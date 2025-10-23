@@ -10,16 +10,27 @@ const delimiterType = ref<DelimiterType>('auto')
 const outputFormat = ref<'tsv' | 'csv'>('tsv')
 const result = ref('')
 
+const fixedToTsvLoading = ref(false)
+const tsvToFixedLoading = ref(false)
+const copyLoading = ref(false)
+const downloadLoading = ref(false)
+
 const fixedToTsv = () => {
+  fixedToTsvLoading.value = true
   try {
     const lengths = parseColumnLengths(columnLengths.value)
     result.value = convertFixedToTsv(dataBody.value, lengths, outputFormat.value)
   } catch (error) {
     result.value = 'エラー: ' + (error as Error).message
+  } finally {
+    setTimeout(() => {
+      fixedToTsvLoading.value = false
+    }, 300)
   }
 }
 
 const tsvToFixed = () => {
+  tsvToFixedLoading.value = true
   try {
     const lengths = parseColumnLengths(columnLengths.value)
     const options = columnOptions.value.trim() 
@@ -28,19 +39,26 @@ const tsvToFixed = () => {
     result.value = convertTsvToFixed(dataBody.value, lengths, options, delimiterType.value)
   } catch (error) {
     result.value = 'エラー: ' + (error as Error).message
+  } finally {
+    setTimeout(() => {
+      tsvToFixedLoading.value = false
+    }, 300)
   }
 }
 
 const copyToClipboard = () => {
+  copyLoading.value = true
   navigator.clipboard.writeText(result.value).then(() => {
-    // コピー成功の通知を表示
+    copyLoading.value = false
     showNotification('コピーしました')
   }).catch(() => {
+    copyLoading.value = false
     showNotification('コピーに失敗しました', 'error')
   })
 }
 
 const downloadResult = () => {
+  downloadLoading.value = true
   const blob = new Blob([result.value], { type: 'text/plain' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
@@ -48,7 +66,10 @@ const downloadResult = () => {
   a.download = 'result.txt'
   a.click()
   URL.revokeObjectURL(url)
-  showNotification('ダウンロードしました')
+  setTimeout(() => {
+    downloadLoading.value = false
+    showNotification('ダウンロードしました')
+  }, 300)
 }
 
 const notificationMessage = ref('')
@@ -113,16 +134,48 @@ const showNotification = (message: string, type: 'success' | 'error' = 'success'
     </div>
 
     <div class="button-group">
-      <button class="btn btn-primary" @click="fixedToTsv">固定長 → TSV/CSV</button>
-      <button class="btn btn-secondary" @click="tsvToFixed">TSV/CSV → 固定長</button>
+      <button 
+        class="btn btn-primary" 
+        @click="fixedToTsv"
+        :disabled="fixedToTsvLoading"
+        :class="{ loading: fixedToTsvLoading }"
+      >
+        <i class="mdi mdi-arrow-right-bold"></i>
+        <span>固定長 → TSV/CSV</span>
+      </button>
+      <button 
+        class="btn btn-secondary" 
+        @click="tsvToFixed"
+        :disabled="tsvToFixedLoading"
+        :class="{ loading: tsvToFixedLoading }"
+      >
+        <i class="mdi mdi-arrow-left-bold"></i>
+        <span>TSV/CSV → 固定長</span>
+      </button>
     </div>
 
     <div class="result-section">
       <h3>実行結果</h3>
       <textarea v-model="result" rows="10" readonly></textarea>
       <div class="result-actions">
-        <button class="btn btn-success" @click="copyToClipboard">コピー</button>
-        <button class="btn btn-success" @click="downloadResult">ダウンロード</button>
+        <button 
+          class="btn btn-icon" 
+          @click="copyToClipboard"
+          :disabled="copyLoading || !result"
+          :class="{ loading: copyLoading }"
+          title="コピー"
+        >
+          <i :class="copyLoading ? 'mdi mdi-loading mdi-spin' : 'mdi mdi-content-copy'"></i>
+        </button>
+        <button 
+          class="btn btn-icon" 
+          @click="downloadResult"
+          :disabled="downloadLoading || !result"
+          :class="{ loading: downloadLoading }"
+          title="ダウンロード"
+        >
+          <i :class="downloadLoading ? 'mdi mdi-loading mdi-spin' : 'mdi mdi-download'"></i>
+        </button>
         <div class="output-format-selector">
           <label>出力形式:</label>
           <label>
