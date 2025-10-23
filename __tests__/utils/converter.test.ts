@@ -32,6 +32,14 @@ describe('Fixed Length Converter', () => {
         { type: 'string', padding: 'right', padChar: ' ' }
       ])
     })
+
+    it('should use default padding char based on type', () => {
+      const result = parseColumnOptions('string:right,number:left')
+      expect(result).toEqual([
+        { type: 'string', padding: 'right', padChar: ' ' },
+        { type: 'number', padding: 'left', padChar: '0' }
+      ])
+    })
   })
 
   describe('padValue', () => {
@@ -48,6 +56,18 @@ describe('Fixed Length Converter', () => {
     it('should pad left with spaces', () => {
       const option: ColumnOption = { type: 'string', padding: 'left', padChar: ' ' }
       expect(padValue('test', 10, option)).toBe('      test')
+    })
+
+    it('should truncate value if longer than length', () => {
+      const option: ColumnOption = { type: 'string', padding: 'right', padChar: ' ' }
+      expect(padValue('verylongtext', 5, option)).toBe('veryl')
+    })
+
+    it('should use default padding char based on type when not specified', () => {
+      const stringOption: ColumnOption = { type: 'string', padding: 'right', padChar: '' }
+      const numberOption: ColumnOption = { type: 'number', padding: 'left', padChar: '' }
+      expect(padValue('test', 10, stringOption)).toBe('test      ')
+      expect(padValue('123', 5, numberOption)).toBe('00123')
     })
   })
 

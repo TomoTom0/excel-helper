@@ -5,7 +5,7 @@ import { parseColumnLengths, parseColumnOptions, fixedToTsv as convertFixedToTsv
 const columnLengths = ref('10,20,15')
 const dataBody = ref('')
 const columnTitles = ref('ID,Name,Age')
-const columnOptions = ref('string:right: ,string:right: ,number:left:0')
+const columnOptions = ref('string:right,string:right,number:left')
 const delimiterType = ref<DelimiterType>('auto')
 const result = ref('')
 
@@ -48,7 +48,23 @@ const downloadResult = () => {
 
 <template>
   <div class="converter-container">
-    <h2>固定長相互変換</h2>
+    <div class="header-row">
+      <h2>固定長相互変換</h2>
+      <div class="delimiter-selector">
+        <label>
+          <input type="radio" value="auto" v-model="delimiterType" />
+          自動判別
+        </label>
+        <label>
+          <input type="radio" value="tsv" v-model="delimiterType" />
+          TSV
+        </label>
+        <label>
+          <input type="radio" value="csv" v-model="delimiterType" />
+          CSV
+        </label>
+      </div>
+    </div>
 
     <div class="input-section">
       <h3>カラムごとの長さ</h3>
@@ -71,27 +87,14 @@ const downloadResult = () => {
     <div class="input-section">
       <h3>カラムごとのオプション</h3>
       <textarea v-model="columnOptions" rows="3"></textarea>
-      <p>例: string:right: ,string:right: ,number:left:0</p>
-      <p>形式: データ型:padding方向:padding文字</p>
+      <p>例: string:right,string:right,number:left</p>
+      <p>形式: データ型:padding方向[:padding文字]</p>
+      <p>※padding文字省略時: numberは'0'、stringは半角空白</p>
     </div>
 
     <div class="button-group">
       <button class="btn btn-primary" @click="fixedToTsv">固定長 → TSV/CSV</button>
       <button class="btn btn-secondary" @click="tsvToFixed">TSV/CSV → 固定長</button>
-      <div class="delimiter-selector">
-        <label>
-          <input type="radio" value="auto" v-model="delimiterType" />
-          自動判別
-        </label>
-        <label>
-          <input type="radio" value="tsv" v-model="delimiterType" />
-          TSV
-        </label>
-        <label>
-          <input type="radio" value="csv" v-model="delimiterType" />
-          CSV
-        </label>
-      </div>
     </div>
 
     <div class="result-section">

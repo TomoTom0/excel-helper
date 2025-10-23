@@ -65,6 +65,17 @@ body {
   color: #2c3e50;
 }
 
+.header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+.header-row h2 {
+  margin: 0;
+}
+
 .input-section {
   background: white;
   padding: 20px;
@@ -105,7 +116,6 @@ body {
   display: flex;
   gap: 15px;
   margin-bottom: 30px;
-  align-items: center;
 }
 
 .delimiter-selector {

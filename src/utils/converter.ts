@@ -26,16 +26,27 @@ export const parseColumnLengths = (input: string): number[] => {
 export const parseColumnOptions = (input: string): ColumnOption[] => {
   return input.split(',').map(opt => {
     const parts = opt.trim().split(':')
+    const type = (parts[0] || 'string') as 'string' | 'number'
+    const padding = (parts[1] || 'right') as 'left' | 'right'
+    let padChar: string
+    if (parts[2] !== undefined && parts[2] !== '') {
+      padChar = parts[2]
+    } else {
+      padChar = type === 'number' ? '0' : ' '
+    }
     return {
-      type: (parts[0] || 'string') as 'string' | 'number',
-      padding: (parts[1] || 'right') as 'left' | 'right',
-      padChar: parts[2] || ' '
+      type,
+      padding,
+      padChar
     }
   })
 }
 
 export const padValue = (value: string, length: number, option: ColumnOption): string => {
-  const padChar = option.padChar || ' '
+  const padChar = option.padChar || (option.type === 'number' ? '0' : ' ')
+  if (value.length >= length) {
+    return value.substring(0, length)
+  }
   if (option.padding === 'left') {
     return value.padStart(length, padChar)
   } else {
