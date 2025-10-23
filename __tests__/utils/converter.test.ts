@@ -15,6 +15,10 @@ describe('Fixed Length Converter', () => {
     it('should filter out invalid values', () => {
       expect(parseColumnLengths('10,abc,15')).toEqual([10, 15])
     })
+
+    it('should parse tab-separated lengths', () => {
+      expect(parseColumnLengths('10\t20\t15')).toEqual([10, 20, 15])
+    })
   })
 
   describe('parseColumnOptions', () => {

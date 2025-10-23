@@ -7,13 +7,13 @@ const dataBody = ref('')
 const columnTitles = ref('')
 const columnOptions = ref('')
 const delimiterType = ref<DelimiterType>('auto')
+const outputFormat = ref<'tsv' | 'csv'>('tsv')
 const result = ref('')
 
 const fixedToTsv = () => {
   try {
     const lengths = parseColumnLengths(columnLengths.value)
-    const outputType = delimiterType.value === 'auto' ? 'tsv' : delimiterType.value
-    result.value = convertFixedToTsv(dataBody.value, lengths, outputType)
+    result.value = convertFixedToTsv(dataBody.value, lengths, outputFormat.value)
   } catch (error) {
     result.value = 'エラー: ' + (error as Error).message
   }
@@ -71,7 +71,7 @@ const downloadResult = () => {
     <div class="input-section">
       <h3>カラムごとの長さ</h3>
       <textarea v-model="columnLengths" rows="2"></textarea>
-      <p>例: 10,20,15 (カンマ区切り)</p>
+      <p>例: 10,20,15 (カンマ区切りで各カラムの文字数を指定)</p>
     </div>
 
     <div class="input-section">
@@ -106,6 +106,17 @@ const downloadResult = () => {
       <div class="result-actions">
         <button class="btn btn-success" @click="copyToClipboard">コピー</button>
         <button class="btn btn-success" @click="downloadResult">ダウンロード</button>
+        <div class="output-format-selector">
+          <label>出力形式:</label>
+          <label>
+            <input type="radio" value="tsv" v-model="outputFormat" />
+            TSV
+          </label>
+          <label>
+            <input type="radio" value="csv" v-model="outputFormat" />
+            CSV
+          </label>
+        </div>
       </div>
     </div>
   </div>

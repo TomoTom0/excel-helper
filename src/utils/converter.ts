@@ -20,7 +20,9 @@ export const getDelimiter = (data: string, type: DelimiterType): '\t' | ',' => {
 }
 
 export const parseColumnLengths = (input: string): number[] => {
-  return input.split(',').map(v => parseInt(v.trim())).filter(v => !isNaN(v))
+  // タブ区切りまたはカンマ区切りを検出
+  const separator = input.includes('\t') ? '\t' : ','
+  return input.split(separator).map(v => parseInt(v.trim())).filter(v => !isNaN(v))
 }
 
 export const parseColumnOptions = (input: string): ColumnOption[] => {
