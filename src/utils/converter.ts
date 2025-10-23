@@ -4,6 +4,21 @@ export interface ColumnOption {
   padChar: string
 }
 
+export type DelimiterType = 'auto' | 'tsv' | 'csv'
+
+export const detectDelimiter = (data: string): '\t' | ',' => {
+  const firstLine = data.split('\n')[0] || ''
+  const tabCount = (firstLine.match(/\t/g) || []).length
+  const commaCount = (firstLine.match(/,/g) || []).length
+  return tabCount >= commaCount ? '\t' : ','
+}
+
+export const getDelimiter = (data: string, type: DelimiterType): '\t' | ',' => {
+  if (type === 'auto') return detectDelimiter(data)
+  if (type === 'tsv') return '\t'
+  return ','
+}
+
 export const parseColumnLengths = (input: string): number[] => {
   return input.split(',').map(v => parseInt(v.trim())).filter(v => !isNaN(v))
 }
@@ -28,9 +43,10 @@ export const padValue = (value: string, length: number, option: ColumnOption): s
   }
 }
 
-export const fixedToTsv = (data: string, lengths: number[]): string => {
+export const fixedToTsv = (data: string, lengths: number[], delimiterType: DelimiterType = 'tsv'): string => {
   const lines = data.split('\n').filter(line => line.trim())
-  const tsvLines: string[] = []
+  const delimiter = delimiterType === 'csv' ? ',' : '\t'
+  const resultLines: string[] = []
 
   for (const line of lines) {
     const columns: string[] = []
@@ -42,18 +58,19 @@ export const fixedToTsv = (data: string, lengths: number[]): string => {
       position += length
     }
 
-    tsvLines.push(columns.join('\t'))
+    resultLines.push(columns.join(delimiter))
   }
 
-  return tsvLines.join('\n')
+  return resultLines.join('\n')
 }
 
-export const tsvToFixed = (data: string, lengths: number[], options: ColumnOption[]): string => {
+export const tsvToFixed = (data: string, lengths: number[], options: ColumnOption[], delimiterType: DelimiterType = 'auto'): string => {
   const lines = data.split('\n').filter(line => line.trim())
+  const delimiter = getDelimiter(data, delimiterType)
   const fixedLines: string[] = []
 
   for (const line of lines) {
-    const columns = line.split('\t')
+    const columns = line.split(delimiter)
     let fixedLine = ''
 
     for (let i = 0; i < lengths.length; i++) {

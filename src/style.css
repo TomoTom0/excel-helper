@@ -105,6 +105,30 @@ body {
   display: flex;
   gap: 15px;
   margin-bottom: 30px;
+  align-items: center;
+}
+
+.delimiter-selector {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  padding: 10px 20px;
+  background-color: #f8f9fa;
+  border-radius: 6px;
+  border: 1px solid #dee2e6;
+}
+
+.delimiter-selector label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #495057;
+}
+
+.delimiter-selector input[type="radio"] {
+  cursor: pointer;
 }
 
 .btn {

@@ -1,17 +1,19 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { parseColumnLengths, parseColumnOptions, fixedToTsv as convertFixedToTsv, tsvToFixed as convertTsvToFixed } from '../utils/converter'
+import { parseColumnLengths, parseColumnOptions, fixedToTsv as convertFixedToTsv, tsvToFixed as convertTsvToFixed, type DelimiterType } from '../utils/converter'
 
 const columnLengths = ref('10,20,15')
 const dataBody = ref('')
 const columnTitles = ref('ID,Name,Age')
 const columnOptions = ref('string:right: ,string:right: ,number:left:0')
+const delimiterType = ref<DelimiterType>('auto')
 const result = ref('')
 
 const fixedToTsv = () => {
   try {
     const lengths = parseColumnLengths(columnLengths.value)
-    result.value = convertFixedToTsv(dataBody.value, lengths)
+    const outputType = delimiterType.value === 'auto' ? 'tsv' : delimiterType.value
+    result.value = convertFixedToTsv(dataBody.value, lengths, outputType)
   } catch (error) {
     result.value = 'エラー: ' + (error as Error).message
   }
@@ -21,7 +23,7 @@ const tsvToFixed = () => {
   try {
     const lengths = parseColumnLengths(columnLengths.value)
     const options = parseColumnOptions(columnOptions.value)
-    result.value = convertTsvToFixed(dataBody.value, lengths, options)
+    result.value = convertTsvToFixed(dataBody.value, lengths, options, delimiterType.value)
   } catch (error) {
     result.value = 'エラー: ' + (error as Error).message
   }
@@ -74,8 +76,22 @@ const downloadResult = () => {
     </div>
 
     <div class="button-group">
-      <button class="btn btn-primary" @click="fixedToTsv">固定長 → TSV</button>
-      <button class="btn btn-secondary" @click="tsvToFixed">TSV → 固定長</button>
+      <button class="btn btn-primary" @click="fixedToTsv">固定長 → TSV/CSV</button>
+      <button class="btn btn-secondary" @click="tsvToFixed">TSV/CSV → 固定長</button>
+      <div class="delimiter-selector">
+        <label>
+          <input type="radio" value="auto" v-model="delimiterType" />
+          自動判別
+        </label>
+        <label>
+          <input type="radio" value="tsv" v-model="delimiterType" />
+          TSV
+        </label>
+        <label>
+          <input type="radio" value="csv" v-model="delimiterType" />
+          CSV
+        </label>
+      </div>
     </div>
 
     <div class="result-section">
