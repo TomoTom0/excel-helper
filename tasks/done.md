@@ -51,3 +51,10 @@
   - 各入力欄にコピーボタンとクリアボタンを追加
   - アイコンボタンのUIデザイン統一
   - 全26テストが成功
+
+### デプロイ設定
+- GitHubリポジトリ作成: https://github.com/TomoTom0/excel-helper
+- GitHub Actions CI/CD設定
+  - テスト自動実行（Node.js 18.x, 20.x）
+  - ビルド検証
+  - プッシュ・プルリクエスト時に自動実行
