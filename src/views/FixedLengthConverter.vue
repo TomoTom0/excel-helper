@@ -22,7 +22,9 @@ const fixedToTsv = () => {
 const tsvToFixed = () => {
   try {
     const lengths = parseColumnLengths(columnLengths.value)
-    const options = parseColumnOptions(columnOptions.value)
+    const options = columnOptions.value.trim() 
+      ? parseColumnOptions(columnOptions.value)
+      : lengths.map(() => ({ type: 'string' as const, padding: 'right' as const, padChar: ' ' }))
     result.value = convertTsvToFixed(dataBody.value, lengths, options, delimiterType.value)
   } catch (error) {
     result.value = 'エラー: ' + (error as Error).message
@@ -79,16 +81,17 @@ const downloadResult = () => {
     </div>
 
     <div class="input-section">
-      <h3>カラムタイトル</h3>
+      <h3>カラムタイトル（省略可）</h3>
       <textarea v-model="columnTitles" rows="2"></textarea>
       <p>例: ID,Name,Age (カンマ区切り)</p>
     </div>
 
     <div class="input-section">
-      <h3>カラムごとのオプション</h3>
+      <h3>カラムごとのオプション（省略可）</h3>
       <textarea v-model="columnOptions" rows="3"></textarea>
       <p>例: string:right,string:right,number:left</p>
       <p>形式: データ型:padding方向[:padding文字]</p>
+      <p>※省略時は全てstring型、右パディング、半角空白</p>
       <p>※padding文字省略時: numberは'0'、stringは半角空白</p>
     </div>
 

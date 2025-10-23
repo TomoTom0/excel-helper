@@ -175,5 +175,17 @@ describe('Fixed Length Converter', () => {
       const result = tsvToFixed(data, lengths, options, 'tsv')
       expect(result).toBe('John      Doe                         30\nJane      Smith                       25')
     })
+
+    it('should use default string options when options are empty', () => {
+      const data = 'John\tDoe\t30'
+      const lengths = [10, 20, 10]
+      const options: ColumnOption[] = [
+        { type: 'string', padding: 'right', padChar: ' ' },
+        { type: 'string', padding: 'right', padChar: ' ' },
+        { type: 'string', padding: 'right', padChar: ' ' }
+      ]
+      const result = tsvToFixed(data, lengths, options, 'tsv')
+      expect(result).toBe('John      Doe                 30        ')
+    })
   })
 })
