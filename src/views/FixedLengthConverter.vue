@@ -33,7 +33,10 @@ const tsvToFixed = () => {
 
 const copyToClipboard = () => {
   navigator.clipboard.writeText(result.value).then(() => {
-    alert('コピーしました')
+    // コピー成功の通知を表示
+    showNotification('コピーしました')
+  }).catch(() => {
+    showNotification('コピーに失敗しました', 'error')
   })
 }
 
@@ -45,6 +48,20 @@ const downloadResult = () => {
   a.download = 'result.txt'
   a.click()
   URL.revokeObjectURL(url)
+  showNotification('ダウンロードしました')
+}
+
+const notificationMessage = ref('')
+const notificationType = ref<'success' | 'error'>('success')
+const showNotificationFlag = ref(false)
+
+const showNotification = (message: string, type: 'success' | 'error' = 'success') => {
+  notificationMessage.value = message
+  notificationType.value = type
+  showNotificationFlag.value = true
+  setTimeout(() => {
+    showNotificationFlag.value = false
+  }, 2000)
 }
 </script>
 
@@ -118,6 +135,11 @@ const downloadResult = () => {
           </label>
         </div>
       </div>
+    </div>
+
+    <!-- 通知メッセージ -->
+    <div v-if="showNotificationFlag" :class="['notification', notificationType]">
+      {{ notificationMessage }}
     </div>
   </div>
 </template>
