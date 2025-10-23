@@ -58,3 +58,7 @@
   - テスト自動実行（Node.js 18.x, 20.x）
   - ビルド検証
   - プッシュ・プルリクエスト時に自動実行
+- Cloudflare Pagesデプロイ完了
+  - サイトURL: https://3be88f6e.excel-helper.pages.dev
+  - masterブランチへのプッシュで自動デプロイ
+  - Wrangler CLIでデプロイ

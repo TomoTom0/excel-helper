@@ -27,6 +27,7 @@
     "@mdi/font": "^7.4.47",
     "@vitest/ui": "^4.0.1",
     "happy-dom": "^20.0.8",
-    "vitest": "^4.0.1"
+    "vitest": "^4.0.1",
+    "wrangler": "^4.45.0"
   }
 }
