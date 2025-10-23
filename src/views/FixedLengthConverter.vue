@@ -2,10 +2,10 @@
 import { ref } from 'vue'
 import { parseColumnLengths, parseColumnOptions, fixedToTsv as convertFixedToTsv, tsvToFixed as convertTsvToFixed, type DelimiterType } from '../utils/converter'
 
-const columnLengths = ref('10,20,15')
+const columnLengths = ref('')
 const dataBody = ref('')
-const columnTitles = ref('ID,Name,Age')
-const columnOptions = ref('string:right,string:right,number:left')
+const columnTitles = ref('')
+const columnOptions = ref('')
 const delimiterType = ref<DelimiterType>('auto')
 const result = ref('')
 
