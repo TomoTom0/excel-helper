@@ -1,13 +1,12 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { parseColumnLengths, parseColumnOptions, fixedToTsv as convertFixedToTsv, tsvToFixed as convertTsvToFixed, type DelimiterType } from '../utils/converter'
+import { storeToRefs } from 'pinia'
+import { useConverterStore } from '../stores/converter'
+import { parseColumnLengths, parseColumnOptions, fixedToTsv as convertFixedToTsv, tsvToFixed as convertTsvToFixed } from '../utils/converter'
 
-const columnLengths = ref('')
-const dataBody = ref('')
-const columnTitles = ref('')
-const columnOptions = ref('')
-const delimiterType = ref<DelimiterType>('auto')
-const outputFormat = ref<'tsv' | 'csv'>('tsv')
+const store = useConverterStore()
+const { columnLengths, dataBody, columnTitles, columnOptions, delimiterType, outputFormat } = storeToRefs(store)
+
 const result = ref('')
 
 const fixedToTsvLoading = ref(false)
@@ -84,6 +83,14 @@ const showNotification = (message: string, type: 'success' | 'error' = 'success'
     showNotificationFlag.value = false
   }, 2000)
 }
+
+const copyFieldToClipboard = (text: string, fieldName: string) => {
+  navigator.clipboard.writeText(text).then(() => {
+    showNotification(`${fieldName}をコピーしました`)
+  }).catch(() => {
+    showNotification('コピーに失敗しました', 'error')
+  })
+}
 </script>
 
 <template>
@@ -107,25 +114,105 @@ const showNotification = (message: string, type: 'success' | 'error' = 'success'
     </div>
 
     <div class="input-section">
-      <h3>カラムごとの長さ</h3>
+      <div class="input-header">
+        <h3>カラムごとの長さ</h3>
+        <div class="input-actions">
+          <button 
+            class="btn btn-icon-small" 
+            @click="copyFieldToClipboard(columnLengths, 'カラムごとの長さ')"
+            :disabled="!columnLengths"
+            title="コピー"
+          >
+            <i class="mdi mdi-content-copy"></i>
+          </button>
+          <button 
+            class="btn btn-icon-small" 
+            @click="store.clearColumnLengths()"
+            :disabled="!columnLengths"
+            title="クリア"
+          >
+            <i class="mdi mdi-delete"></i>
+          </button>
+        </div>
+      </div>
       <textarea v-model="columnLengths" rows="2"></textarea>
       <p>例: 10,20,15 (カンマ区切りで各カラムの文字数を指定)</p>
     </div>
 
     <div class="input-section">
-      <h3>データ本体</h3>
+      <div class="input-header">
+        <h3>データ本体</h3>
+        <div class="input-actions">
+          <button 
+            class="btn btn-icon-small" 
+            @click="copyFieldToClipboard(dataBody, 'データ本体')"
+            :disabled="!dataBody"
+            title="コピー"
+          >
+            <i class="mdi mdi-content-copy"></i>
+          </button>
+          <button 
+            class="btn btn-icon-small" 
+            @click="store.clearDataBody()"
+            :disabled="!dataBody"
+            title="クリア"
+          >
+            <i class="mdi mdi-delete"></i>
+          </button>
+        </div>
+      </div>
       <textarea v-model="dataBody" rows="8"></textarea>
       <p>固定長形式またはTSV形式のデータを入力</p>
     </div>
 
     <div class="input-section">
-      <h3>カラムタイトル（省略可）</h3>
+      <div class="input-header">
+        <h3>カラムタイトル（省略可）</h3>
+        <div class="input-actions">
+          <button 
+            class="btn btn-icon-small" 
+            @click="copyFieldToClipboard(columnTitles, 'カラムタイトル')"
+            :disabled="!columnTitles"
+            title="コピー"
+          >
+            <i class="mdi mdi-content-copy"></i>
+          </button>
+          <button 
+            class="btn btn-icon-small" 
+            @click="store.clearColumnTitles()"
+            :disabled="!columnTitles"
+            title="クリア"
+          >
+            <i class="mdi mdi-delete"></i>
+          </button>
+        </div>
+      </div>
       <textarea v-model="columnTitles" rows="2"></textarea>
       <p>例: ID,Name,Age (カンマ区切り)</p>
     </div>
 
     <div class="input-section">
-      <h3>カラムごとのオプション（省略可）</h3>
+      <div class="input-header">
+        <h3>カラムごとのオプション（省略可）</h3>
+        <div class="input-actions">
+          <button 
+            class="btn btn-icon-small" 
+            @click="copyFieldToClipboard(columnOptions, 'カラムごとのオプション')"
+            :disabled="!columnOptions"
+            title="コピー"
+          >
+            <i class="mdi mdi-content-copy"></i>
+          </button>
+          <button 
+            class="btn btn-icon-small" 
+            @click="store.clearColumnOptions()"
+            :disabled="!columnOptions"
+            title="クリア"
+          >
+            <i class="mdi mdi-delete"></i>
+          </button>
+        </div>
+      </div>
       <textarea v-model="columnOptions" rows="3"></textarea>
       <p>例: string:right,string:right,number:left</p>
       <p>形式: データ型:padding方向[:padding文字]</p>
