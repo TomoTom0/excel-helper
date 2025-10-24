@@ -4,6 +4,8 @@ dist/
 *.log
 .vscode/
 .idea/
+tmp/
+coverage/
 
 # Test coverage
 coverage/

@@ -68,6 +68,8 @@ Viewsの低カバレッジは主にUIイベントハンドラー:
 2. ✅ ドキュメント確認完了: すべて充実している
 3. ✅ 重複テストファイル削除完了
 4. ✅ Pinia store 追加完了
-5. feature branchでの開発完了
-6. dev branchへのマージ準備
+5. ✅ .gitignore 更新完了（tmp/, coverage/ 追加）
+6. ✅ 全テスト成功確認（178 passed）
+7. ✅ feature branchでの開発完了
+8. 次: dev branchへのマージ準備（GitHub PRで実施）
 
