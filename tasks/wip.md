@@ -22,10 +22,10 @@
 - クリア機能
 
 ### 次のステップ
-- [ ] コミット準備
-- [ ] dev ブランチへマージ
+- [x] コミット準備（要件定義ドキュメント追加完了）
+- [ ] dev ブランチへマージ（GitHub PR経由）
 - [ ] 動作確認
-- [ ] master ブランチへマージ検討
+- [ ] main ブランチへマージ（GitHub PR経由）
 
 ---
 
@@ -72,8 +72,9 @@ Viewsの低カバレッジは主にUIイベントハンドラー:
 6. ✅ 全テスト成功確認（178 passed）
 7. ✅ feature branchでの開発完了
 8. ✅ 最終テスト確認: 178 passed (2025-10-25)
-9. **次: GitHub PRを作成してdev branchへマージ**
-   - ユーザーがGitHub UIでPRを作成
-   - マージ先: dev branch
-   - レビュー後、devからmainへのPRも同様に実施
+9. ✅ 要件定義ドキュメント追加: docs/design/chat/numbering-line-converter-requirements.md
+10. **次: GitHub PRを作成してdev branchへマージ**
+    - ユーザーがGitHub UIでPRを作成
+    - マージ先: dev branch
+    - レビュー後、devからmainへのPRも同様に実施
 
