@@ -71,5 +71,9 @@ Viewsの低カバレッジは主にUIイベントハンドラー:
 5. ✅ .gitignore 更新完了（tmp/, coverage/ 追加）
 6. ✅ 全テスト成功確認（178 passed）
 7. ✅ feature branchでの開発完了
-8. 次: dev branchへのマージ準備（GitHub PRで実施）
+8. ✅ 最終テスト確認: 178 passed (2025-10-25)
+9. **次: GitHub PRを作成してdev branchへマージ**
+   - ユーザーがGitHub UIでPRを作成
+   - マージ先: dev branch
+   - レビュー後、devからmainへのPRも同様に実施
 
