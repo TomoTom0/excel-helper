@@ -67,9 +67,9 @@ export const padValue = (value: string, length: number, option: ColumnOption): s
   }
 }
 
-export const fixedToTsv = (data: string, lengths: number[], delimiterType: DelimiterType = 'tsv'): string => {
+export const fixedToTsv = (data: string, lengths: number[], outputFormat: 'tsv' | 'csv' | 'fixed' = 'tsv'): string => {
   const lines = data.split('\n')
-  const delimiter = delimiterType === 'csv' ? ',' : '\t'
+  const delimiter = outputFormat === 'csv' ? ',' : '\t'
   const resultLines: string[] = []
 
   for (const line of lines) {

@@ -269,6 +269,10 @@ const copyFieldToClipboard = (text: string, fieldName: string) => {
         <div class="output-format-selector">
           <label>出力形式:</label>
           <label>
+            <input type="radio" value="fixed" v-model="outputFormat" />
+            固定長
+          </label>
+          <label>
             <input type="radio" value="tsv" v-model="outputFormat" />
             TSV
           </label>

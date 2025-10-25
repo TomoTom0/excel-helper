@@ -26,7 +26,7 @@ describe('FixedLengthConverter.vue', () => {
     it('should render column lengths input', () => {
       const wrapper = createWrapper();
       const section = wrapper.findAll('.input-section')[0];
-      expect(section.find('h3').text()).toBe('カラムごとの長さ');
+      expect(section.find('h3').text()).toBe('カラム長');
       expect(section.find('textarea').exists()).toBe(true);
     });
 

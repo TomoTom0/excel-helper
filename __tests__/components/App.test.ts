@@ -15,7 +15,7 @@ describe('App.vue', () => {
   describe('Rendering', () => {
     it('should render the sidebar with title', () => {
       const wrapper = createWrapper();
-      expect(wrapper.find('h1').text()).toBe('変換ツール');
+      expect(wrapper.find('h1').text()).toBe('YT Excel Helper');
     });
 
     it('should render all tabs', () => {
