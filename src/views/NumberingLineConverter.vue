@@ -78,9 +78,7 @@ const convert = () => {
   } catch (error) {
     result.value = 'エラー: ' + (error as Error).message
   } finally {
-    setTimeout(() => {
-      convertLoading.value = false
-    }, 300)
+    convertLoading.value = false
   }
 }
 
@@ -173,26 +171,26 @@ const { clearDataBody, togglePattern } = store
       <div class="delimiter-selector" style="flex-wrap: wrap;">
         <label>
           <input type="checkbox" :checked="detectPatterns.includes('circled')" @change="togglePattern('circled')" />
-          丸数字 <span style="color: #7f8c8d; margin-left: 5px;">①②③</span>
+          丸数字 <span class="pattern-example">①②③</span>
         </label>
         <label>
           <input type="checkbox" :checked="detectPatterns.includes('dotted')" @change="togglePattern('dotted')" />
-          数字+ドット <span style="color: #7f8c8d; margin-left: 5px;">1. 2. 3.</span>
+          数字+ドット <span class="pattern-example">1. 2. 3.</span>
         </label>
         <label>
           <input type="checkbox" :checked="detectPatterns.includes('parenthesized')" @change="togglePattern('parenthesized')" />
-          括弧囲み数字 <span style="color: #7f8c8d; margin-left: 5px;">(1) (2) (3)</span>
+          括弧囲み数字 <span class="pattern-example">(1) (2) (3)</span>
         </label>
-        <label style="display: flex; align-items: center; gap: 5px;">
+        <label class="dummy-char-label">
           <input type="checkbox" :checked="detectPatterns.includes('dummy')" @change="togglePattern('dummy')" />
           ダミー文字
           <input 
             type="text" 
             v-model="dummyChar" 
             maxlength="1" 
-            style="width: 40px; padding: 4px 6px; border: 1px solid #ddd; border-radius: 4px; font-family: 'Courier New', monospace; font-size: 14px; margin: 0 5px;"
+            class="dummy-char-input"
           />
-          <span style="color: #7f8c8d;">x項目A</span>
+          <span class="pattern-example">x項目A</span>
         </label>
       </div>
       <p>検出したい行のパターンを選択（複数選択可）</p>
@@ -266,3 +264,26 @@ const { clearDataBody, togglePattern } = store
     </div>
   </div>
 </template>
+
+<style scoped>
+.pattern-example {
+  color: #7f8c8d;
+  margin-left: 5px;
+}
+
+.dummy-char-label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.dummy-char-input {
+  width: 40px;
+  padding: 4px 6px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-family: 'Courier New', monospace;
+  font-size: 14px;
+  margin: 0 5px;
+}
+</style>

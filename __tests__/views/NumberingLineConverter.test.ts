@@ -149,7 +149,7 @@ describe('NumberingLineConverter.vue', () => {
       if (convertButton) {
         await convertButton.trigger('click');
         await wrapper.vm.$nextTick();
-        await new Promise(resolve => setTimeout(resolve, 350)); // ローディング待ち
+        
       }
       
       // 結果セクションが存在することを確認

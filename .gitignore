@@ -8,14 +8,12 @@ tmp/
 coverage/
 
 # Test coverage
-coverage/
 .nyc_output/
 
 # Vitest
 .vitest/
 
 # Temporary files
-tmp/
 *.tmp
 .cache/
 

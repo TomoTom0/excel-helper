@@ -19,12 +19,13 @@ export const useNumberingStore = defineStore('numbering', () => {
   }
 
   const togglePattern = (pattern: PatternType) => {
-    const index = detectPatterns.value.indexOf(pattern)
-    if (index > -1) {
-      detectPatterns.value = detectPatterns.value.filter(p => p !== pattern)
+    const patterns = new Set(detectPatterns.value)
+    if (patterns.has(pattern)) {
+      patterns.delete(pattern)
     } else {
-      detectPatterns.value = [...detectPatterns.value, pattern]
+      patterns.add(pattern)
     }
+    detectPatterns.value = Array.from(patterns)
   }
 
   return {

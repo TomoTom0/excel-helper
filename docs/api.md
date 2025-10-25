@@ -151,8 +151,10 @@ type NumberFormat = 'circled' | 'dotted' | 'parenthesized'
 ```typescript
 const text = "x概要\nx詳細\n①項目A\n②項目B"
 convertNumberingLines(text, ['dummy', 'circled'], 'dotted', 'x')
-// => "1. 概要\n2. 詳細\n1. 項目A\n2. 項目B"
+// => "1. 概要\n2. 詳細\n3. 項目A\n4. 項目B"
 ```
+
+**注**: この関数はテキストブロック全体で連続したカウンターを使用します。セルごとに独立したカウンターが必要な場合は、各セルに対して個別に呼び出してください。
 
 **検出パターン**:
 - `'circled'`: 丸数字（①②③...）
