@@ -161,7 +161,7 @@ const copyFieldToClipboard = (text: string, fieldName: string) => {
           </button>
         </div>
       </div>
-      <textarea v-model="dataBody" rows="8" placeholder="John      Tokyo     25&#10;Alice     NewYork   30&#10;（固定長形式）&#10;&#10;John,Tokyo,25&#10;Alice,NewYork,30&#10;（CSV/TSV形式）"></textarea>
+      <textarea v-model="dataBody" rows="8" placeholder="John      Tokyo     25&#10;Alice     NewYork   30&#10;（固定長 or CSV or TSV形式）"></textarea>
       <p class="field-description">固定長形式またはTSV/CSV形式のデータ</p>
     </div>
 
