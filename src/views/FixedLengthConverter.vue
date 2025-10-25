@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useConverterStore } from '../stores/converter'
 import { parseColumnLengths, parseColumnOptions, fixedToTsv as convertFixedToTsv, tsvToFixed as convertTsvToFixed } from '../utils/converter'
@@ -12,6 +12,16 @@ const result = ref('')
 const convertLoading = ref(false)
 const copyLoading = ref(false)
 const downloadLoading = ref(false)
+
+const resultPlaceholder = computed(() => {
+  if (outputFormat.value === 'fixed') {
+    return 'John      Tokyo     25\nAlice     NewYork   30\n(変換結果がここに表示されます)'
+  } else if (outputFormat.value === 'tsv') {
+    return 'John\tTokyo\t25\nAlice\tNewYork\t30\n(変換結果がここに表示されます)'
+  } else {
+    return 'John,Tokyo,25\nAlice,NewYork,30\n(変換結果がここに表示されます)'
+  }
+})
 
 const convert = () => {
   convertLoading.value = true
@@ -254,7 +264,7 @@ const copyFieldToClipboard = (text: string, fieldName: string) => {
           </button>
         </div>
       </div>
-      <textarea v-model="result" rows="10" readonly placeholder="John,Tokyo,25&#10;Alice,NewYork,30&#10;(変換結果がここに表示されます)"></textarea>
+      <textarea v-model="result" rows="10" readonly :placeholder="resultPlaceholder"></textarea>
       <div class="result-actions">
         <div class="output-format-selector">
           <label>出力形式:</label>

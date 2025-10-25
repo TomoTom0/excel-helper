@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { 
   convertNumberingLines, 
@@ -28,6 +28,21 @@ const downloadLoading = ref(false)
 const notificationMessage = ref('')
 const notificationType = ref<'success' | 'error'>('success')
 const showNotificationFlag = ref(false)
+
+const resultPlaceholder = computed(() => {
+  const delimiter = outputDelimiterType.value === 'tsv' ? '\t' : ','
+  let numberingExample = ''
+  
+  if (outputFormat.value === 'circled') {
+    numberingExample = `項目A${delimiter}項目B\n"①手順1\n②手順2\n注意事項\n③手順3"${delimiter}"①概要\n②詳細\n③まとめ"`
+  } else if (outputFormat.value === 'dotted') {
+    numberingExample = `項目A${delimiter}項目B\n"1. 手順1\n2. 手順2\n注意事項\n3. 手順3"${delimiter}"1. 概要\n2. 詳細\n3. まとめ"`
+  } else {
+    numberingExample = `項目A${delimiter}項目B\n"(1) 手順1\n(2) 手順2\n注意事項\n(3) 手順3"${delimiter}"(1) 概要\n(2) 詳細\n(3) まとめ"`
+  }
+  
+  return `${numberingExample}\n(変換結果がここに表示されます)`
+})
 
 const showNotification = (message: string, type: 'success' | 'error' = 'success') => {
   notificationMessage.value = message
@@ -230,7 +245,7 @@ const { clearDataBody, togglePattern } = store
           </button>
         </div>
       </div>
-      <textarea v-model="result" rows="10" readonly placeholder="項目A	項目B&#10;&quot;1. 手順1&#10;2. 手順2&#10;注意事項&#10;3. 手順3&quot;	&quot;1. 概要&#10;2. 詳細&#10;3. まとめ&quot;&#10;(変換結果がここに表示されます)"></textarea>
+      <textarea v-model="result" rows="10" readonly :placeholder="resultPlaceholder"></textarea>
       <div class="result-actions">
         <div class="output-format-selector">
           <label>番号:</label>
