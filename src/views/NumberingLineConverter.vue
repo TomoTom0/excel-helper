@@ -162,7 +162,7 @@ const { clearDataBody, togglePattern } = store
           </button>
         </div>
       </div>
-      <textarea v-model="dataBody" rows="8"></textarea>
+      <textarea v-model="dataBody" rows="8" placeholder="項目A	項目B	項目C&#10;①データ1	②データ2	③データ3&#10;(TSV/CSV形式)"></textarea>
       <p>TSV/CSV形式のデータを入力（改行を含む要素はクォートで囲まれます）</p>
     </div>
 
@@ -209,27 +209,31 @@ const { clearDataBody, togglePattern } = store
     </div>
 
     <div class="result-section">
-      <h3>実行結果</h3>
-      <textarea v-model="result" rows="10" readonly></textarea>
+      <div class="input-header">
+        <h3>実行結果</h3>
+        <div class="input-actions">
+          <button 
+            class="btn btn-icon-small" 
+            @click="copyToClipboard"
+            :disabled="copyLoading || !result"
+            :class="{ loading: copyLoading }"
+            title="コピー"
+          >
+            <i :class="copyLoading ? 'mdi mdi-loading mdi-spin' : 'mdi mdi-content-copy'"></i>
+          </button>
+          <button 
+            class="btn btn-icon-small" 
+            @click="downloadResult"
+            :disabled="downloadLoading || !result"
+            :class="{ loading: downloadLoading }"
+            title="ダウンロード"
+          >
+            <i :class="downloadLoading ? 'mdi mdi-loading mdi-spin' : 'mdi mdi-download'"></i>
+          </button>
+        </div>
+      </div>
+      <textarea v-model="result" rows="10" readonly placeholder="1. データ1	2. データ2	3. データ3&#10;(変換結果がここに表示されます)"></textarea>
       <div class="result-actions">
-        <button 
-          class="btn btn-icon" 
-          @click="copyToClipboard"
-          :disabled="copyLoading || !result"
-          :class="{ loading: copyLoading }"
-          title="コピー"
-        >
-          <i :class="copyLoading ? 'mdi mdi-loading mdi-spin' : 'mdi mdi-content-copy'"></i>
-        </button>
-        <button 
-          class="btn btn-icon" 
-          @click="downloadResult"
-          :disabled="downloadLoading || !result"
-          :class="{ loading: downloadLoading }"
-          title="ダウンロード"
-        >
-          <i :class="downloadLoading ? 'mdi mdi-loading mdi-spin' : 'mdi mdi-download'"></i>
-        </button>
         <div class="output-format-selector">
           <label>番号:</label>
           <label>

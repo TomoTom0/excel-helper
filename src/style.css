@@ -237,6 +237,14 @@ body {
 
 .delimiter-selector input[type="radio"] {
   cursor: pointer;
+  margin-right: 3px;
+  accent-color: #667eea;
+}
+
+.delimiter-selector input[type="checkbox"] {
+  cursor: pointer;
+  margin-right: 3px;
+  accent-color: #667eea;
 }
 
 .btn {
@@ -389,6 +397,8 @@ body {
 
 .output-format-selector input[type="radio"] {
   cursor: pointer;
+  margin-right: 3px;
+  accent-color: #667eea;
 }
 
 .notification {
