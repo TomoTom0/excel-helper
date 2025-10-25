@@ -115,11 +115,11 @@ const copyFieldToClipboard = (text: string, fieldName: string) => {
 
     <div class="input-section">
       <div class="input-header">
-        <h3>カラムごとの長さ</h3>
+        <h3>カラム長</h3>
         <div class="input-actions">
           <button 
             class="btn btn-icon-small" 
-            @click="copyFieldToClipboard(columnLengths, 'カラムごとの長さ')"
+            @click="copyFieldToClipboard(columnLengths, 'カラム長')"
             :disabled="!columnLengths"
             title="コピー"
           >
@@ -135,8 +135,8 @@ const copyFieldToClipboard = (text: string, fieldName: string) => {
           </button>
         </div>
       </div>
-      <textarea v-model="columnLengths" rows="2"></textarea>
-      <p>例: 10,20,15 (カンマ区切りで各カラムの文字数を指定)</p>
+      <textarea v-model="columnLengths" rows="2" placeholder="10,20,15"></textarea>
+      <p class="field-description">各カラムの文字数を区切り文字で指定</p>
     </div>
 
     <div class="input-section">
@@ -161,13 +161,13 @@ const copyFieldToClipboard = (text: string, fieldName: string) => {
           </button>
         </div>
       </div>
-      <textarea v-model="dataBody" rows="8"></textarea>
-      <p>固定長形式またはTSV形式のデータを入力</p>
+      <textarea v-model="dataBody" rows="8" placeholder="固定長形式またはTSV/CSV形式のデータを入力"></textarea>
+      <p class="field-description">固定長形式またはTSV/CSV形式のデータ</p>
     </div>
 
     <div class="input-section">
       <div class="input-header">
-        <h3>カラムタイトル（省略可）</h3>
+        <h3>カラムタイトル<span class="optional">（省略可）</span></h3>
         <div class="input-actions">
           <button 
             class="btn btn-icon-small" 
@@ -187,17 +187,17 @@ const copyFieldToClipboard = (text: string, fieldName: string) => {
           </button>
         </div>
       </div>
-      <textarea v-model="columnTitles" rows="2"></textarea>
-      <p>例: ID,Name,Age (カンマ区切り)</p>
+      <textarea v-model="columnTitles" rows="2" placeholder="ID,Name,Age"></textarea>
+      <p class="field-description">カラム名を区切り文字で指定</p>
     </div>
 
     <div class="input-section">
       <div class="input-header">
-        <h3>カラムごとのオプション（省略可）</h3>
+        <h3>カラムオプション<span class="optional">（省略可）</span></h3>
         <div class="input-actions">
           <button 
             class="btn btn-icon-small" 
-            @click="copyFieldToClipboard(columnOptions, 'カラムごとのオプション')"
+            @click="copyFieldToClipboard(columnOptions, 'カラムオプション')"
             :disabled="!columnOptions"
             title="コピー"
           >
@@ -213,11 +213,10 @@ const copyFieldToClipboard = (text: string, fieldName: string) => {
           </button>
         </div>
       </div>
-      <textarea v-model="columnOptions" rows="3"></textarea>
-      <p>例: string:right,string:right,number:left</p>
-      <p>形式: データ型:padding方向[:padding文字]</p>
-      <p>※省略時は全てstring型、右パディング、半角空白</p>
-      <p>※padding文字省略時: numberは'0'、stringは半角空白</p>
+      <textarea v-model="columnOptions" rows="3" placeholder="string:right,string:right,number:left"></textarea>
+      <p class="field-description">形式: データ型:padding方向[:padding文字]</p>
+      <p class="field-description field-note">※省略時は全てstring型、右パディング、半角空白</p>
+      <p class="field-description field-note">※padding文字省略時: numberは'0'、stringは半角空白</p>
     </div>
 
     <div class="button-group">
