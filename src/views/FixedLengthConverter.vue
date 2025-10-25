@@ -242,7 +242,7 @@ const copyFieldToClipboard = (text: string, fieldName: string) => {
 
     <div class="result-section">
       <h3>実行結果</h3>
-      <textarea v-model="result" rows="10" readonly></textarea>
+      <textarea v-model="result" rows="10" readonly placeholder="John,Tokyo,25&#10;Alice,NewYork,30&#10;(変換結果がここに表示されます)"></textarea>
       <div class="result-actions">
         <button 
           class="btn btn-icon" 
