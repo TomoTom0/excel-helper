@@ -241,27 +241,31 @@ const copyFieldToClipboard = (text: string, fieldName: string) => {
     </div>
 
     <div class="result-section">
-      <h3>実行結果</h3>
+      <div class="input-header">
+        <h3>実行結果</h3>
+        <div class="input-actions">
+          <button 
+            class="btn btn-icon-small" 
+            @click="copyToClipboard"
+            :disabled="copyLoading || !result"
+            :class="{ loading: copyLoading }"
+            title="コピー"
+          >
+            <i :class="copyLoading ? 'mdi mdi-loading mdi-spin' : 'mdi mdi-content-copy'"></i>
+          </button>
+          <button 
+            class="btn btn-icon-small" 
+            @click="downloadResult"
+            :disabled="downloadLoading || !result"
+            :class="{ loading: downloadLoading }"
+            title="ダウンロード"
+          >
+            <i :class="downloadLoading ? 'mdi mdi-loading mdi-spin' : 'mdi mdi-download'"></i>
+          </button>
+        </div>
+      </div>
       <textarea v-model="result" rows="10" readonly placeholder="John,Tokyo,25&#10;Alice,NewYork,30&#10;(変換結果がここに表示されます)"></textarea>
       <div class="result-actions">
-        <button 
-          class="btn btn-icon" 
-          @click="copyToClipboard"
-          :disabled="copyLoading || !result"
-          :class="{ loading: copyLoading }"
-          title="コピー"
-        >
-          <i :class="copyLoading ? 'mdi mdi-loading mdi-spin' : 'mdi mdi-content-copy'"></i>
-        </button>
-        <button 
-          class="btn btn-icon" 
-          @click="downloadResult"
-          :disabled="downloadLoading || !result"
-          :class="{ loading: downloadLoading }"
-          title="ダウンロード"
-        >
-          <i :class="downloadLoading ? 'mdi mdi-loading mdi-spin' : 'mdi mdi-download'"></i>
-        </button>
         <div class="output-format-selector">
           <label>出力形式:</label>
           <label>
