@@ -162,7 +162,7 @@ const { clearDataBody, togglePattern } = store
           </button>
         </div>
       </div>
-      <textarea v-model="dataBody" rows="8" placeholder="項目A	項目B&#10;&quot;①データ1-1&#10;②データ1-2&#10;③データ1-3&quot;	データ2&#10;(TSV/CSV形式)"></textarea>
+      <textarea v-model="dataBody" rows="8" placeholder="項目A	項目B&#10;&quot;①手順1&#10;②手順2&#10;x注意事項&#10;③手順3&quot;	&quot;(1)概要&#10;(2)詳細&#10;(1)まとめ&quot;&#10;(TSV/CSV形式)"></textarea>
       <p>TSV/CSV形式のデータを入力（改行を含む要素はクォートで囲まれます）</p>
     </div>
 
@@ -232,7 +232,7 @@ const { clearDataBody, togglePattern } = store
           </button>
         </div>
       </div>
-      <textarea v-model="result" rows="10" readonly placeholder="項目A	項目B&#10;&quot;1. データ1-1&#10;2. データ1-2&#10;3. データ1-3&quot;	データ2&#10;(変換結果がここに表示されます)"></textarea>
+      <textarea v-model="result" rows="10" readonly placeholder="項目A	項目B&#10;&quot;1. 手順1&#10;2. 手順2&#10;注意事項&#10;3. 手順3&quot;	&quot;1. 概要&#10;2. 詳細&#10;3. まとめ&quot;&#10;(変換結果がここに表示されます)"></textarea>
       <div class="result-actions">
         <div class="output-format-selector">
           <label>番号:</label>
