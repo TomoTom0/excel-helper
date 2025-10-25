@@ -135,7 +135,7 @@ const copyFieldToClipboard = (text: string, fieldName: string) => {
           </button>
         </div>
       </div>
-      <textarea v-model="columnLengths" rows="2" placeholder="10,20,15"></textarea>
+      <textarea v-model="columnLengths" rows="2" placeholder="10,20,15&#10;（カンマ区切りで各カラムの文字数）"></textarea>
       <p class="field-description">各カラムの文字数を区切り文字で指定</p>
     </div>
 
@@ -187,7 +187,7 @@ const copyFieldToClipboard = (text: string, fieldName: string) => {
           </button>
         </div>
       </div>
-      <textarea v-model="columnTitles" rows="2" placeholder="ID,Name,Age"></textarea>
+      <textarea v-model="columnTitles" rows="2" placeholder="ID,Name,Age&#10;（カンマ区切りでカラム名）"></textarea>
       <p class="field-description">カラム名を区切り文字で指定</p>
     </div>
 
@@ -213,7 +213,7 @@ const copyFieldToClipboard = (text: string, fieldName: string) => {
           </button>
         </div>
       </div>
-      <textarea v-model="columnOptions" rows="3" placeholder="string:right,string:right,number:left"></textarea>
+      <textarea v-model="columnOptions" rows="3" placeholder="string:right,string:right,number:left&#10;（データ型:padding方向[:padding文字]）"></textarea>
       <p class="field-description">形式: データ型:padding方向[:padding文字]</p>
       <p class="field-description field-note">※省略時は全てstring型、右パディング、半角空白</p>
       <p class="field-description field-note">※padding文字省略時: numberは'0'、stringは半角空白</p>
