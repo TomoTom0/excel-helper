@@ -13,6 +13,7 @@ jobs:
     strategy:
       matrix:
         node-version: [18.x, 20.x]
+      fail-fast: false  # 1つのバージョンが失敗しても他のバージョンを続行
     
     steps:
     - uses: actions/checkout@v4
@@ -31,3 +32,11 @@ jobs:
     
     - name: Build
       run: npm run build
+    
+    - name: Upload test results (on failure)
+      if: failure()
+      uses: actions/upload-artifact@v3
+      with:
+        name: test-results-${{ matrix.node-version }}
+        path: coverage/
+        retention-days: 7
