@@ -31,11 +31,9 @@ describe('GitHub Copilot Assignee Test', () => {
     it('should validate integration with existing test infrastructure', () => {
       // Verify this test integrates properly with the existing Vitest setup
       const currentDate = new Date();
-      const testRunner = 'vitest';
       const testFramework = 'vitest';
       
       expect(currentDate).toBeInstanceOf(Date);
-      expect(testRunner).toBe('vitest');
       expect(testFramework).toBe('vitest');
     });
   });
