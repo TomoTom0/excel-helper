@@ -135,7 +135,7 @@ const copyFieldToClipboard = (text: string, fieldName: string) => {
           </button>
         </div>
       </div>
-      <textarea v-model="columnLengths" rows="2" placeholder="10,20,15&#10;（カンマ区切りで各カラムの文字数）"></textarea>
+      <textarea v-model="columnLengths" rows="2" placeholder="10,20,15&#10;(CSV or TSV形式)"></textarea>
       <p class="field-description">各カラムの文字数を区切り文字で指定</p>
     </div>
 
@@ -161,7 +161,7 @@ const copyFieldToClipboard = (text: string, fieldName: string) => {
           </button>
         </div>
       </div>
-      <textarea v-model="dataBody" rows="8" placeholder="John      Tokyo     25&#10;Alice     NewYork   30&#10;（固定長 or CSV or TSV形式）"></textarea>
+      <textarea v-model="dataBody" rows="8" placeholder="John      Tokyo     25&#10;Alice     NewYork   30&#10;（固定長形式）&#10;&#10;John,Tokyo,25&#10;Alice,NewYork,30&#10;（CSV/TSV形式）"></textarea>
       <p class="field-description">固定長形式またはTSV/CSV形式のデータ</p>
     </div>
 
@@ -187,7 +187,7 @@ const copyFieldToClipboard = (text: string, fieldName: string) => {
           </button>
         </div>
       </div>
-      <textarea v-model="columnTitles" rows="2" placeholder="ID,Name,Age&#10;（カンマ区切りでカラム名）"></textarea>
+      <textarea v-model="columnTitles" rows="2" placeholder="ID,Name,Age&#10;(CSV or TSV形式)"></textarea>
       <p class="field-description">カラム名を区切り文字で指定</p>
     </div>
 
@@ -213,7 +213,7 @@ const copyFieldToClipboard = (text: string, fieldName: string) => {
           </button>
         </div>
       </div>
-      <textarea v-model="columnOptions" rows="3" placeholder="string:right,string:right,number:left&#10;（データ型:padding方向[:padding文字]）"></textarea>
+      <textarea v-model="columnOptions" rows="3" placeholder="string:right,string:right,number:left&#10;(CSV or TSV形式)"></textarea>
       <p class="field-description">形式: データ型:padding方向[:padding文字]</p>
       <p class="field-description field-note">※省略時は全てstring型、右パディング、半角空白</p>
       <p class="field-description field-note">※padding文字省略時: numberは'0'、stringは半角空白</p>
