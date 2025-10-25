@@ -162,7 +162,7 @@ const { clearDataBody, togglePattern } = store
           </button>
         </div>
       </div>
-      <textarea v-model="dataBody" rows="8" placeholder="項目A	項目B&#10;①データ1-1&#10;②データ1-2&#10;③データ1-3	データ2&#10;(TSV/CSV形式)"></textarea>
+      <textarea v-model="dataBody" rows="8" placeholder="項目A	項目B&#10;&quot;①データ1-1&#10;②データ1-2&#10;③データ1-3&quot;	データ2&#10;(TSV/CSV形式)"></textarea>
       <p>TSV/CSV形式のデータを入力（改行を含む要素はクォートで囲まれます）</p>
     </div>
 
