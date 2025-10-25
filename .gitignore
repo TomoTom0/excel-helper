@@ -4,3 +4,23 @@ dist/
 *.log
 .vscode/
 .idea/
+tmp/
+coverage/
+
+# Test coverage
+.nyc_output/
+
+# Vitest
+.vitest/
+
+# Temporary files
+*.tmp
+.cache/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Build artifacts
+*.tsbuildinfo
