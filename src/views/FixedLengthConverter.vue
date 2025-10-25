@@ -9,38 +9,40 @@ const { columnLengths, dataBody, columnTitles, columnOptions, delimiterType, out
 
 const result = ref('')
 
-const fixedToTsvLoading = ref(false)
-const tsvToFixedLoading = ref(false)
+const convertLoading = ref(false)
 const copyLoading = ref(false)
 const downloadLoading = ref(false)
 
-const fixedToTsv = () => {
-  fixedToTsvLoading.value = true
+const convert = () => {
+  convertLoading.value = true
   try {
     const lengths = parseColumnLengths(columnLengths.value)
-    result.value = convertFixedToTsv(dataBody.value, lengths, outputFormat.value)
+    
+    // データが固定長形式かTSV/CSV形式かを自動判定
+    const lines = dataBody.value.trim().split('\n')
+    if (lines.length === 0) {
+      throw new Error('データが空です')
+    }
+    
+    // 固定長形式の判定: 区切り文字（タブやカンマ）がない、または極端に少ない
+    const firstLine = lines[0]
+    const hasDelimiters = /[\t,]/.test(firstLine)
+    
+    if (hasDelimiters) {
+      // TSV/CSV → 固定長
+      const options = columnOptions.value.trim() 
+        ? parseColumnOptions(columnOptions.value)
+        : lengths.map(() => ({ type: 'string' as const, padding: 'right' as const, padChar: ' ' }))
+      result.value = convertTsvToFixed(dataBody.value, lengths, options, delimiterType.value)
+    } else {
+      // 固定長 → TSV/CSV
+      result.value = convertFixedToTsv(dataBody.value, lengths, outputFormat.value)
+    }
   } catch (error) {
     result.value = 'エラー: ' + (error as Error).message
   } finally {
     setTimeout(() => {
-      fixedToTsvLoading.value = false
-    }, 300)
-  }
-}
-
-const tsvToFixed = () => {
-  tsvToFixedLoading.value = true
-  try {
-    const lengths = parseColumnLengths(columnLengths.value)
-    const options = columnOptions.value.trim() 
-      ? parseColumnOptions(columnOptions.value)
-      : lengths.map(() => ({ type: 'string' as const, padding: 'right' as const, padChar: ' ' }))
-    result.value = convertTsvToFixed(dataBody.value, lengths, options, delimiterType.value)
-  } catch (error) {
-    result.value = 'エラー: ' + (error as Error).message
-  } finally {
-    setTimeout(() => {
-      tsvToFixedLoading.value = false
+      convertLoading.value = false
     }, 300)
   }
 }
@@ -136,7 +138,6 @@ const copyFieldToClipboard = (text: string, fieldName: string) => {
         </div>
       </div>
       <textarea v-model="columnLengths" rows="2" placeholder="10,20,15&#10;(CSV or TSV形式)"></textarea>
-      <p class="field-description">各カラムの文字数を区切り文字で指定</p>
     </div>
 
     <div class="input-section">
@@ -162,7 +163,6 @@ const copyFieldToClipboard = (text: string, fieldName: string) => {
         </div>
       </div>
       <textarea v-model="dataBody" rows="8" placeholder="John      Tokyo     25&#10;Alice     NewYork   30&#10;（固定長形式）&#10;&#10;John,Tokyo,25&#10;Alice,NewYork,30&#10;（CSV/TSV形式）"></textarea>
-      <p class="field-description">固定長形式またはTSV/CSV形式のデータ</p>
     </div>
 
     <div class="input-section">
@@ -188,7 +188,6 @@ const copyFieldToClipboard = (text: string, fieldName: string) => {
         </div>
       </div>
       <textarea v-model="columnTitles" rows="2" placeholder="ID,Name,Age&#10;(CSV or TSV形式)"></textarea>
-      <p class="field-description">カラム名を区切り文字で指定</p>
     </div>
 
     <div class="input-section">
@@ -222,21 +221,12 @@ const copyFieldToClipboard = (text: string, fieldName: string) => {
     <div class="button-group">
       <button 
         class="btn btn-primary" 
-        @click="fixedToTsv"
-        :disabled="fixedToTsvLoading"
-        :class="{ loading: fixedToTsvLoading }"
+        @click="convert"
+        :disabled="convertLoading"
+        :class="{ loading: convertLoading }"
       >
-        <i class="mdi mdi-arrow-right-bold"></i>
-        <span>固定長 → TSV/CSV</span>
-      </button>
-      <button 
-        class="btn btn-secondary" 
-        @click="tsvToFixed"
-        :disabled="tsvToFixedLoading"
-        :class="{ loading: tsvToFixedLoading }"
-      >
-        <i class="mdi mdi-arrow-left-bold"></i>
-        <span>TSV/CSV → 固定長</span>
+        <i class="mdi mdi-auto-fix"></i>
+        <span>変換</span>
       </button>
     </div>
 

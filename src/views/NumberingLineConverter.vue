@@ -163,7 +163,6 @@ const { clearDataBody, togglePattern } = store
         </div>
       </div>
       <textarea v-model="dataBody" rows="8" placeholder="項目A	項目B&#10;&quot;①手順1&#10;②手順2&#10;x注意事項&#10;③手順3&quot;	&quot;(1)概要&#10;(2)詳細&#10;(1)まとめ&quot;&#10;(TSV/CSV形式)"></textarea>
-      <p>TSV/CSV形式のデータを入力（改行を含む要素はクォートで囲まれます）</p>
     </div>
 
     <div class="input-section">
@@ -193,7 +192,6 @@ const { clearDataBody, togglePattern } = store
           <span class="pattern-example">x項目A</span>
         </label>
       </div>
-      <p>検出したい行のパターンを選択（複数選択可）</p>
     </div>
 
     <div class="button-group">
