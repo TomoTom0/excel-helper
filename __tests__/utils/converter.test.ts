@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { parseColumnLengths, parseColumnOptions, padValue, convertFromFixed, tsvToFixed, detectDelimiter, getDelimiter } from '../../src/utils/converter'
+import { parseColumnLengths, parseColumnOptions, padValue, convertFromFixed, tsvToFixedFromString as tsvToFixed, detectDelimiter, getDelimiter } from '../../src/utils/converter'
 import type { ColumnOption } from '../../src/utils/converter'
 
 describe('Fixed Length Converter', () => {

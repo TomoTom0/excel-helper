@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { parseColumnLengths, parseColumnOptions, convertFromFixed, tsvToFixed } from '../../src/utils/converter'
+import { parseColumnLengths, parseColumnOptions, convertFromFixed, tsvToFixedFromString as tsvToFixed } from '../../src/utils/converter'
 import type { ColumnOption } from '../../src/utils/converter'
 
 describe('converter - エッジケースと追加テスト', () => {

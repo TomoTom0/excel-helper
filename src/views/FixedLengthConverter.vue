@@ -60,7 +60,7 @@ const handleDelimitedInput = (lengths: number[], parsedData: string[][]) => {
     const options = columnOptions.value.trim() 
       ? parseColumnOptions(columnOptions.value)
       : lengths.map(() => ({ type: 'string' as const, padding: 'right' as const, padChar: ' ' }))
-    result.value = convertTsvToFixed(dataBody.value, lengths, options, delimiterType.value)
+    result.value = convertTsvToFixed(parsedData, lengths, options)
   } else {
     // TSV/CSV → TSV/CSV (区切り文字変換)
     result.value = outputFormat.value === 'csv' ? toCSV(parsedData) : toTSV(parsedData)

@@ -98,17 +98,14 @@ export const convertFromFixed = (data: string, lengths: number[], outputFormat: 
   return resultLines.join('\n')
 }
 
-export const tsvToFixed = (data: string, lengths: number[], options: ColumnOption[], delimiterType: DelimiterType = 'auto'): string => {
-  if (data === '') {
+export const tsvToFixed = (parsedData: string[][], lengths: number[], options: ColumnOption[]): string => {
+  if (parsedData.length === 0) {
     return ''
   }
   
-  const lines = data.split('\n')
-  const delimiter = getDelimiter(data, delimiterType)
   const fixedLines: string[] = []
 
-  for (const line of lines) {
-    const columns = line.split(delimiter)
+  for (const columns of parsedData) {
     let fixedLine = ''
 
     for (let i = 0; i < lengths.length; i++) {
@@ -121,4 +118,17 @@ export const tsvToFixed = (data: string, lengths: number[], options: ColumnOptio
   }
 
   return fixedLines.join('\n')
+}
+
+// 後方互換性のためのヘルパー関数
+export const tsvToFixedFromString = (data: string, lengths: number[], options: ColumnOption[], delimiterType: DelimiterType = 'auto'): string => {
+  if (data === '') {
+    return ''
+  }
+  
+  const delimiter = getDelimiter(data, delimiterType)
+  const lines = data.split('\n')
+  const parsedData = lines.map(line => line.split(delimiter))
+  
+  return tsvToFixed(parsedData, lengths, options)
 }
