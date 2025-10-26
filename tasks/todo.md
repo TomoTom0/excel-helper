@@ -57,14 +57,9 @@
 
 ### ローディング状態のテスト改善
 - **優先度**: Low
+- **状態**: ✅ 完了 (PR #11)
 - **内容**: `vitest` の Fake Timers を使用してローディング状態を直接テスト
-- **現状**: 変換結果の表示確認による間接的な検証のみ
-- **改善案**: 
-  ```typescript
-  vi.useFakeTimers()
-  await button.trigger('click')
-  expect(button.classes()).toContain('loading')
-  await vi.advanceTimersByTimeAsync(300)
-  expect(button.classes()).not.toContain('loading')
-  ```
+- **成果**:
+  - `vi.useFakeTimers()` を利用し、コピー操作のローディング状態テストを追加
+  - テスト内でクリップボードAPIをモックし、`setTimeout` で遅延をシミュレートすることで、ローディング中のUI状態を確実に検証
 - **出典**: Gemini Code Review (2025-10-26 10:09:40)
