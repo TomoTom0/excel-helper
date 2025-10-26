@@ -73,7 +73,7 @@ export const convertFromFixed = (data: string, lengths: number[], outputFormat: 
     return data
   }
   
-  const lines = data.split('\n')
+  const lines = data.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n')
   const delimiter = outputFormat === 'csv' ? ',' : '\t'
   const resultLines: string[] = []
 
