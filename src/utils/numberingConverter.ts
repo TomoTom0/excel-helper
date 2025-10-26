@@ -197,3 +197,10 @@ export function toTSV(data: string[][]): string {
 export function toCSV(data: string[][]): string {
   return toDelimitedString(data, ',');
 }
+
+/**
+ * 区切り文字データをパースする（CSV/TSV対応）
+ */
+export function parseDelimitedData(input: string, delimiter: ',' | '\t'): string[][] {
+  return parseDelimited(input, delimiter);
+}

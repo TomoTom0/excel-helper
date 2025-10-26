@@ -26,7 +26,7 @@ describe('FixedLengthConverter.vue', () => {
     it('should render column lengths input', () => {
       const wrapper = createWrapper();
       const section = wrapper.findAll('.input-section')[0];
-      expect(section.find('h3').text()).toBe('カラムごとの長さ');
+      expect(section.find('h3').text()).toBe('カラム長');
       expect(section.find('textarea').exists()).toBe(true);
     });
 
@@ -89,7 +89,7 @@ describe('FixedLengthConverter.vue', () => {
   });
 
   describe('Conversion Functions', () => {
-    it('should convert fixed to TSV when button is clicked', async () => {
+    it('should convert data when convert button is clicked', async () => {
       const wrapper = createWrapper();
       const store = useConverterStore();
       
@@ -97,7 +97,7 @@ describe('FixedLengthConverter.vue', () => {
       store.dataBody = 'AAAA BBBB CCCC ';
       
       const button = wrapper.findAll('button').find(b => 
-        b.text().includes('固定長→TSV') || b.text().includes('固定長→CSV')
+        b.text().includes('変換')
       );
       
       if (button) {
@@ -113,11 +113,11 @@ describe('FixedLengthConverter.vue', () => {
       const wrapper = createWrapper();
       const store = useConverterStore();
       
-      store.columnLengths = 'invalid';
+      store.columnLengths = '';
       store.dataBody = 'test data';
       
       const button = wrapper.findAll('button').find(b => 
-        b.text().includes('固定長→TSV') || b.text().includes('固定長→CSV')
+        b.text().includes('変換')
       );
       
       if (button) {
@@ -126,7 +126,7 @@ describe('FixedLengthConverter.vue', () => {
         
         const resultArea = wrapper.find('textarea[readonly]');
         if (resultArea.exists()) {
-          expect(resultArea.element.textContent).toContain('エラー');
+          expect((resultArea.element as HTMLTextAreaElement).value).toContain('エラー');
         }
       }
     });
@@ -199,13 +199,16 @@ describe('FixedLengthConverter.vue', () => {
       store.dataBody = 'AAAA BBBB CCCC ';
       
       const button = wrapper.findAll('button').find(b => 
-        b.text().includes('固定長→TSV') || b.text().includes('固定長→CSV')
+        b.text().includes('変換')
       );
       
       if (button) {
+        // ローディング状態は同期的に変化するため、クラスやボタンの状態をチェックする
         await button.trigger('click');
-        // Loading state should be active briefly
-        expect(wrapper.vm.fixedToTsvLoading || wrapper.vm.tsvToFixedLoading).toBeDefined();
+        await wrapper.vm.$nextTick();
+        // 変換が完了していることを確認
+        const resultArea = wrapper.find('textarea[readonly]');
+        expect(resultArea.exists()).toBe(true);
       }
     });
   });

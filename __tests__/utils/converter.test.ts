@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { parseColumnLengths, parseColumnOptions, padValue, fixedToTsv, tsvToFixed, detectDelimiter, getDelimiter } from '../../src/utils/converter'
+import { parseColumnLengths, parseColumnOptions, padValue, convertFromFixed, tsvToFixedFromString as tsvToFixed, detectDelimiter, getDelimiter } from '../../src/utils/converter'
 import type { ColumnOption } from '../../src/utils/converter'
 
 describe('Fixed Length Converter', () => {
@@ -107,25 +107,25 @@ describe('Fixed Length Converter', () => {
     })
   })
 
-  describe('fixedToTsv', () => {
+  describe('convertFromFixed', () => {
     it('should convert fixed length to TSV', () => {
       const data = 'John      Doe                 30       '
       const lengths = [10, 20, 10]
-      const result = fixedToTsv(data, lengths, 'tsv')
+      const result = convertFromFixed(data, lengths, 'tsv')
       expect(result).toBe('John\tDoe\t30')
     })
 
     it('should convert fixed length to CSV', () => {
       const data = 'John      Doe                 30       '
       const lengths = [10, 20, 10]
-      const result = fixedToTsv(data, lengths, 'csv')
+      const result = convertFromFixed(data, lengths, 'csv')
       expect(result).toBe('John,Doe,30')
     })
 
     it('should handle multiple lines', () => {
       const data = 'John      Doe                 30       \nJane      Smith               25       '
       const lengths = [10, 20, 10]
-      const result = fixedToTsv(data, lengths, 'tsv')
+      const result = convertFromFixed(data, lengths, 'tsv')
       expect(result).toBe('John\tDoe\t30\nJane\tSmith\t25')
     })
   })
