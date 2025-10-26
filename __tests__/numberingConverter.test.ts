@@ -1,3 +1,13 @@
+/**
+ * numberingConverter.ts のテスト
+ * 
+ * テスト観点:
+ * - パターン検出: 丸数字、ドット、括弧の各形式を正しく検出
+ * - 形式変換: 各形式間の相互変換が正しく動作
+ * - エッジケース: 空文字、連続ナンバリング、混在パターン
+ * - 全角/半角: 全角数字と半角数字の両方に対応
+ */
+
 import { describe, it, expect } from 'vitest';
 import {
   detectNumberingLine,
