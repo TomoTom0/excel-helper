@@ -1,0 +1,344 @@
+name: Auto Fix on CI Failure
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types:
+      - completed
+
+permissions:
+  issues: write
+  pull-requests: write
+  contents: write
+
+jobs:
+  handle-failure:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'failure' }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ github.event.workflow_run.head_branch }}
+    
+    - name: Get failed jobs info
+      id: failed-jobs
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const runId = context.payload.workflow_run.id;
+          const { data: jobs } = await github.rest.actions.listJobsForWorkflowRun({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            run_id: runId,
+          });
+          
+          const failedJobs = jobs.jobs.filter(job => job.conclusion === 'failure');
+          
+          let failureDetails = '';
+          for (const job of failedJobs) {
+            failureDetails += `\n### ❌ ${job.name}\n`;
+            failureDetails += `- **Status**: ${job.conclusion}\n`;
+            failureDetails += `- **Started**: ${job.started_at}\n`;
+            failureDetails += `- **Completed**: ${job.completed_at}\n`;
+            failureDetails += `- **Log URL**: ${job.html_url}\n`;
+            
+            // Get job logs
+            try {
+              const { data: logs } = await github.rest.actions.downloadJobLogsForWorkflowRun({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                job_id: job.id,
+              });
+              
+              // Extract last 50 lines of error
+              const logLines = logs.split('\n');
+              const errorLines = logLines.slice(-50).join('\n');
+              failureDetails += `\n**Error Logs (last 50 lines)**:\n\`\`\`\n${errorLines}\n\`\`\`\n`;
+            } catch (e) {
+              failureDetails += `\n_Could not fetch logs_\n`;
+            }
+          }
+          
+          core.setOutput('failure_details', failureDetails);
+          core.setOutput('failed_count', failedJobs.length);
+          return failureDetails;
+    
+    - name: Check if issue already exists
+      id: check-issue
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const branch = context.payload.workflow_run.head_branch;
+          const sha = context.payload.workflow_run.head_sha.substring(0, 7);
+          const title = `🔴 CI Failure on ${branch} (${sha})`;
+          
+          const { data: issues } = await github.rest.issues.listForRepo({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            state: 'open',
+            labels: 'ci-failure,automated',
+            per_page: 100
+          });
+          
+          const existingIssue = issues.find(issue => issue.title === title);
+          
+          if (existingIssue) {
+            core.setOutput('issue_exists', 'true');
+            core.setOutput('issue_number', existingIssue.number);
+          } else {
+            core.setOutput('issue_exists', 'false');
+          }
+          
+          return existingIssue ? existingIssue.number : null;
+    
+    - name: Create issue for CI failure
+      if: steps.check-issue.outputs.issue_exists == 'false'
+      id: create-issue
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const branch = context.payload.workflow_run.head_branch;
+          const sha = context.payload.workflow_run.head_sha;
+          const shortSha = sha.substring(0, 7);
+          const runUrl = context.payload.workflow_run.html_url;
+          const failureDetails = `${{ steps.failed-jobs.outputs.failure_details }}`;
+          
+          const issueBody = `## 🔴 CI Pipeline Failed
+          
+          **Branch**: \`${branch}\`  
+          **Commit**: \`${shortSha}\` (${sha})  
+          **Workflow Run**: [View Details](${runUrl})  
+          **Failed Jobs**: ${{ steps.failed-jobs.outputs.failed_count }}
+          
+          ---
+          
+          ${failureDetails}
+          
+          ---
+          
+          ## 🤖 Automated Actions
+          
+          - [ ] Review failure logs
+          - [ ] Identify root cause
+          - [ ] Implement fix
+          - [ ] Verify tests pass locally
+          - [ ] Create PR with fix
+          
+          ## 🆘 AI Assistant Recommendations
+          
+          ### For GitHub Copilot:
+          1. Review the error logs above
+          2. Analyze the failed test cases
+          3. Suggest potential fixes
+          
+          ### For Claude/AI Coding Assistants:
+          \`\`\`
+          Please analyze the CI failure above and:
+          1. Identify the root cause
+          2. Suggest a fix
+          3. Generate test cases to prevent regression
+          \`\`\`
+          
+          ---
+          
+          **Auto-generated by CI/CD pipeline**  
+          _This issue will be automatically closed when the CI passes on this branch._
+          `;
+          
+          const { data: issue } = await github.rest.issues.create({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            title: `🔴 CI Failure on ${branch} (${shortSha})`,
+            body: issueBody,
+            labels: ['ci-failure', 'automated', 'bug', 'needs-triage', 'needs-ai-review'],
+            assignees: context.payload.workflow_run.head_commit.author.username ? [context.payload.workflow_run.head_commit.author.username] : []
+          });
+          
+          core.setOutput('issue_number', issue.number);
+          core.setOutput('issue_url', issue.html_url);
+          
+          return issue.number;
+    
+    - name: Add AI assistant instructions
+      if: steps.check-issue.outputs.issue_exists == 'false'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const issueNumber = ${{ steps.create-issue.outputs.issue_number }};
+          
+          const aiComment = `## 🤖 AI Assistant Instructions
+          
+          ### For GitHub Copilot Chat Users
+          
+          Open GitHub Copilot Chat and use these commands:
+          
+          \`\`\`
+          /explain #${issueNumber}
+          What caused this CI failure?
+          \`\`\`
+          
+          \`\`\`
+          /fix #${issueNumber}
+          How can we fix this issue?
+          \`\`\`
+          
+          \`\`\`
+          /tests #${issueNumber}
+          Generate tests to prevent this regression
+          \`\`\`
+          
+          ### For Claude/Cursor/Other AI Assistants
+          
+          Copy the error logs above and ask your AI assistant:
+          
+          **Prompt Template:**
+          \`\`\`
+          I have a CI failure in my TypeScript/Node.js project.
+          
+          Error details:
+          [Paste error logs from above]
+          
+          Please:
+          1. Identify the root cause
+          2. Suggest a fix with code examples
+          3. Recommend tests to prevent this issue
+          4. Explain any potential side effects
+          \`\`\`
+          
+          ### For @claude-code Integration
+          
+          @claude-code If you're monitoring this repository, please review this CI failure and provide insights.
+          
+          ---
+          
+          **Note**: AI assistants currently require manual invocation. Please review the error logs above and use your preferred AI tool to generate a fix.
+          `;
+          
+          await github.rest.issues.createComment({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: issueNumber,
+            body: aiComment
+          });
+    
+    - name: Create fix branch suggestion
+      if: steps.check-issue.outputs.issue_exists == 'false'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const issueNumber = ${{ steps.create-issue.outputs.issue_number }};
+          const branch = context.payload.workflow_run.head_branch;
+          const sha = context.payload.workflow_run.head_sha.substring(0, 7);
+          const fixBranch = `fix/ci-failure-${branch}-${sha}`;
+          
+          const suggestionComment = `## 💡 Suggested Fix Workflow
+          
+          ### Option 1: Manual Fix
+          \`\`\`bash
+          # Create a fix branch
+          git checkout ${branch}
+          git pull origin ${branch}
+          git checkout -b ${fixBranch}
+          
+          # Make your fixes here
+          # ...
+          
+          # Test locally
+          npm test
+          npm run build
+          
+          # Commit and push
+          git add .
+          git commit -m "fix: resolve CI failure from #${issueNumber}"
+          git push origin ${fixBranch}
+          
+          # Create PR
+          gh pr create --base ${branch} --head ${fixBranch} --title "Fix CI failure #${issueNumber}"
+          \`\`\`
+          
+          ### Option 2: AI-Assisted Fix (with Claude/Cursor)
+          1. Open this repository in your AI coding assistant
+          2. Reference this issue: #${issueNumber}
+          3. Ask: "Fix the CI failure described in issue #${issueNumber}"
+          4. Review and test the suggested changes
+          5. Create a PR with the fix
+          
+          ### Option 3: Quick Fix Template
+          If you know the issue, you can use this template:
+          
+          \`\`\`typescript
+          // TODO: Fix identified in CI failure #${issueNumber}
+          // Root cause: [Describe here]
+          // Solution: [Describe here]
+          \`\`\`
+          `;
+          
+          await github.rest.issues.createComment({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: issueNumber,
+            body: suggestionComment
+          });
+    
+    - name: Notify on Slack/Discord (optional)
+      if: steps.check-issue.outputs.issue_exists == 'false' && vars.SLACK_WEBHOOK_URL != ''
+      run: |
+        curl -X POST ${{ vars.SLACK_WEBHOOK_URL }} \
+          -H 'Content-Type: application/json' \
+          -d '{
+            "text": "🔴 CI Failure Detected",
+            "blocks": [
+              {
+                "type": "section",
+                "text": {
+                  "type": "mrkdwn",
+                  "text": "*CI Pipeline Failed*\n\n*Branch:* `${{ github.event.workflow_run.head_branch }}`\n*Issue:* <${{ steps.create-issue.outputs.issue_url }}|#${{ steps.create-issue.outputs.issue_number }}>"
+                }
+              }
+            ]
+          }'
+      continue-on-error: true
+
+  auto-close-on-success:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    
+    steps:
+    - name: Close related CI failure issues
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const branch = context.payload.workflow_run.head_branch;
+          const sha = context.payload.workflow_run.head_sha.substring(0, 7);
+          const title = `🔴 CI Failure on ${branch} (${sha})`;
+          
+          const { data: issues } = await github.rest.issues.listForRepo({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            state: 'open',
+            labels: 'ci-failure,automated',
+            per_page: 100
+          });
+          
+          const issueToClose = issues.find(issue => issue.title === title);
+          
+          if (issueToClose) {
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issueToClose.number,
+              body: `✅ **CI Pipeline now passing!**\n\nThe CI failure has been resolved. Closing this issue automatically.\n\n**Successful Run**: ${context.payload.workflow_run.html_url}`
+            });
+            
+            await github.rest.issues.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issueToClose.number,
+              state: 'closed',
+              labels: [...issueToClose.labels.map(l => l.name), 'resolved']
+            });
+            
+            core.info(`Closed issue #${issueToClose.number}`);
+          }

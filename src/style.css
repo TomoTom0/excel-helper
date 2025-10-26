@@ -20,6 +20,8 @@ body {
   color: white;
   padding: 20px 0;
   box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+  display: flex;
+  flex-direction: column;
 }
 
 .sidebar h1 {
@@ -31,6 +33,7 @@ body {
 
 .sidebar-nav {
   list-style: none;
+  flex: 1;
 }
 
 .sidebar-nav li {
@@ -47,6 +50,38 @@ body {
 .sidebar-nav li.active {
   background-color: #34495e;
   border-left-color: #3498db;
+}
+
+.sidebar-footer {
+  padding: 20px;
+  border-top: 1px solid #34495e;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.footer-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px;
+  border-radius: 4px;
+  color: white;
+  text-decoration: none;
+  transition: background-color 0.3s;
+  font-size: 14px;
+}
+
+.footer-link:hover {
+  background-color: #34495e;
+}
+
+.btn-link {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
 }
 
 .main-content {
@@ -157,6 +192,24 @@ body {
   color: #7f8c8d;
 }
 
+.field-description {
+  margin-top: 8px;
+  font-size: 0.85rem;
+  color: #6c757d;
+}
+
+.field-note {
+  font-size: 0.8rem;
+  color: #95a5a6;
+}
+
+.optional {
+  font-size: 0.75rem;
+  color: #95a5a6;
+  font-weight: normal;
+  margin-left: 6px;
+}
+
 .button-group {
   display: flex;
   gap: 15px;
@@ -184,6 +237,14 @@ body {
 
 .delimiter-selector input[type="radio"] {
   cursor: pointer;
+  margin-right: 3px;
+  accent-color: #667eea;
+}
+
+.delimiter-selector input[type="checkbox"] {
+  cursor: pointer;
+  margin-right: 3px;
+  accent-color: #667eea;
 }
 
 .btn {
@@ -336,6 +397,8 @@ body {
 
 .output-format-selector input[type="radio"] {
   cursor: pointer;
+  margin-right: 3px;
+  accent-color: #667eea;
 }
 
 .notification {

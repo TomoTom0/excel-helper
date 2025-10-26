@@ -1,47 +1,97 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useConverterStore } from '../stores/converter'
-import { parseColumnLengths, parseColumnOptions, fixedToTsv as convertFixedToTsv, tsvToFixed as convertTsvToFixed } from '../utils/converter'
+import { parseColumnLengths, parseColumnOptions, getDelimiter, convertFromFixed, tsvToFixed as convertTsvToFixed } from '../utils/converter'
+import { parseDelimitedData, toCSV, toTSV } from '../utils/numberingConverter'
 
 const store = useConverterStore()
 const { columnLengths, dataBody, columnTitles, columnOptions, delimiterType, outputFormat } = storeToRefs(store)
 
 const result = ref('')
 
-const fixedToTsvLoading = ref(false)
-const tsvToFixedLoading = ref(false)
+const convertLoading = ref(false)
 const copyLoading = ref(false)
 const downloadLoading = ref(false)
 
-const fixedToTsv = () => {
-  fixedToTsvLoading.value = true
+const isDelimitedData = (data: string, expectedColumnCount: number): string[][] | false => {
+  const trimmedData = data.trim().replace(/\r\n/g, '\n').replace(/\r/g, '\n')
+  if (trimmedData.length === 0) return false
+
   try {
-    const lengths = parseColumnLengths(columnLengths.value)
-    result.value = convertFixedToTsv(dataBody.value, lengths, outputFormat.value)
-  } catch (error) {
-    result.value = 'エラー: ' + (error as Error).message
-  } finally {
-    setTimeout(() => {
-      fixedToTsvLoading.value = false
-    }, 300)
+    const delimiter = getDelimiter(trimmedData, delimiterType.value)
+    const allRows = parseDelimitedData(trimmedData, delimiter)
+    
+    const nonEmptyRows = allRows.filter(row => row.length > 1 || (row.length === 1 && row[0] !== ''))
+    if (nonEmptyRows.length === 0) return false
+
+    // 最初の5行をサンプリングしてチェック
+    const sample = nonEmptyRows.slice(0, 5)
+    
+    // サンプル内のすべての行が同じ列数で、かつ期待される列数と一致するか
+    const firstColumnCount = sample[0].length
+    if (firstColumnCount !== expectedColumnCount) return false
+    
+    if (!sample.every(row => row.length === firstColumnCount)) return false
+    
+    // パース成功時は全行を返す
+    return allRows
+  } catch {
+    // パースに失敗した場合は区切り文字データではないと判断
+    return false
   }
 }
 
-const tsvToFixed = () => {
-  tsvToFixedLoading.value = true
-  try {
-    const lengths = parseColumnLengths(columnLengths.value)
+
+const resultPlaceholder = computed(() => {
+  if (outputFormat.value === 'fixed') {
+    return 'John      Tokyo     25\nAlice     NewYork   30\n(変換結果がここに表示されます)'
+  } else if (outputFormat.value === 'tsv') {
+    return 'John\tTokyo\t25\nAlice\tNewYork\t30\n(変換結果がここに表示されます)'
+  } else {
+    return 'John,Tokyo,25\nAlice,NewYork,30\n(変換結果がここに表示されます)'
+  }
+})
+
+const handleDelimitedInput = (lengths: number[], parsedData: string[][]) => {
+  if (outputFormat.value === 'fixed') {
+    // TSV/CSV → 固定長
     const options = columnOptions.value.trim() 
       ? parseColumnOptions(columnOptions.value)
       : lengths.map(() => ({ type: 'string' as const, padding: 'right' as const, padChar: ' ' }))
-    result.value = convertTsvToFixed(dataBody.value, lengths, options, delimiterType.value)
+    result.value = convertTsvToFixed(parsedData, lengths, options)
+  } else {
+    // TSV/CSV → TSV/CSV (区切り文字変換)
+    result.value = outputFormat.value === 'csv' ? toCSV(parsedData) : toTSV(parsedData)
+  }
+}
+
+const handleFixedWidthInput = (lengths: number[]) => {
+  // 固定長 → TSV/CSV
+  result.value = convertFromFixed(dataBody.value, lengths, outputFormat.value)
+}
+
+const convert = () => {
+  convertLoading.value = true
+  try {
+    const lengths = parseColumnLengths(columnLengths.value)
+    if (lengths.length === 0) {
+      throw new Error('カラム長が指定されていません')
+    }
+    if (!dataBody.value.trim()) {
+      throw new Error('データが空です')
+    }
+    
+    const parsedData = isDelimitedData(dataBody.value, lengths.length)
+    if (parsedData) {
+      handleDelimitedInput(lengths, parsedData)
+    } else {
+      handleFixedWidthInput(lengths)
+    }
   } catch (error) {
     result.value = 'エラー: ' + (error as Error).message
   } finally {
-    setTimeout(() => {
-      tsvToFixedLoading.value = false
-    }, 300)
+    convertLoading.value = false
   }
 }
 
@@ -115,11 +165,11 @@ const copyFieldToClipboard = (text: string, fieldName: string) => {
 
     <div class="input-section">
       <div class="input-header">
-        <h3>カラムごとの長さ</h3>
+        <h3>カラム長</h3>
         <div class="input-actions">
           <button 
             class="btn btn-icon-small" 
-            @click="copyFieldToClipboard(columnLengths, 'カラムごとの長さ')"
+            @click="copyFieldToClipboard(columnLengths, 'カラム長')"
             :disabled="!columnLengths"
             title="コピー"
           >
@@ -135,8 +185,7 @@ const copyFieldToClipboard = (text: string, fieldName: string) => {
           </button>
         </div>
       </div>
-      <textarea v-model="columnLengths" rows="2"></textarea>
-      <p>例: 10,20,15 (カンマ区切りで各カラムの文字数を指定)</p>
+      <textarea v-model="columnLengths" rows="2" placeholder="10,20,15&#10;(CSV or TSV形式)"></textarea>
     </div>
 
     <div class="input-section">
@@ -161,13 +210,12 @@ const copyFieldToClipboard = (text: string, fieldName: string) => {
           </button>
         </div>
       </div>
-      <textarea v-model="dataBody" rows="8"></textarea>
-      <p>固定長形式またはTSV形式のデータを入力</p>
+      <textarea v-model="dataBody" rows="8" placeholder="John      Tokyo     25&#10;Alice     NewYork   30&#10;（固定長形式）&#10;&#10;John,Tokyo,25&#10;Alice,NewYork,30&#10;（CSV/TSV形式）"></textarea>
     </div>
 
     <div class="input-section">
       <div class="input-header">
-        <h3>カラムタイトル（省略可）</h3>
+        <h3>カラムタイトル<span class="optional">（省略可）</span></h3>
         <div class="input-actions">
           <button 
             class="btn btn-icon-small" 
@@ -187,17 +235,16 @@ const copyFieldToClipboard = (text: string, fieldName: string) => {
           </button>
         </div>
       </div>
-      <textarea v-model="columnTitles" rows="2"></textarea>
-      <p>例: ID,Name,Age (カンマ区切り)</p>
+      <textarea v-model="columnTitles" rows="2" placeholder="ID,Name,Age&#10;(CSV or TSV形式)"></textarea>
     </div>
 
     <div class="input-section">
       <div class="input-header">
-        <h3>カラムごとのオプション（省略可）</h3>
+        <h3>カラムオプション<span class="optional">（省略可）</span></h3>
         <div class="input-actions">
           <button 
             class="btn btn-icon-small" 
-            @click="copyFieldToClipboard(columnOptions, 'カラムごとのオプション')"
+            @click="copyFieldToClipboard(columnOptions, 'カラムオプション')"
             :disabled="!columnOptions"
             title="コピー"
           >
@@ -213,58 +260,56 @@ const copyFieldToClipboard = (text: string, fieldName: string) => {
           </button>
         </div>
       </div>
-      <textarea v-model="columnOptions" rows="3"></textarea>
-      <p>例: string:right,string:right,number:left</p>
-      <p>形式: データ型:padding方向[:padding文字]</p>
-      <p>※省略時は全てstring型、右パディング、半角空白</p>
-      <p>※padding文字省略時: numberは'0'、stringは半角空白</p>
+      <textarea v-model="columnOptions" rows="3" placeholder="string:right,string:right,number:left&#10;(CSV or TSV形式)"></textarea>
+      <p class="field-description">形式: データ型:padding方向[:padding文字]</p>
+      <p class="field-description field-note">※省略時は全てstring型、右パディング、半角空白</p>
+      <p class="field-description field-note">※padding文字省略時: numberは'0'、stringは半角空白</p>
     </div>
 
     <div class="button-group">
       <button 
         class="btn btn-primary" 
-        @click="fixedToTsv"
-        :disabled="fixedToTsvLoading"
-        :class="{ loading: fixedToTsvLoading }"
+        @click="convert"
+        :disabled="convertLoading"
+        :class="{ loading: convertLoading }"
       >
-        <i class="mdi mdi-arrow-right-bold"></i>
-        <span>固定長 → TSV/CSV</span>
-      </button>
-      <button 
-        class="btn btn-secondary" 
-        @click="tsvToFixed"
-        :disabled="tsvToFixedLoading"
-        :class="{ loading: tsvToFixedLoading }"
-      >
-        <i class="mdi mdi-arrow-left-bold"></i>
-        <span>TSV/CSV → 固定長</span>
+        <i class="mdi mdi-auto-fix"></i>
+        <span>変換</span>
       </button>
     </div>
 
     <div class="result-section">
-      <h3>実行結果</h3>
-      <textarea v-model="result" rows="10" readonly></textarea>
+      <div class="input-header">
+        <h3>実行結果</h3>
+        <div class="input-actions">
+          <button 
+            class="btn btn-icon-small" 
+            @click="copyToClipboard"
+            :disabled="copyLoading || !result"
+            :class="{ loading: copyLoading }"
+            title="コピー"
+          >
+            <i :class="copyLoading ? 'mdi mdi-loading mdi-spin' : 'mdi mdi-content-copy'"></i>
+          </button>
+          <button 
+            class="btn btn-icon-small" 
+            @click="downloadResult"
+            :disabled="downloadLoading || !result"
+            :class="{ loading: downloadLoading }"
+            title="ダウンロード"
+          >
+            <i :class="downloadLoading ? 'mdi mdi-loading mdi-spin' : 'mdi mdi-download'"></i>
+          </button>
+        </div>
+      </div>
+      <textarea v-model="result" rows="10" readonly :placeholder="resultPlaceholder"></textarea>
       <div class="result-actions">
-        <button 
-          class="btn btn-icon" 
-          @click="copyToClipboard"
-          :disabled="copyLoading || !result"
-          :class="{ loading: copyLoading }"
-          title="コピー"
-        >
-          <i :class="copyLoading ? 'mdi mdi-loading mdi-spin' : 'mdi mdi-content-copy'"></i>
-        </button>
-        <button 
-          class="btn btn-icon" 
-          @click="downloadResult"
-          :disabled="downloadLoading || !result"
-          :class="{ loading: downloadLoading }"
-          title="ダウンロード"
-        >
-          <i :class="downloadLoading ? 'mdi mdi-loading mdi-spin' : 'mdi mdi-download'"></i>
-        </button>
         <div class="output-format-selector">
           <label>出力形式:</label>
+          <label>
+            <input type="radio" value="fixed" v-model="outputFormat" />
+            固定長
+          </label>
           <label>
             <input type="radio" value="tsv" v-model="outputFormat" />
             TSV
