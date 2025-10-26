@@ -1,8 +1,4 @@
 <script setup lang="ts">
-import { useRoute } from 'vue-router'
-
-const route = useRoute()
-
 const tabs = [
   { id: 'fixed-length', name: '固定長相互変換' },
   { id: 'numbering-line', name: 'ナンバリング行変換' }
