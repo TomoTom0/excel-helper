@@ -1,14 +1,17 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import FixedLengthConverter from './views/FixedLengthConverter.vue'
-import NumberingLineConverter from './views/NumberingLineConverter.vue'
+import { useRoute, useRouter } from 'vue-router'
 
-const currentTab = ref('fixed-length')
+const route = useRoute()
+const router = useRouter()
 
 const tabs = [
   { id: 'fixed-length', name: '固定長相互変換' },
   { id: 'numbering-line', name: 'ナンバリング行変換' }
 ]
+
+const navigateToTab = (tabId: string) => {
+  router.push({ name: tabId })
+}
 
 const showDocs = () => {
   window.open('/docs/usage/usage.md', '_blank')
@@ -22,8 +25,8 @@ const showDocs = () => {
       <li
         v-for="tab in tabs"
         :key="tab.id"
-        :class="{ active: currentTab === tab.id }"
-        @click="currentTab = tab.id"
+        :class="{ active: route.name === tab.id }"
+        @click="navigateToTab(tab.id)"
       >
         {{ tab.name }}
       </li>
@@ -40,7 +43,6 @@ const showDocs = () => {
     </div>
   </div>
   <div class="main-content">
-    <FixedLengthConverter v-if="currentTab === 'fixed-length'" />
-    <NumberingLineConverter v-if="currentTab === 'numbering-line'" />
+    <router-view />
   </div>
 </template>
