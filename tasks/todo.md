@@ -51,7 +51,8 @@
 - **優先度**: Medium
 - **状態**: ✅ 完了 (PR #9)
 - **内容**: `parseDelimitedData`, `toCSV`, `toTSV` を `numberingConverter.ts` から `src/utils/delimited.ts` に移動
-- **成果**: コードの関心事を分離し、再利用性を向上
+- **成果**:
+  - コードの関心事を分離し、再利用性を向上
 - **出典**: Gemini Code Review (2025-10-26 09:35:37)
 
 ### ローディング状態のテスト改善
