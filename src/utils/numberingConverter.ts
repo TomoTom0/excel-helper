@@ -1,7 +1,12 @@
+import { parseCSV, parseTSV, toCSV, toTSV, parseDelimitedData } from './delimited';
+
 export type NumberFormat = 'circled' | 'dotted' | 'parenthesized';
 export type PatternType = 'circled' | 'dotted' | 'parenthesized' | 'dummy';
 
 const CIRCLED_NUMBERS = '①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳';
+
+// Re-export delimited functions for backward compatibility
+export { parseCSV, parseTSV, toCSV, toTSV, parseDelimitedData };
 
 const PATTERNS: ReadonlyArray<{ type: PatternType; regex: RegExp }> = [
   { type: 'circled', regex: new RegExp(`^[${CIRCLED_NUMBERS}]`) },
@@ -102,114 +107,4 @@ export function convertNumberingLines(
   });
   
   return convertedLines.join('\n');
-}
-
-/**
- * 区切り文字列をパースする（共通関数）
- */
-function parseDelimited(input: string, delimiter: ',' | '\t'): string[][] {
-  const rows: string[][] = [];
-  let currentRow: string[] = [];
-  let currentCell = '';
-  let inQuotes = false;
-  let i = 0;
-  
-  while (i < input.length) {
-    const char = input[i];
-    const nextChar = input[i + 1];
-    
-    if (inQuotes) {
-      if (char === '"' && nextChar === '"') {
-        // エスケープされたクォート
-        currentCell += '"';
-        i += 2;
-      } else if (char === '"') {
-        // クォート終了
-        inQuotes = false;
-        i++;
-      } else {
-        currentCell += char;
-        i++;
-      }
-    } else {
-      if (char === '"') {
-        // クォート開始
-        inQuotes = true;
-        i++;
-      } else if (char === delimiter) {
-        // セル区切り
-        currentRow.push(currentCell);
-        currentCell = '';
-        i++;
-      } else if (char === '\n') {
-        // 行区切り
-        currentRow.push(currentCell);
-        rows.push(currentRow);
-        currentRow = [];
-        currentCell = '';
-        i++;
-      } else {
-        currentCell += char;
-        i++;
-      }
-    }
-  }
-  
-  // 最後のセルと行を追加
-  if (currentCell || currentRow.length > 0) {
-    currentRow.push(currentCell);
-    rows.push(currentRow);
-  }
-  
-  return rows;
-}
-
-/**
- * TSV文字列をパースする
- */
-export function parseTSV(input: string): string[][] {
-  return parseDelimited(input, '\t');
-}
-
-/**
- * CSV文字列をパースする
- */
-export function parseCSV(input: string): string[][] {
-  return parseDelimited(input, ',');
-}
-
-/**
- * 2次元配列を区切り文字列に変換する（共通関数）
- */
-function toDelimitedString(data: string[][], delimiter: ',' | '\t'): string {
-  return data.map(row => 
-    row.map(cell => {
-      // 区切り文字、改行、クォートを含む場合はクォートで囲む
-      if (cell.includes(delimiter) || cell.includes('\n') || cell.includes('"')) {
-        return '"' + cell.replace(/"/g, '""') + '"';
-      }
-      return cell;
-    }).join(delimiter)
-  ).join('\n');
-}
-
-/**
- * 2次元配列をTSV文字列に変換する
- */
-export function toTSV(data: string[][]): string {
-  return toDelimitedString(data, '\t');
-}
-
-/**
- * 2次元配列をCSV文字列に変換する
- */
-export function toCSV(data: string[][]): string {
-  return toDelimitedString(data, ',');
-}
-
-/**
- * 区切り文字データをパースする（CSV/TSV対応）
- */
-export function parseDelimitedData(input: string, delimiter: ',' | '\t'): string[][] {
-  return parseDelimited(input, delimiter);
 }
