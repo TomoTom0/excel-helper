@@ -18,8 +18,8 @@
 - [x] docs/design/chat/ の設計ドキュメント
 
 ## 次のタスク
-- [ ] feature branchのコードレビュー
-- [ ] main branchへのマージ
+- [x] feature branchのコードレビュー
+- [x] dev branchへのマージ
 
 ## 固定長相互変換機能の改善
 - [ ] カラムタイトルを活用した機能の追加
