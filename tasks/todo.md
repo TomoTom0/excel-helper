@@ -37,6 +37,13 @@
 
 ## 将来のリファクタリング
 
+### CSV/TSVパーサーのライブラリ化
+- **優先度**: High
+- **内容**: カスタム実装の`parseDelimited`を`papaparse`等の実績あるライブラリに置き換え
+- **理由**: 不正なクォート処理（例：`"a"b,c`）が寛容すぎてデータ破損のリスクがある
+- **効果**: エッジケースへの堅牢性向上、保守コスト削減
+- **出典**: Gemini Code Review (2025-10-26 14:15:43) on PR #5
+
 ### 共通ユーティリティの分離
 - **優先度**: Medium
 - **内容**: `parseDelimitedData`, `toCSV`, `toTSV` を `numberingConverter.ts` から `src/utils/delimited.ts` に移動
