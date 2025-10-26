@@ -13,6 +13,24 @@ const convertLoading = ref(false)
 const copyLoading = ref(false)
 const downloadLoading = ref(false)
 
+const isDelimitedData = (data: string, expectedColumnCount: number): boolean => {
+  if (expectedColumnCount <= 1) return false
+  const lines = data.trim().split('\n')
+  const sampleLines = lines.slice(0, Math.min(5, lines.length))
+  if (sampleLines.length === 0) return false
+
+  const delimiterCounts = sampleLines.map(line => {
+    const tabCount = (line.match(/\t/g) || []).length
+    const commaCount = (line.match(/,/g) || []).length
+    return Math.max(tabCount, commaCount)
+  })
+
+  return delimiterCounts.length > 0 &&
+    delimiterCounts.every(count => count === delimiterCounts[0]) &&
+    delimiterCounts[0] === expectedColumnCount - 1
+}
+
+
 const resultPlaceholder = computed(() => {
   if (outputFormat.value === 'fixed') {
     return 'John      Tokyo     25\nAlice     NewYork   30\n(変換結果がここに表示されます)'
@@ -27,32 +45,15 @@ const convert = () => {
   convertLoading.value = true
   try {
     const lengths = parseColumnLengths(columnLengths.value)
+    if (lengths.length === 0) {
+      throw new Error('カラム長が指定されていません')
+    }
     // データが空かチェック
     if (!dataBody.value.trim()) {
       throw new Error('データが空です')
     }
     
-    const lines = dataBody.value.trim().split('\n')
-    
-    // 固定長形式かTSV/CSV形式かを自動判定
-    // より堅牢な判定: columnLengthsから期待されるカラム数を取得し、
-    // 区切り文字の数が一貫しているかを確認
-    const expectedColumnCount = lengths.length
-    const sampleLines = lines.slice(0, Math.min(5, lines.length))
-    
-    const delimiterCounts = sampleLines.map(line => {
-      const tabCount = (line.match(/\t/g) || []).length
-      const commaCount = (line.match(/,/g) || []).length
-      return Math.max(tabCount, commaCount)
-    })
-    
-    // 区切り文字の数が一貫していて、期待されるカラム数-1と一致するか確認
-    const hasConsistentDelimiters = expectedColumnCount > 1 &&
-      delimiterCounts.length > 0 &&
-      delimiterCounts.every(count => count === delimiterCounts[0]) &&
-      delimiterCounts[0] === expectedColumnCount - 1
-    
-    if (hasConsistentDelimiters) {
+    if (isDelimitedData(dataBody.value, lengths.length)) {
       // TSV/CSV → 固定長
       const options = columnOptions.value.trim() 
         ? parseColumnOptions(columnOptions.value)

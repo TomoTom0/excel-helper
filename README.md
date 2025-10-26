@@ -43,7 +43,7 @@ Excelデータの固定長形式変換とナンバリング形式変換を行う
 5. 「変換」ボタンをクリック
 6. 結果をコピーまたはダウンロード
 
-詳細な使い方は [docs/usage/](docs/usage/) を参照してください。
+詳細な使い方は [docs/usage/usage.md](docs/usage/usage.md) を参照してください。
 
 ## 開発者向け情報
 
@@ -73,10 +73,10 @@ npm test
 
 ### ドキュメント
 
-- [使い方](docs/usage/) - 利用者向けドキュメント
-- [開発](docs/dev/) - 開発者向けドキュメント
-- [設計](docs/design/) - アーキテクチャ設計
-- [API](docs/api/) - API仕様
+- [使い方](docs/usage/usage.md) - 利用者向けドキュメント
+- [開発](docs/dev/dev.md) - 開発者向けドキュメント
+- [設計](docs/design/design.md) - アーキテクチャ設計
+- [API](docs/api/api.md) - API仕様
 
 ## ライセンス
 
