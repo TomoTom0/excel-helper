@@ -34,7 +34,8 @@ const isDelimitedData = (data: string, expectedColumnCount: number): boolean => 
     if (firstColumnCount !== expectedColumnCount) return false
     
     return sample.every(row => row.length === firstColumnCount)
-  } catch {
+  } catch (error) {
+    console.error('Failed to parse for delimited data detection:', error)
     return false
   }
 }

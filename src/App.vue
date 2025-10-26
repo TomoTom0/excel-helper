@@ -10,7 +10,7 @@ const tabs = [
     <h1>YT Excel Helper</h1>
     <ul class="sidebar-nav">
       <router-link v-for="tab in tabs" :key="tab.id" :to="{ name: tab.id }" custom v-slot="{ navigate, isActive }">
-        <li :class="{ active: isActive }" @click="navigate" role="link">
+        <li :class="{ active: isActive }" @click="navigate" @keydown.enter="navigate" role="link" tabindex="0">
           {{ tab.name }}
         </li>
       </router-link>

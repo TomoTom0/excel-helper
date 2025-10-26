@@ -45,7 +45,7 @@ YT Excel Helperでは、GitHub Actionsを使用したCI/CDパイプラインを�
 **制約事項**:
 - GitHub Copilot Botを自動的にAssigneeに設定することは技術的制約により困難です
 - アサイン操作自体は可能ですが、Copilotが自動でレビューを開始するわけではありません
-- 詳細は `CI_AI_INTEGRATION_SUMMARY.md` を参照してください
+- 詳細は `CI_AI_INTEGRATION.md` を参照してください
 
 #### 2.2. 手動でのレビュー依頼
 
