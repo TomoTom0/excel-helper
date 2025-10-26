@@ -16,25 +16,24 @@ const downloadLoading = ref(false)
 
 const isDelimitedData = (data: string, expectedColumnCount: number): boolean => {
   if (expectedColumnCount <= 1) return false
-  const lines = data.trim().replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n')
-  // 空行を除外してサンプリング
-  const sampleLines = lines.filter(l => l.trim() !== '').slice(0, 5)
-  if (sampleLines.length === 0) return false
+  const trimmedData = data.trim().replace(/\r\n/g, '\n').replace(/\r/g, '\n')
+  if (trimmedData.length === 0) return false
 
-  // より堅牢なパーサーで列数を判定
   try {
-    const delimiter = getDelimiter(data, delimiterType.value)
-    const parsedRows = sampleLines.map(line => {
-      const parsed = parseDelimitedData(line + '\n', delimiter)
-      return parsed.length > 0 ? parsed[0].length : 0
-    })
+    const delimiter = getDelimiter(trimmedData, delimiterType.value)
+    const allRows = parseDelimitedData(trimmedData, delimiter)
     
-    if (parsedRows.length === 0) return false
+    const nonEmptyRows = allRows.filter(row => row.length > 1 || (row.length === 1 && row[0] !== ''))
+    if (nonEmptyRows.length === 0) return false
 
-    // サンプルしたすべての行が同じ列数で、期待される列数と一致するか確認
-    const firstCount = parsedRows[0]
-    return parsedRows.every(count => count === firstCount) &&
-      firstCount === expectedColumnCount
+    // 最初の5行をサンプリングしてチェック
+    const sample = nonEmptyRows.slice(0, 5)
+    
+    // サンプル内のすべての行が同じ列数で、かつ期待される列数と一致するか
+    const firstColumnCount = sample[0].length
+    if (firstColumnCount !== expectedColumnCount) return false
+    
+    return sample.every(row => row.length === firstColumnCount)
   } catch {
     return false
   }
