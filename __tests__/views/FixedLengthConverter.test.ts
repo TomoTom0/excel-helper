@@ -89,7 +89,7 @@ describe('FixedLengthConverter.vue', () => {
   });
 
   describe('Conversion Functions', () => {
-    it('should convert fixed to TSV when button is clicked', async () => {
+    it('should convert data when convert button is clicked', async () => {
       const wrapper = createWrapper();
       const store = useConverterStore();
       
@@ -97,7 +97,7 @@ describe('FixedLengthConverter.vue', () => {
       store.dataBody = 'AAAA BBBB CCCC ';
       
       const button = wrapper.findAll('button').find(b => 
-        b.text().includes('固定長→TSV') || b.text().includes('固定長→CSV')
+        b.text().includes('変換')
       );
       
       if (button) {
@@ -113,11 +113,11 @@ describe('FixedLengthConverter.vue', () => {
       const wrapper = createWrapper();
       const store = useConverterStore();
       
-      store.columnLengths = 'invalid';
+      store.columnLengths = '';
       store.dataBody = 'test data';
       
       const button = wrapper.findAll('button').find(b => 
-        b.text().includes('固定長→TSV') || b.text().includes('固定長→CSV')
+        b.text().includes('変換')
       );
       
       if (button) {

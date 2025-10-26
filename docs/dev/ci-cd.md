@@ -167,4 +167,3 @@ permissions:
 - [GitHub Actions公式ドキュメント](https://docs.github.com/en/actions)
 - [GitHub GraphQL API](https://docs.github.com/en/graphql)
 - [GitHub Copilot使い方](https://docs.github.com/en/copilot)
-- [GitHub Copilot Issue作成](https://docs.github.com/en/copilot/how-tos/use-copilot-for-common-tasks/use-copilot-to-create-issues)

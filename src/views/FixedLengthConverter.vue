@@ -2,7 +2,7 @@
 import { ref, computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useConverterStore } from '../stores/converter'
-import { parseColumnLengths, parseColumnOptions, fixedToTsv as convertFixedToTsv, tsvToFixed as convertTsvToFixed } from '../utils/converter'
+import { parseColumnLengths, parseColumnOptions, getDelimiter, fixedToTsv as convertFixedToTsv, tsvToFixed as convertTsvToFixed } from '../utils/converter'
 
 const store = useConverterStore()
 const { columnLengths, dataBody, columnTitles, columnOptions, delimiterType, outputFormat } = storeToRefs(store)
@@ -63,7 +63,13 @@ const convert = () => {
         result.value = convertTsvToFixed(dataBody.value, lengths, options, delimiterType.value)
       } else {
         // TSV/CSV → TSV/CSV (区切り文字変換)
-        result.value = convertFixedToTsv(dataBody.value, lengths, outputFormat.value)
+        const inputDelimiter = getDelimiter(dataBody.value, delimiterType.value)
+        const outputDelimiter = outputFormat.value === 'csv' ? ',' : '\t'
+        
+        result.value = dataBody.value
+          .split('\n')
+          .map(line => line.split(inputDelimiter).join(outputDelimiter))
+          .join('\n')
       }
     } else {
       // 固定長 → TSV/CSV
@@ -72,9 +78,7 @@ const convert = () => {
   } catch (error) {
     result.value = 'エラー: ' + (error as Error).message
   } finally {
-    setTimeout(() => {
-      convertLoading.value = false
-    }, 300)
+    convertLoading.value = false
   }
 }
 
