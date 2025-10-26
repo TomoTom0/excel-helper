@@ -71,7 +71,7 @@ while true; do
           }
         }
       }
-    }' -f owner="$REPO_OWNER" -f name="$REPO_NAME" -f prNumber=$PR_NUMBER --jq ".data.repository.pullRequest.reviews.nodes | map(select(.author.login == \"$REVIEW_BOT_LOGIN\")) | sort_by(.submittedAt)" 2>/dev/null || echo "[]")
+    }' -f owner="$REPO_OWNER" -f name="$REPO_NAME" -F prNumber=$PR_NUMBER --jq ".data.repository.pullRequest.reviews.nodes | map(select(.author.login == \"$REVIEW_BOT_LOGIN\")) | sort_by(.submittedAt)" 2>/dev/null || echo "[]")
   
   REVIEW_COUNT=$(echo "$GEMINI_REVIEWS_JSON" | jq 'length' | tr -d '\n')
   
