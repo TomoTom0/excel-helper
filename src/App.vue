@@ -14,7 +14,7 @@ const navigateToTab = (tabId: string) => {
 }
 
 const showDocs = () => {
-  window.open('/docs/usage/usage.md', '_blank')
+  window.open('https://github.com/TomoTom0/excel-helper/blob/main/docs/usage/usage.md', '_blank')
 }
 </script>
 

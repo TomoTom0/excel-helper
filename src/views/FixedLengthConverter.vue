@@ -27,16 +27,20 @@ const convert = () => {
   convertLoading.value = true
   try {
     const lengths = parseColumnLengths(columnLengths.value)
-    
-    // データが固定長形式かTSV/CSV形式かを自動判定
-    const lines = dataBody.value.trim().split('\n')
-    if (lines.length === 0) {
+    // データが空かチェック
+    if (!dataBody.value.trim()) {
       throw new Error('データが空です')
     }
     
-    // 固定長形式の判定: 区切り文字（タブやカンマ）がない、または極端に少ない
-    const firstLine = lines[0]
-    const hasDelimiters = /[\t,]/.test(firstLine)
+    const lines = dataBody.value.trim().split('\n')
+    
+    // 固定長形式かTSV/CSV形式かを自動判定
+    // より堅牢な判定: 複数行の区切り文字の一貫性をチェック
+    const hasDelimiters = lines.slice(0, Math.min(3, lines.length)).every(line => {
+      const tabCount = (line.match(/\t/g) || []).length
+      const commaCount = (line.match(/,/g) || []).length
+      return tabCount > 0 || commaCount > 0
+    })
     
     if (hasDelimiters) {
       // TSV/CSV → 固定長
