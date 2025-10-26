@@ -47,7 +47,8 @@ const convert = () => {
     })
     
     // 区切り文字の数が一貫していて、期待されるカラム数-1と一致するか確認
-    const hasConsistentDelimiters = delimiterCounts.length > 0 &&
+    const hasConsistentDelimiters = expectedColumnCount > 1 &&
+      delimiterCounts.length > 0 &&
       delimiterCounts.every(count => count === delimiterCounts[0]) &&
       delimiterCounts[0] === expectedColumnCount - 1
     

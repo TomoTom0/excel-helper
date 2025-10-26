@@ -176,7 +176,7 @@ labels: ['ci-failure', 'automated', 'bug', 'needs-triage', 'needs-ai-review', 'y
 
 デフォルトは50行ですが、変更可能:
 
-```yaml
+```javascript
 const errorLines = logLines.slice(-100).join('\n'); // 100行に変更
 ```
 

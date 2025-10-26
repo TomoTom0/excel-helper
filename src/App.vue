@@ -12,10 +12,6 @@ const tabs = [
 const navigateToTab = (tabId: string) => {
   router.push({ name: tabId })
 }
-
-const showDocs = () => {
-  window.open('https://github.com/TomoTom0/excel-helper/blob/main/docs/usage/usage.md', '_blank')
-}
 </script>
 
 <template>
@@ -36,10 +32,10 @@ const showDocs = () => {
         <i class="mdi mdi-github"></i>
         GitHub
       </a>
-      <button @click="showDocs" class="footer-link btn-link">
+      <a href="https://github.com/TomoTom0/excel-helper/blob/main/docs/usage/usage.md" target="_blank" class="footer-link">
         <i class="mdi mdi-book-open-variant"></i>
         Docs
-      </button>
+      </a>
     </div>
   </div>
   <div class="main-content">

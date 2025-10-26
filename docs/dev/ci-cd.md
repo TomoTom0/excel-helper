@@ -42,36 +42,12 @@ YT Excel Helperでは、GitHub Actionsを使用したCI/CDパイプラインを�
       return issue.data.node_id;
 ```
 
-#### 2.2. GitHub Copilotへの自動Assign
-
-**GraphQL APIを使用**:
-```yaml
-- name: Assign to Copilot
-  uses: actions/github-script@v7
-  with:
-    script: |
-      const mutation = `
-        mutation {
-          replaceActorsForAssignable(input: {
-            assignableId: "${{ steps.create_issue.outputs.result }}"
-            actorIds: ["BOT_kgDOC9w8XQ"]
-          }) {
-            assignable {
-              ... on Issue {
-                number
-              }
-            }
-          }
-        }
-      `;
-      await github.graphql(mutation);
-```
-
 **制約事項**:
-- 現在、GitHub Copilot Botを自動的にAssigneeに設定することは技術的制約により困難です
+- GitHub Copilot Botを自動的にAssigneeに設定することは技術的制約により困難です
+- アサイン操作自体は可能ですが、Copilotが自動でレビューを開始するわけではありません
 - 詳細は `CI_AI_INTEGRATION_SUMMARY.md` を参照してください
 
-#### 2.3. レビュー依頼
+#### 2.2. レビュー依頼
 
 Issueの説明文に`@github-copilot`をメンションすることで、GitHub Copilotからの支援を要求できます。
 
