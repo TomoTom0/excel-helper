@@ -32,7 +32,7 @@ while true; do
   echo "[$TIMESTAMP] チェック中..."
   
   # CI/CDステータスを確認
-  CI_STATUS=$(gh pr view $PR_NUMBER --json statusCheckRollup --jq ".statusCheckRollup[] | select(.workflowName == \"$CI_WORKFLOW_NAME\") | .conclusion // \"PENDING\"")
+  CI_STATUS=$(gh pr view "$PR_NUMBER" --json statusCheckRollup --jq ".statusCheckRollup[] | select(.workflowName == \"$CI_WORKFLOW_NAME\") | .conclusion // \"PENDING\"")
   
   if [ "$CI_STATUS" != "$LAST_CI_STATUS" ]; then
     echo ""
@@ -44,7 +44,7 @@ while true; do
       echo "詳細: https://github.com/$REPO_OWNER/$REPO_NAME/pull/${PR_NUMBER}/checks"
       
       # ログURLを取得（HEADコミットSHAを使用）
-      RUN_ID=$(gh run list --commit $(gh pr view $PR_NUMBER --json headRefOid --jq '.headRefOid') --limit 1 --json databaseId --jq '.[0].databaseId')
+      RUN_ID=$(gh run list --commit "$(gh pr view "$PR_NUMBER" --json headRefOid --jq '.headRefOid')" --limit 1 --json databaseId --jq '.[0].databaseId')
       echo "ログ: https://github.com/$REPO_OWNER/$REPO_NAME/actions/runs/${RUN_ID}"
       echo ""
       echo "監視を終了します"
@@ -53,7 +53,7 @@ while true; do
       echo "✅ CI/CD成功"
     fi
     
-    LAST_CI_STATUS=$CI_STATUS
+    LAST_CI_STATUS="$CI_STATUS"
   fi
   
   # Geminiレビューを確認（1回のAPI呼び出しで効率化）
@@ -107,5 +107,5 @@ while true; do
   echo "  CI: $CI_STATUS | Geminiレビュー: $REVIEW_COUNT 件"
   
   # 待機
-  sleep $INTERVAL
+  sleep "$INTERVAL"
 done
