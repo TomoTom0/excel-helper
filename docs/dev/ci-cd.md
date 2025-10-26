@@ -70,8 +70,12 @@ YT Excel Helperでは、GitHub Actionsを使用したCI/CDパイプラインを�
 **重要な技術情報**:
 - REST APIではCopilot Botのassignに失敗する
 - GraphQL APIの`replaceActorsForAssignable` mutationを使用する必要がある
-- Copilot Bot ID: `BOT_kgDOC9w8XQ`（グローバルに固定）
+- ⚠️ **注意**: Copilot BotのIDは環境によって異なる場合があります。GitHub APIを使用して動的に取得することを推奨します
 - Issue Node IDは`I_` プレフィックスで始まるGlobal ID
+
+**制約事項**:
+- 現在、GitHub Copilot Botを自動的にAssigneeに設定することは技術的制約により困難です
+- 詳細は `CI_AI_INTEGRATION_SUMMARY.md` を参照してください
 
 #### 2.3. レビュー依頼
 
@@ -127,11 +131,14 @@ Issueの説明文に`@github-copilot`をメンションすることで、GitHub 
 
 ## デプロイメント
 
-### GitHub Pages
+### Cloudflare Pages
 
 **設定**:
-- ソース: `gh-pages`ブランチ
-- ビルド: GitHub Actions
+- プラットフォーム: Cloudflare Pages
+- トリガー: PRマージ時（main/devブランチ）
+- 自動デプロイ: GitHub Actions経由
+- 本番環境: mainブランチ → Production
+- プレビュー環境: devブランチ → Preview
 
 **デプロイワークフロー**:
 ```yaml

@@ -51,8 +51,8 @@ npm run lint
 
 ## プロジェクト情報
 
-- **リポジトリ**: [yutoo89/excel-helper](https://github.com/yutoo89/excel-helper)
-- **ライセンス**: MIT
+- **リポジトリ**: [TomoTom0/excel-helper](https://github.com/TomoTom0/excel-helper)
+- **ライセンス**: ISC
 - **技術スタック**: Vue 3, TypeScript, Vite, Pinia
 
 ## コントリビューション
