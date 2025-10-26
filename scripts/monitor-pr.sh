@@ -32,7 +32,7 @@ while true; do
   echo "[$TIMESTAMP] チェック中..."
   
   # CI/CDステータスを確認
-  CI_STATUS=$(gh pr view $PR_NUMBER --json statusCheckRollup --jq ".statusCheckRollup[] | select(.workflowName == \"$CI_WORKFLOW_NAME\") | .conclusion" 2>/dev/null || echo "PENDING")
+  CI_STATUS=$(gh pr view $PR_NUMBER --json statusCheckRollup --jq ".statusCheckRollup[] | select(.workflowName == \"$CI_WORKFLOW_NAME\") | .conclusion // \"PENDING\"")
   
   if [ "$CI_STATUS" != "$LAST_CI_STATUS" ]; then
     echo ""
@@ -75,7 +75,7 @@ while true; do
   
   REVIEW_COUNT=$(echo "$GEMINI_REVIEWS_JSON" | jq 'length' | tr -d '\n')
   
-  if [ "$REVIEW_COUNT" -gt 0 ] 2>/dev/null; then
+  if [ "$REVIEW_COUNT" -gt 0 ]; then
     echo ""
     echo "📝 新しいGeminiレビューを検出！ (総数: $REVIEW_COUNT)"
     
@@ -91,7 +91,7 @@ while true; do
     echo "レビュー本文 (抜粋):"
     echo "$REVIEW_BODY"
     echo ""
-    echo "完全なレビューを表示: https://github.com/$REPO_OWNER/$REPO_NAME/pull/${PR_NUMBER}"
+    echo "完全なレビューを表示: $(gh pr view "$PR_NUMBER" --json url --jq .url)"
     echo ""
     
     if [ "$COMMENT_COUNT" -eq 0 ]; then
