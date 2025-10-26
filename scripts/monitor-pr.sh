@@ -73,9 +73,9 @@ while true; do
       }
     }' -f owner="$REPO_OWNER" -f name="$REPO_NAME" -f prNumber=$PR_NUMBER --jq ".data.repository.pullRequest.reviews.nodes | map(select(.author.login == \"$REVIEW_BOT_LOGIN\"))" 2>/dev/null || echo "[]")
   
-  REVIEW_COUNT=$(echo "$GEMINI_REVIEWS_JSON" | jq 'length')
+  REVIEW_COUNT=$(echo "$GEMINI_REVIEWS_JSON" | jq 'length' | tr -d '\n')
   
-  if [ "$REVIEW_COUNT" -gt 0 ]; then
+  if [ "$REVIEW_COUNT" -gt 0 ] 2>/dev/null; then
     echo ""
     echo "📝 新しいGeminiレビューを検出！ (総数: $REVIEW_COUNT)"
     
