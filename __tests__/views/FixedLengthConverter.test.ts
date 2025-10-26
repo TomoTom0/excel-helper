@@ -126,7 +126,7 @@ describe('FixedLengthConverter.vue', () => {
         
         const resultArea = wrapper.find('textarea[readonly]');
         if (resultArea.exists()) {
-          expect(resultArea.element.textContent).toContain('エラー');
+          expect((resultArea.element as HTMLTextAreaElement).value).toContain('エラー');
         }
       }
     });
