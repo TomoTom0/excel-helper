@@ -58,14 +58,16 @@ export const parseColumnOptions = (input: string): ColumnOption[] => {
 }
 
 export const padValue = (value: string, length: number, option: ColumnOption): string => {
+  // フィールド内の改行をスペースに置換
+  const normalizedValue = value.replace(/\r?\n/g, ' ')
   const padChar = option.padChar || (option.type === 'number' ? '0' : ' ')
-  if (value.length >= length) {
-    return value.substring(0, length)
+  if (normalizedValue.length >= length) {
+    return normalizedValue.substring(0, length)
   }
   if (option.padding === 'left') {
-    return value.padStart(length, padChar)
+    return normalizedValue.padStart(length, padChar)
   } else {
-    return value.padEnd(length, padChar)
+    return normalizedValue.padEnd(length, padChar)
   }
 }
 
