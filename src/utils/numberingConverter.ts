@@ -192,8 +192,9 @@ export function toTSV(data: string[][]): string {
 }
 
 /**
- * 2次元配列をCSV文字列に変換する
+ * 区切り文字データをパースする（CSV/TSV対応）
  */
-export function toCSV(data: string[][]): string {
-  return toDelimitedString(data, ',');
+export function parseDelimitedData(input: string, delimiter: ',' | '\t'): string[][] {
+  return parseDelimited(input, delimiter);
 }
+

@@ -61,7 +61,6 @@ describe('App.vue', () => {
       const tabs = wrapper.findAll('.sidebar-nav li');
       
       await tabs[1].trigger('click');
-      await router.isReady();
       await flushPromises();
       
       expect(tabs[0].classes()).not.toContain('active');

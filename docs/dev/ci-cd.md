@@ -47,9 +47,9 @@ YT Excel Helperでは、GitHub Actionsを使用したCI/CDパイプラインを�
 - アサイン操作自体は可能ですが、Copilotが自動でレビューを開始するわけではありません
 - 詳細は `CI_AI_INTEGRATION_SUMMARY.md` を参照してください
 
-#### 2.2. レビュー依頼
+#### 2.2. 手動でのレビュー依頼
 
-Issueの説明文に`@github-copilot`をメンションすることで、GitHub Copilotからの支援を要求できます。
+プルリクエストのコメント欄で `/gemini review` コマンドを使用することで、Gemini Code Assistにレビューを依頼できます。
 
 ## 技術詳細
 

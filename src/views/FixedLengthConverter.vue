@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useConverterStore } from '../stores/converter'
 import { parseColumnLengths, parseColumnOptions, getDelimiter, fixedToTsv as convertFixedToTsv, tsvToFixed as convertTsvToFixed } from '../utils/converter'
+import { parseDelimitedData } from '../utils/numberingConverter'
 
 const store = useConverterStore()
 const { columnLengths, dataBody, columnTitles, columnOptions, delimiterType, outputFormat } = storeToRefs(store)
@@ -19,15 +20,21 @@ const isDelimitedData = (data: string, expectedColumnCount: number): boolean => 
   const sampleLines = lines.slice(0, Math.min(5, lines.length))
   if (sampleLines.length === 0) return false
 
-  const delimiterCounts = sampleLines.map(line => {
-    const tabCount = (line.match(/\t/g) || []).length
-    const commaCount = (line.match(/,/g) || []).length
-    return Math.max(tabCount, commaCount)
-  })
-
-  return delimiterCounts.length > 0 &&
-    delimiterCounts.every(count => count === delimiterCounts[0]) &&
-    delimiterCounts[0] === expectedColumnCount - 1
+  // より堅牢なパーサーで列数を判定
+  try {
+    const delimiter = getDelimiter(data, delimiterType.value)
+    const parsedRows = sampleLines.map(line => {
+      const parsed = parseDelimitedData(line + '\n', delimiter)
+      return parsed.length > 0 ? parsed[0].length : 0
+    })
+    
+    // すべての行が同じ列数で、期待される列数と一致するか確認
+    return parsedRows.length > 0 &&
+      parsedRows.every(count => count === parsedRows[0]) &&
+      parsedRows[0] === expectedColumnCount
+  } catch {
+    return false
+  }
 }
 
 
