@@ -5,8 +5,8 @@ const CIRCLED_NUMBERS = '①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱�
 
 const PATTERNS: ReadonlyArray<{ type: PatternType; regex: RegExp }> = [
   { type: 'circled', regex: new RegExp(`^[${CIRCLED_NUMBERS}]`) },
-  { type: 'dotted', regex: /^[\d１-９０]+[.．]/ },
-  { type: 'parenthesized', regex: /^[\(（][\d１-９０]+[\)）]/ },
+  { type: 'dotted', regex: /^[\d０-９]+[.．]/ },
+  { type: 'parenthesized', regex: /^[(（][\d０-９]+[)）]/ },
 ];
 
 /**
