@@ -47,8 +47,8 @@ export function formatNumber(num: number, format: NumberFormat): string {
       if (num >= 1 && num <= 20) {
         return CIRCLED_NUMBERS[num - 1];
       }
-      // 20を超える場合はフォールバック
-      return `${num}.`;
+      // 1-20の範囲外の場合は半角丸括弧でフォールバック
+      return `(${num}) `;
     case 'dotted':
       return `${num}. `;
     case 'parenthesized':

@@ -1,3 +1,12 @@
+/**
+ * numberingConverter.ts のエッジケーステスト
+ * 
+ * テスト観点:
+ * - 境界値: 20番目の丸数字、21番目以降のフォールバック
+ * - 異常系: 不正な形式、予期しない入力
+ * - パフォーマンス: 大量データでの動作確認
+ */
+
 import { describe, it, expect } from 'vitest'
 import { 
   convertNumberingLines,
@@ -26,14 +35,14 @@ describe('numberingConverter - エッジケース', () => {
   })
 
   describe('formatNumber - 境界値テスト', () => {
-    it('丸数字形式で20を超える数字はフォールバックする', () => {
-      expect(formatNumber(21, 'circled')).toBe('21.')
-      expect(formatNumber(100, 'circled')).toBe('100.')
+    it('丸数字形式で20を超える数字は半角丸括弧でフォールバックする', () => {
+      expect(formatNumber(21, 'circled')).toBe('(21) ')
+      expect(formatNumber(100, 'circled')).toBe('(100) ')
     })
 
-    it('1未満の数字はフォールバックする', () => {
-      expect(formatNumber(0, 'circled')).toBe('0.')
-      expect(formatNumber(-1, 'circled')).toBe('-1.')
+    it('1未満の数字は半角丸括弧でフォールバックする', () => {
+      expect(formatNumber(0, 'circled')).toBe('(0) ')
+      expect(formatNumber(-1, 'circled')).toBe('(-1) ')
     })
   })
 
@@ -137,9 +146,9 @@ x第四項目
       expect(resultLines[0]).toBe('①項目1')
       expect(resultLines[19]).toBe('⑳項目20')
       
-      // 21個目以降はフォールバック形式
-      expect(resultLines[20]).toBe('21.項目21')
-      expect(resultLines[24]).toBe('25.項目25')
+      // 21個目以降は半角丸括弧でフォールバック
+      expect(resultLines[20]).toBe('(21) 項目21')
+      expect(resultLines[24]).toBe('(25) 項目25')
     })
 
     it('ダミー文字が特殊文字の場合', () => {
