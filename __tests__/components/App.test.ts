@@ -1,40 +1,55 @@
 import { describe, it, expect } from 'vitest';
-import { mount } from '@vue/test-utils';
+import { mount, flushPromises } from '@vue/test-utils';
 import { createPinia } from 'pinia';
+import { createRouter, createMemoryHistory } from 'vue-router';
 import App from '../../src/App.vue';
+import FixedLengthConverter from '../../src/views/FixedLengthConverter.vue';
+import NumberingLineConverter from '../../src/views/NumberingLineConverter.vue';
 
 describe('App.vue', () => {
-  const createWrapper = () => {
+  const createWrapper = async () => {
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [
+        { path: '/', redirect: '/fixed-length' },
+        { path: '/fixed-length', name: 'fixed-length', component: FixedLengthConverter },
+        { path: '/numbering-line', name: 'numbering-line', component: NumberingLineConverter },
+      ],
+    });
+    
+    router.push('/');
+    await router.isReady();
+    
     return mount(App, {
       global: {
-        plugins: [createPinia()],
+        plugins: [createPinia(), router],
       },
     });
   };
 
   describe('Rendering', () => {
-    it('should render the sidebar with title', () => {
-      const wrapper = createWrapper();
+    it('should render the sidebar with title', async () => {
+      const wrapper = await createWrapper();
       expect(wrapper.find('h1').text()).toBe('YT Excel Helper');
     });
 
-    it('should render all tabs', () => {
-      const wrapper = createWrapper();
+    it('should render all tabs', async () => {
+      const wrapper = await createWrapper();
       const tabs = wrapper.findAll('.sidebar-nav li');
       expect(tabs).toHaveLength(2);
       expect(tabs[0].text()).toBe('固定長相互変換');
       expect(tabs[1].text()).toBe('ナンバリング行変換');
     });
 
-    it('should have first tab active by default', () => {
-      const wrapper = createWrapper();
+    it('should have first tab active by default', async () => {
+      const wrapper = await createWrapper();
       const tabs = wrapper.findAll('.sidebar-nav li');
       expect(tabs[0].classes()).toContain('active');
       expect(tabs[1].classes()).not.toContain('active');
     });
 
-    it('should render FixedLengthConverter by default', () => {
-      const wrapper = createWrapper();
+    it('should render FixedLengthConverter by default', async () => {
+      const wrapper = await createWrapper();
       expect(wrapper.findComponent({ name: 'FixedLengthConverter' }).exists()).toBe(true);
       expect(wrapper.findComponent({ name: 'NumberingLineConverter' }).exists()).toBe(false);
     });
@@ -42,10 +57,11 @@ describe('App.vue', () => {
 
   describe('Tab Switching', () => {
     it('should switch to NumberingLineConverter when second tab is clicked', async () => {
-      const wrapper = createWrapper();
+      const wrapper = await createWrapper();
       const tabs = wrapper.findAll('.sidebar-nav li');
       
       await tabs[1].trigger('click');
+      await flushPromises();
       
       expect(tabs[0].classes()).not.toContain('active');
       expect(tabs[1].classes()).toContain('active');
@@ -54,11 +70,13 @@ describe('App.vue', () => {
     });
 
     it('should switch back to FixedLengthConverter when first tab is clicked', async () => {
-      const wrapper = createWrapper();
+      const wrapper = await createWrapper();
       const tabs = wrapper.findAll('.sidebar-nav li');
       
       await tabs[1].trigger('click');
+      await flushPromises();
       await tabs[0].trigger('click');
+      await flushPromises();
       
       expect(tabs[0].classes()).toContain('active');
       expect(tabs[1].classes()).not.toContain('active');
@@ -68,14 +86,14 @@ describe('App.vue', () => {
   });
 
   describe('Component Structure', () => {
-    it('should have sidebar and main-content elements', () => {
-      const wrapper = createWrapper();
+    it('should have sidebar and main-content elements', async () => {
+      const wrapper = await createWrapper();
       expect(wrapper.find('.sidebar').exists()).toBe(true);
       expect(wrapper.find('.main-content').exists()).toBe(true);
     });
 
     it('should only show one converter at a time', async () => {
-      const wrapper = createWrapper();
+      const wrapper = await createWrapper();
       
       // Initially FixedLengthConverter
       expect(wrapper.findComponent({ name: 'FixedLengthConverter' }).exists()).toBe(true);
@@ -84,6 +102,7 @@ describe('App.vue', () => {
       // Switch to NumberingLineConverter
       const tabs = wrapper.findAll('.sidebar-nav li');
       await tabs[1].trigger('click');
+      await flushPromises();
       
       expect(wrapper.findComponent({ name: 'FixedLengthConverter' }).exists()).toBe(false);
       expect(wrapper.findComponent({ name: 'NumberingLineConverter' }).exists()).toBe(true);
