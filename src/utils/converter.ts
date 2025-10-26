@@ -1,3 +1,5 @@
+import { parseDelimitedData } from './delimited'
+
 export interface ColumnOption {
   type: 'string' | 'number'
   padding: 'left' | 'right'
@@ -127,8 +129,7 @@ export const tsvToFixedFromString = (data: string, lengths: number[], options: C
   }
   
   const delimiter = getDelimiter(data, delimiterType)
-  const lines = data.split('\n')
-  const parsedData = lines.map(line => line.split(delimiter))
+  const parsedData = parseDelimitedData(data, delimiter)
   
   return tsvToFixed(parsedData, lengths, options)
 }

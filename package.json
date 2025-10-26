@@ -28,11 +28,13 @@
   "devDependencies": {
     "@mdi/font": "^7.4.47",
     "@pinia/testing": "^1.0.2",
+    "@playwright/test": "^1.56.1",
     "@types/papaparse": "^5.3.16",
     "@vitest/coverage-v8": "^4.0.3",
     "@vitest/ui": "^4.0.3",
     "@vue/test-utils": "^2.4.6",
     "happy-dom": "^20.0.8",
+    "playwright": "^1.56.1",
     "vitest": "^4.0.3",
     "wrangler": "^4.45.0"
   }
