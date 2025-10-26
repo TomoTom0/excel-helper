@@ -15,7 +15,6 @@ const copyLoading = ref(false)
 const downloadLoading = ref(false)
 
 const isDelimitedData = (data: string, expectedColumnCount: number): string[][] | false => {
-  if (expectedColumnCount <= 1) return false
   const trimmedData = data.trim().replace(/\r\n/g, '\n').replace(/\r/g, '\n')
   if (trimmedData.length === 0) return false
 
