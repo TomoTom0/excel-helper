@@ -192,6 +192,8 @@ describe('FixedLengthConverter.vue', () => {
 
   describe('Loading States', () => {
     it('should show loading state during conversion', async () => {
+      vi.useFakeTimers();
+      
       const wrapper = createWrapper();
       const store = useConverterStore();
       
@@ -203,13 +205,77 @@ describe('FixedLengthConverter.vue', () => {
       );
       
       if (button) {
-        // ローディング状態は同期的に変化するため、クラスやボタンの状態をチェックする
+        // 変換前はローディングではない
+        expect(button.classes()).not.toContain('loading');
+        
+        // 変換実行
         await button.trigger('click');
         await wrapper.vm.$nextTick();
-        // 変換が完了していることを確認
+        
+        // 変換完了後はローディングではない（同期処理のため即座に完了）
+        expect(button.classes()).not.toContain('loading');
+        
+        // 変換結果が存在することを確認
         const resultArea = wrapper.find('textarea[readonly]');
         expect(resultArea.exists()).toBe(true);
       }
+      
+      vi.useRealTimers();
+    });
+
+    it('should show loading state during copy operation', async () => {
+      vi.useFakeTimers();
+      
+      const wrapper = createWrapper();
+      const store = useConverterStore();
+      
+      // まず変換を実行
+      store.columnLengths = '5,5,5';
+      store.dataBody = 'AAAA BBBB CCCC ';
+      
+      const convertButton = wrapper.findAll('button').find(b => 
+        b.text().includes('変換')
+      );
+      if (convertButton) {
+        await convertButton.trigger('click');
+        await wrapper.vm.$nextTick();
+      }
+      
+      // コピーボタンを見つける
+      const copyButton = wrapper.findAll('button').find(b => 
+        b.text().includes('コピー')
+      );
+      
+      if (copyButton) {
+        expect(copyButton.classes()).not.toContain('loading');
+        
+        // navigator.clipboard.writeTextをモック（遅延を追加）
+        const mockWriteText = vi.fn().mockImplementation(() => 
+          new Promise(resolve => setTimeout(resolve, 100))
+        );
+        Object.assign(navigator, {
+          clipboard: {
+            writeText: mockWriteText,
+          },
+        });
+        
+        // コピー実行
+        const clickPromise = copyButton.trigger('click');
+        await wrapper.vm.$nextTick();
+        
+        // ローディング中の状態を検証
+        expect(copyButton.classes()).toContain('loading');
+        
+        // タイマーを進めて非同期処理を完了
+        await vi.runAllTimersAsync();
+        await clickPromise;
+        await wrapper.vm.$nextTick();
+        
+        // コピー完了後はローディングではない
+        expect(copyButton.classes()).not.toContain('loading');
+      }
+      
+      vi.useRealTimers();
     });
   });
 
