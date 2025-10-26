@@ -79,7 +79,7 @@ while true; do
     echo ""
     echo "📝 新しいGeminiレビューを検出！ (総数: $REVIEW_COUNT)"
     
-    LATEST_REVIEW=$(echo "$GEMINI_REVIEWS_JSON" | jq '.[-1]')
+    LATEST_REVIEW=$(echo "$GEMINI_REVIEWS_JSON" | jq -r 'sort_by(.submittedAt) | .[-1]')
     
     REVIEW_BODY=$(echo "$LATEST_REVIEW" | jq -r '.body' | head -5)
     COMMENT_COUNT=$(echo "$LATEST_REVIEW" | jq -r '.comments.totalCount')
