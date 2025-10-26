@@ -52,20 +52,20 @@ CI/CDで失敗した場合に自動でissueを作成し、AIアシスタント�
 
 ### GitHub Copilot Chat
 
-Issueが作成されたら、以下のコマンドを使用できます:
+Issueが作成されたら、そのIssue上で以下のコマンドを使用できます（Issue番号は不要）:
 
 ```
-/explain #[ISSUE_NUMBER]
+/explain
 What caused this CI failure?
 ```
 
 ```
-/fix #[ISSUE_NUMBER]
+/fix
 How can we fix this issue?
 ```
 
 ```
-/tests #[ISSUE_NUMBER]
+/tests
 Generate tests to prevent this regression
 ```
 

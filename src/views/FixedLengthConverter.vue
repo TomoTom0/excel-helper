@@ -16,7 +16,7 @@ const downloadLoading = ref(false)
 
 const isDelimitedData = (data: string, expectedColumnCount: number): boolean => {
   if (expectedColumnCount <= 1) return false
-  const lines = data.trim().split('\n')
+  const lines = data.trim().replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n')
   // 空行を除外してサンプリング
   const sampleLines = lines.filter(l => l.trim() !== '').slice(0, 5)
   if (sampleLines.length === 0) return false
