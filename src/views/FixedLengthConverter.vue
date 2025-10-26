@@ -54,11 +54,17 @@ const convert = () => {
     }
     
     if (isDelimitedData(dataBody.value, lengths.length)) {
-      // TSV/CSV → 固定長
-      const options = columnOptions.value.trim() 
-        ? parseColumnOptions(columnOptions.value)
-        : lengths.map(() => ({ type: 'string' as const, padding: 'right' as const, padChar: ' ' }))
-      result.value = convertTsvToFixed(dataBody.value, lengths, options, delimiterType.value)
+      // TSV/CSV形式と判定
+      if (outputFormat.value === 'fixed') {
+        // TSV/CSV → 固定長
+        const options = columnOptions.value.trim() 
+          ? parseColumnOptions(columnOptions.value)
+          : lengths.map(() => ({ type: 'string' as const, padding: 'right' as const, padChar: ' ' }))
+        result.value = convertTsvToFixed(dataBody.value, lengths, options, delimiterType.value)
+      } else {
+        // TSV/CSV → TSV/CSV (区切り文字変換)
+        result.value = convertFixedToTsv(dataBody.value, lengths, outputFormat.value)
+      }
     } else {
       // 固定長 → TSV/CSV
       result.value = convertFixedToTsv(dataBody.value, lengths, outputFormat.value)
