@@ -71,7 +71,7 @@ while true; do
           }
         }
       }
-    }' -f owner="$REPO_OWNER" -f name="$REPO_NAME" -f prNumber=$PR_NUMBER --jq ".data.repository.pullRequest.reviews.nodes | map(select(.author.login == \"$REVIEW_BOT_LOGIN\"))" 2>/dev/null || echo "[]")
+    }' -f owner="$REPO_OWNER" -f name="$REPO_NAME" -f prNumber=$PR_NUMBER --jq ".data.repository.pullRequest.reviews.nodes | map(select(.author.login == \"$REVIEW_BOT_LOGIN\")) | sort_by(.submittedAt)" 2>/dev/null || echo "[]")
   
   REVIEW_COUNT=$(echo "$GEMINI_REVIEWS_JSON" | jq 'length' | tr -d '\n')
   
@@ -79,7 +79,7 @@ while true; do
     echo ""
     echo "📝 新しいGeminiレビューを検出！ (総数: $REVIEW_COUNT)"
     
-    LATEST_REVIEW=$(echo "$GEMINI_REVIEWS_JSON" | jq -r 'sort_by(.submittedAt) | .[-1]')
+    LATEST_REVIEW=$(echo "$GEMINI_REVIEWS_JSON" | jq '.[-1]')
     
     REVIEW_BODY=$(echo "$LATEST_REVIEW" | jq -r '.body' | head -5)
     COMMENT_COUNT=$(echo "$LATEST_REVIEW" | jq -r '.comments.totalCount')
