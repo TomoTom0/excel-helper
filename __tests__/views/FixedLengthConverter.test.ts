@@ -205,7 +205,7 @@ describe('FixedLengthConverter.vue', () => {
       if (button) {
         await button.trigger('click');
         // Loading state should be active briefly
-        expect(wrapper.vm.fixedToTsvLoading || wrapper.vm.tsvToFixedLoading).toBeDefined();
+        expect(wrapper.vm.convertFromFixedLoading || wrapper.vm.tsvToFixedLoading).toBeDefined();
       }
     });
   });

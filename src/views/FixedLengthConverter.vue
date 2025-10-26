@@ -2,8 +2,8 @@
 import { ref, computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useConverterStore } from '../stores/converter'
-import { parseColumnLengths, parseColumnOptions, getDelimiter, fixedToTsv as convertFixedToTsv, tsvToFixed as convertTsvToFixed } from '../utils/converter'
-import { parseDelimitedData } from '../utils/numberingConverter'
+import { parseColumnLengths, parseColumnOptions, getDelimiter, convertFromFixed, tsvToFixed as convertTsvToFixed } from '../utils/converter'
+import { parseDelimitedData, toCSV, toTSV } from '../utils/numberingConverter'
 
 const store = useConverterStore()
 const { columnLengths, dataBody, columnTitles, columnOptions, delimiterType, outputFormat } = storeToRefs(store)
@@ -71,16 +71,18 @@ const convert = () => {
       } else {
         // TSV/CSV → TSV/CSV (区切り文字変換)
         const inputDelimiter = getDelimiter(dataBody.value, delimiterType.value)
-        const outputDelimiter = outputFormat.value === 'csv' ? ',' : '\t'
-        
-        result.value = dataBody.value
-          .split('\n')
-          .map(line => line.split(inputDelimiter).join(outputDelimiter))
-          .join('\n')
+        const parsedData = parseDelimitedData(dataBody.value, inputDelimiter)
+
+        // 2D配列を目的の区切り文字形式に変換
+        if (outputFormat.value === 'csv') {
+          result.value = toCSV(parsedData)
+        } else {
+          result.value = toTSV(parsedData)
+        }
       }
     } else {
       // 固定長 → TSV/CSV
-      result.value = convertFixedToTsv(dataBody.value, lengths, outputFormat.value)
+      result.value = convertFromFixed(dataBody.value, lengths, outputFormat.value)
     }
   } catch (error) {
     result.value = 'エラー: ' + (error as Error).message

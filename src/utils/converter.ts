@@ -67,7 +67,7 @@ export const padValue = (value: string, length: number, option: ColumnOption): s
   }
 }
 
-export const fixedToTsv = (data: string, lengths: number[], outputFormat: 'tsv' | 'csv' | 'fixed' = 'tsv'): string => {
+export const convertFromFixed = (data: string, lengths: number[], outputFormat: 'tsv' | 'csv' | 'fixed' = 'tsv'): string => {
   // 固定長形式の場合はそのまま返す
   if (outputFormat === 'fixed') {
     return data

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { parseColumnLengths, parseColumnOptions, fixedToTsv, tsvToFixed } from '../../src/utils/converter'
+import { parseColumnLengths, parseColumnOptions, convertFromFixed, tsvToFixed } from '../../src/utils/converter'
 import type { ColumnOption } from '../../src/utils/converter'
 
 describe('converter - エッジケースと追加テスト', () => {
@@ -50,22 +50,22 @@ describe('converter - エッジケースと追加テスト', () => {
     })
   })
 
-  describe('fixedToTsv - エッジケース', () => {
+  describe('convertFromFixed - エッジケース', () => {
     it('空文字列を処理する', () => {
-      expect(fixedToTsv('', [10, 20], 'tsv')).toBe('')
+      expect(convertFromFixed('', [10, 20], 'tsv')).toBe('')
     })
 
     it('長さが不足する行を処理する', () => {
       const data = 'Short'
       const lengths = [10, 20, 10]
-      const result = fixedToTsv(data, lengths, 'tsv')
+      const result = convertFromFixed(data, lengths, 'tsv')
       expect(result).toBe('Short\t\t')
     })
 
     it('長さが超過する行を処理する', () => {
       const data = 'A'.repeat(100)
       const lengths = [10, 20]
-      const result = fixedToTsv(data, lengths, 'tsv')
+      const result = convertFromFixed(data, lengths, 'tsv')
       const parts = result.split('\t')
       expect(parts).toHaveLength(2)
       expect(parts[0]).toHaveLength(10)
@@ -75,14 +75,14 @@ describe('converter - エッジケースと追加テスト', () => {
     it('空行を保持する', () => {
       const data = 'John      Doe       \n\nJane      Smith     '
       const lengths = [10, 10]
-      const result = fixedToTsv(data, lengths, 'tsv')
+      const result = convertFromFixed(data, lengths, 'tsv')
       expect(result).toBe('John\tDoe\n\nJane\tSmith')
     })
 
     it('日本語を含むデータを処理する', () => {
       const data = '山田太郎  東京都   '
       const lengths = [6, 6]
-      const result = fixedToTsv(data, lengths, 'tsv')
+      const result = convertFromFixed(data, lengths, 'tsv')
       expect(result).toBe('山田太郎\t東京都')
     })
   })
@@ -154,7 +154,7 @@ describe('converter - エッジケースと追加テスト', () => {
       ]
       
       const fixed = tsvToFixed(original, lengths, options, 'tsv')
-      const restored = fixedToTsv(fixed, lengths, 'tsv')
+      const restored = convertFromFixed(fixed, lengths, 'tsv')
       
       expect(restored).toBe(original)
     })
@@ -169,7 +169,7 @@ describe('converter - エッジケースと追加テスト', () => {
       ]
       
       const fixed = tsvToFixed(original, lengths, options, 'tsv')
-      const restored = fixedToTsv(fixed, lengths, 'tsv')
+      const restored = convertFromFixed(fixed, lengths, 'tsv')
       
       expect(restored).toBe(original)
     })
@@ -182,7 +182,7 @@ describe('converter - エッジケースと追加テスト', () => {
       ).join('\n')
       
       const startTime = Date.now()
-      const result = fixedToTsv(lines, [20, 20], 'tsv')
+      const result = convertFromFixed(lines, [20, 20], 'tsv')
       const endTime = Date.now()
       
       expect(result.split('\n')).toHaveLength(1000)
@@ -224,7 +224,7 @@ describe('converter - エッジケースと追加テスト', () => {
       // NOTE: tsvToFixedは改行で行を分割するため、
       // CSV内の改行を含むフィールドは正しく処理できません。
       // 改行を含むフィールドを処理する場合は、
-      // parseCSV -> tsvToFixed -> fixedToTsvの順で処理する必要があります。
+      // parseCSV -> tsvToFixed -> convertFromFixedの順で処理する必要があります。
       const data = '"Multi\nLine\nField",Simple'
       const lengths = [20, 20]
       const options: ColumnOption[] = [
