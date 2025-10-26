@@ -249,18 +249,29 @@ describe('FixedLengthConverter.vue', () => {
       if (copyButton) {
         expect(copyButton.classes()).not.toContain('loading');
         
-        // navigator.clipboard.writeTextをモック
-        const mockWriteText = vi.fn().mockResolvedValue(undefined);
+        // navigator.clipboard.writeTextをモック（遅延を追加）
+        const mockWriteText = vi.fn().mockImplementation(() => 
+          new Promise(resolve => setTimeout(resolve, 100))
+        );
         Object.assign(navigator, {
           clipboard: {
             writeText: mockWriteText,
           },
         });
         
-        await copyButton.trigger('click');
-        await vi.runAllTimersAsync();
+        // コピー実行
+        const clickPromise = copyButton.trigger('click');
         await wrapper.vm.$nextTick();
         
+        // ローディング中の状態を検証
+        expect(copyButton.classes()).toContain('loading');
+        
+        // タイマーを進めて非同期処理を完了
+        await vi.runAllTimersAsync();
+        await clickPromise;
+        await wrapper.vm.$nextTick();
+        
+        // コピー完了後はローディングではない
         expect(copyButton.classes()).not.toContain('loading');
       }
       

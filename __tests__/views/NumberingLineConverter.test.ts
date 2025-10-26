@@ -351,8 +351,10 @@ describe('NumberingLineConverter.vue', () => {
         // コピー開始前
         expect(copyButton.classes()).not.toContain('loading');
         
-        // navigator.clipboard.writeTextをモック
-        const mockWriteText = vi.fn().mockResolvedValue(undefined);
+        // navigator.clipboard.writeTextをモック（遅延を追加）
+        const mockWriteText = vi.fn().mockImplementation(() => 
+          new Promise(resolve => setTimeout(resolve, 100))
+        );
         Object.assign(navigator, {
           clipboard: {
             writeText: mockWriteText,
@@ -360,10 +362,15 @@ describe('NumberingLineConverter.vue', () => {
         });
         
         // コピー実行
-        await copyButton.trigger('click');
+        const clickPromise = copyButton.trigger('click');
+        await wrapper.vm.$nextTick();
         
-        // 非同期処理の完了を待つ
+        // ローディング中の状態を検証
+        expect(copyButton.classes()).toContain('loading');
+        
+        // タイマーを進めて非同期処理を完了
         await vi.runAllTimersAsync();
+        await clickPromise;
         await wrapper.vm.$nextTick();
         
         // コピー完了後はローディングではない
