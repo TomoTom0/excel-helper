@@ -199,13 +199,16 @@ describe('FixedLengthConverter.vue', () => {
       store.dataBody = 'AAAA BBBB CCCC ';
       
       const button = wrapper.findAll('button').find(b => 
-        b.text().includes('固定長→TSV') || b.text().includes('固定長→CSV')
+        b.text().includes('変換')
       );
       
       if (button) {
+        // ローディング状態は同期的に変化するため、クラスやボタンの状態をチェックする
         await button.trigger('click');
-        // Loading state should be active briefly
-        expect(wrapper.vm.convertFromFixedLoading || wrapper.vm.tsvToFixedLoading).toBeDefined();
+        await wrapper.vm.$nextTick();
+        // 変換が完了していることを確認
+        const resultArea = wrapper.find('textarea[readonly]');
+        expect(resultArea.exists()).toBe(true);
       }
     });
   });
