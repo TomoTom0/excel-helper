@@ -51,6 +51,26 @@ const resultPlaceholder = computed(() => {
   }
 })
 
+const handleDelimitedInput = (lengths: number[]) => {
+  if (outputFormat.value === 'fixed') {
+    // TSV/CSV → 固定長
+    const options = columnOptions.value.trim() 
+      ? parseColumnOptions(columnOptions.value)
+      : lengths.map(() => ({ type: 'string' as const, padding: 'right' as const, padChar: ' ' }))
+    result.value = convertTsvToFixed(dataBody.value, lengths, options, delimiterType.value)
+  } else {
+    // TSV/CSV → TSV/CSV (区切り文字変換)
+    const inputDelimiter = getDelimiter(dataBody.value, delimiterType.value)
+    const parsedData = parseDelimitedData(dataBody.value, inputDelimiter)
+    result.value = outputFormat.value === 'csv' ? toCSV(parsedData) : toTSV(parsedData)
+  }
+}
+
+const handleFixedWidthInput = (lengths: number[]) => {
+  // 固定長 → TSV/CSV
+  result.value = convertFromFixed(dataBody.value, lengths, outputFormat.value)
+}
+
 const convert = () => {
   convertLoading.value = true
   try {
@@ -58,34 +78,14 @@ const convert = () => {
     if (lengths.length === 0) {
       throw new Error('カラム長が指定されていません')
     }
-    // データが空かチェック
     if (!dataBody.value.trim()) {
       throw new Error('データが空です')
     }
     
     if (isDelimitedData(dataBody.value, lengths.length)) {
-      // TSV/CSV形式と判定
-      if (outputFormat.value === 'fixed') {
-        // TSV/CSV → 固定長
-        const options = columnOptions.value.trim() 
-          ? parseColumnOptions(columnOptions.value)
-          : lengths.map(() => ({ type: 'string' as const, padding: 'right' as const, padChar: ' ' }))
-        result.value = convertTsvToFixed(dataBody.value, lengths, options, delimiterType.value)
-      } else {
-        // TSV/CSV → TSV/CSV (区切り文字変換)
-        const inputDelimiter = getDelimiter(dataBody.value, delimiterType.value)
-        const parsedData = parseDelimitedData(dataBody.value, inputDelimiter)
-
-        // 2D配列を目的の区切り文字形式に変換
-        if (outputFormat.value === 'csv') {
-          result.value = toCSV(parsedData)
-        } else {
-          result.value = toTSV(parsedData)
-        }
-      }
+      handleDelimitedInput(lengths)
     } else {
-      // 固定長 → TSV/CSV
-      result.value = convertFromFixed(dataBody.value, lengths, outputFormat.value)
+      handleFixedWidthInput(lengths)
     }
   } catch (error) {
     result.value = 'エラー: ' + (error as Error).message
