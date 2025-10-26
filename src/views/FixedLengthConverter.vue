@@ -35,14 +35,23 @@ const convert = () => {
     const lines = dataBody.value.trim().split('\n')
     
     // 固定長形式かTSV/CSV形式かを自動判定
-    // より堅牢な判定: 複数行の区切り文字の一貫性をチェック
-    const hasDelimiters = lines.slice(0, Math.min(3, lines.length)).every(line => {
+    // より堅牢な判定: columnLengthsから期待されるカラム数を取得し、
+    // 区切り文字の数が一貫しているかを確認
+    const expectedColumnCount = lengths.length
+    const sampleLines = lines.slice(0, Math.min(5, lines.length))
+    
+    const delimiterCounts = sampleLines.map(line => {
       const tabCount = (line.match(/\t/g) || []).length
       const commaCount = (line.match(/,/g) || []).length
-      return tabCount > 0 || commaCount > 0
+      return Math.max(tabCount, commaCount)
     })
     
-    if (hasDelimiters) {
+    // 区切り文字の数が一貫していて、期待されるカラム数-1と一致するか確認
+    const hasConsistentDelimiters = delimiterCounts.length > 0 &&
+      delimiterCounts.every(count => count === delimiterCounts[0]) &&
+      delimiterCounts[0] === expectedColumnCount - 1
+    
+    if (hasConsistentDelimiters) {
       // TSV/CSV → 固定長
       const options = columnOptions.value.trim() 
         ? parseColumnOptions(columnOptions.value)

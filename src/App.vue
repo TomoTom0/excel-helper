@@ -32,7 +32,7 @@ const showDocs = () => {
       </li>
     </ul>
     <div class="sidebar-footer">
-      <a href="https://github.com/yutoo89/excel-helper" target="_blank" class="footer-link">
+      <a href="https://github.com/TomoTom0/excel-helper" target="_blank" class="footer-link">
         <i class="mdi mdi-github"></i>
         GitHub
       </a>

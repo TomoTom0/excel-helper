@@ -67,12 +67,6 @@ YT Excel Helperでは、GitHub Actionsを使用したCI/CDパイプラインを�
       await github.graphql(mutation);
 ```
 
-**重要な技術情報**:
-- REST APIではCopilot Botのassignに失敗する
-- GraphQL APIの`replaceActorsForAssignable` mutationを使用する必要がある
-- ⚠️ **注意**: Copilot BotのIDは環境によって異なる場合があります。GitHub APIを使用して動的に取得することを推奨します
-- Issue Node IDは`I_` プレフィックスで始まるGlobal ID
-
 **制約事項**:
 - 現在、GitHub Copilot Botを自動的にAssigneeに設定することは技術的制約により困難です
 - 詳細は `CI_AI_INTEGRATION_SUMMARY.md` を参照してください
@@ -142,11 +136,11 @@ Issueの説明文に`@github-copilot`をメンションすることで、GitHub 
 
 **デプロイワークフロー**:
 ```yaml
-name: Deploy to GitHub Pages
+name: Deploy to Cloudflare Pages
 
 on:
   push:
-    branches: [main]
+    branches: [main, dev]
 
 jobs:
   deploy:
@@ -158,10 +152,11 @@ jobs:
           node-version: '20'
       - run: npm ci
       - run: npm run build
-      - uses: peaceiris/actions-gh-pages@v3
+      - uses: cloudflare/wrangler-action@v3
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./dist
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy dist --project-name=excel-helper
 ```
 
 ## トラブルシューティング
