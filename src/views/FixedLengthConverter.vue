@@ -14,7 +14,7 @@ const convertLoading = ref(false)
 const copyLoading = ref(false)
 const downloadLoading = ref(false)
 
-const isDelimitedData = (data: string, expectedColumnCount: number): boolean => {
+const isDelimitedData = (data: string, expectedColumnCount: number): string[][] | false => {
   if (expectedColumnCount <= 1) return false
   const trimmedData = data.trim().replace(/\r\n/g, '\n').replace(/\r/g, '\n')
   if (trimmedData.length === 0) return false
@@ -33,7 +33,10 @@ const isDelimitedData = (data: string, expectedColumnCount: number): boolean => 
     const firstColumnCount = sample[0].length
     if (firstColumnCount !== expectedColumnCount) return false
     
-    return sample.every(row => row.length === firstColumnCount)
+    if (!sample.every(row => row.length === firstColumnCount)) return false
+    
+    // パース成功時は全行を返す
+    return allRows
   } catch {
     // パースに失敗した場合は区切り文字データではないと判断
     return false
@@ -51,7 +54,7 @@ const resultPlaceholder = computed(() => {
   }
 })
 
-const handleDelimitedInput = (lengths: number[]) => {
+const handleDelimitedInput = (lengths: number[], parsedData: string[][]) => {
   if (outputFormat.value === 'fixed') {
     // TSV/CSV → 固定長
     const options = columnOptions.value.trim() 
@@ -60,8 +63,6 @@ const handleDelimitedInput = (lengths: number[]) => {
     result.value = convertTsvToFixed(dataBody.value, lengths, options, delimiterType.value)
   } else {
     // TSV/CSV → TSV/CSV (区切り文字変換)
-    const inputDelimiter = getDelimiter(dataBody.value, delimiterType.value)
-    const parsedData = parseDelimitedData(dataBody.value, inputDelimiter)
     result.value = outputFormat.value === 'csv' ? toCSV(parsedData) : toTSV(parsedData)
   }
 }
@@ -82,8 +83,9 @@ const convert = () => {
       throw new Error('データが空です')
     }
     
-    if (isDelimitedData(dataBody.value, lengths.length)) {
-      handleDelimitedInput(lengths)
+    const parsedData = isDelimitedData(dataBody.value, lengths.length)
+    if (parsedData) {
+      handleDelimitedInput(lengths, parsedData)
     } else {
       handleFixedWidthInput(lengths)
     }
