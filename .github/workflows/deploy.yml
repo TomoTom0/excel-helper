@@ -1,18 +1,15 @@
 name: Deploy to Cloudflare Pages
 
 on:
-  pull_request:
+  push:
     branches: [ main, dev ]
-    types: [ closed ]
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    if: github.event.pull_request.merged == true
     permissions:
       contents: read
       deployments: write
-      pull-requests: write
 
     steps:
     - uses: actions/checkout@v4
@@ -35,7 +32,7 @@ jobs:
     - name: Determine deployment environment
       id: deployment-env
       run: |
-        if [[ "${{ github.event.pull_request.base.ref }}" == "main" ]]; then
+        if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
           echo "environment=production" >> $GITHUB_OUTPUT
           echo "branch=main" >> $GITHUB_OUTPUT
         else
