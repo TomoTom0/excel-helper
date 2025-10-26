@@ -91,10 +91,7 @@ const convert = () => {
   } catch (error) {
     result.value = 'エラー: ' + (error as Error).message
   } finally {
-    // 処理が非常に速い場合でもローディングが見えるように、最低表示時間を設ける
-    setTimeout(() => {
-      convertLoading.value = false
-    }, 300)
+    convertLoading.value = false
   }
 }
 

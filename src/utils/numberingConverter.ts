@@ -3,15 +3,24 @@ export type PatternType = 'circled' | 'dotted' | 'parenthesized' | 'dummy';
 
 const CIRCLED_NUMBERS = '①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳';
 
+const PATTERNS: ReadonlyArray<{ type: PatternType; regex: RegExp }> = [
+  { type: 'circled', regex: new RegExp(`^[${CIRCLED_NUMBERS}]`) },
+  { type: 'dotted', regex: /^[\d１-９０]+[.．]/ },
+  { type: 'parenthesized', regex: /^[\(（][\d１-９０]+[\)）]/ },
+];
+
 /**
  * 行のパターンタイプを判定する
  */
 function getPatternType(line: string, dummyChar: string): PatternType | null {
   if (!line) return null;
   
-  if (CIRCLED_NUMBERS.includes(line[0])) return 'circled';
-  if (/^[\d１-９０]+[.．]/.test(line)) return 'dotted';
-  if (/^[\(（][\d１-９０]+[\)）]/.test(line)) return 'parenthesized';
+  for (const pattern of PATTERNS) {
+    if (pattern.regex.test(line)) {
+      return pattern.type;
+    }
+  }
+  
   if (dummyChar && line.startsWith(dummyChar)) return 'dummy';
   
   return null;
