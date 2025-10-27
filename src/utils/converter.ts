@@ -113,8 +113,7 @@ export const tsvToFixed = (parsedData: string[][], lengths: number[], options: C
     let fixedLine = ''
 
     for (let i = 0; i < lengths.length; i++) {
-      const rawValue = columns[i] || ''
-      const value = rawValue.replace(/[\r\n]+/g, ' ')
+      const value = columns[i] || ''
       const option = options[i] || { type: 'string', padding: 'right', padChar: ' ' }
       fixedLine += padValue(value, lengths[i], option)
     }
