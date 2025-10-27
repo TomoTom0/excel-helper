@@ -9,9 +9,11 @@ const tabs = [
   <div class="sidebar">
     <h1>YT Excel Helper</h1>
     <ul class="sidebar-nav">
-      <li v-for="tab in tabs" :key="tab.id">
-        <router-link :to="{ name: tab.id }">{{ tab.name }}</router-link>
-      </li>
+      <router-link v-for="tab in tabs" :key="tab.id" :to="{ name: tab.id }" custom v-slot="{ navigate, isActive }">
+        <li :class="{ active: isActive }" @click="navigate" @keydown.enter="() => navigate()" role="link" tabindex="0">
+          {{ tab.name }}
+        </li>
+      </router-link>
     </ul>
     <div class="sidebar-footer">
       <a href="https://github.com/TomoTom0/excel-helper" target="_blank" class="footer-link">

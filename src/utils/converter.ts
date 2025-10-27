@@ -1,5 +1,3 @@
-import { parseDelimitedData } from './delimited'
-
 export interface ColumnOption {
   type: 'string' | 'number'
   padding: 'left' | 'right'
@@ -58,16 +56,14 @@ export const parseColumnOptions = (input: string): ColumnOption[] => {
 }
 
 export const padValue = (value: string, length: number, option: ColumnOption): string => {
-  // フィールド内の改行をスペースに置換
-  const normalizedValue = value.replace(/\r?\n/g, ' ')
   const padChar = option.padChar || (option.type === 'number' ? '0' : ' ')
-  if (normalizedValue.length >= length) {
-    return normalizedValue.substring(0, length)
+  if (value.length >= length) {
+    return value.substring(0, length)
   }
   if (option.padding === 'left') {
-    return normalizedValue.padStart(length, padChar)
+    return value.padStart(length, padChar)
   } else {
-    return normalizedValue.padEnd(length, padChar)
+    return value.padEnd(length, padChar)
   }
 }
 
@@ -131,7 +127,8 @@ export const tsvToFixedFromString = (data: string, lengths: number[], options: C
   }
   
   const delimiter = getDelimiter(data, delimiterType)
-  const parsedData = parseDelimitedData(data, delimiter)
+  const lines = data.split('\n')
+  const parsedData = lines.map(line => line.split(delimiter))
   
   return tsvToFixed(parsedData, lengths, options)
 }
