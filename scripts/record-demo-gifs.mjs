@@ -1,7 +1,7 @@
 import { chromium } from '@playwright/test';
 import { config } from 'dotenv';
 import { execSync } from 'child_process';
-import { existsSync, unlinkSync, readdirSync } from 'fs';
+import { unlinkSync, readdirSync } from 'fs';
 
 config();
 
