@@ -16,8 +16,8 @@ describe('converter - エッジケースと追加テスト', () => {
       expect(parseColumnLengths('10,0,15')).toEqual([10, 15])
     })
 
-    it('小数点を整数に変換する', () => {
-      expect(parseColumnLengths('10.5,20.9,15')).toEqual([10, 20, 15])
+    it('小数点を除外する', () => {
+      expect(parseColumnLengths('10.5,20.9,15')).toEqual([15])
     })
   })
 
