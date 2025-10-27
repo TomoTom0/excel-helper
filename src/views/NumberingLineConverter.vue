@@ -57,9 +57,9 @@ const showNotification = (message: string, type: 'success' | 'error' = 'success'
 const convert = () => {
   convertLoading.value = true
   try {
-    const actualDelimiter = getDelimiter(dataBody.value, inputDelimiterType.value)
+    const delimiter = getDelimiter(dataBody.value, inputDelimiterType.value)
     
-    const parsed = actualDelimiter === 'tsv' 
+    const parsed = delimiter === '\t' 
       ? parseTSV(dataBody.value)
       : parseCSV(dataBody.value)
     
