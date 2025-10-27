@@ -30,8 +30,10 @@ excel-helper/
 │   ├── converter.test.ts        # 固定長変換テスト
 │   └── numberingConverter.test.ts # ナンバリング変換テスト
 ├── docs/
-│   ├── usage.md                 # 使い方ガイド
-│   ├── dev.md                   # 開発者ガイド（このファイル）
+│   ├── usage/
+│   │   └── README.md            # 使い方ガイド
+│   ├── dev/
+│   │   └── README.md            # 開発者ガイド（このファイル）
 │   ├── api.md                   # API仕様書
 │   └── design/
 │       └── chat/
