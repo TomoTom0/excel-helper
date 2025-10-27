@@ -43,9 +43,9 @@ describe('App.vue', () => {
 
     it('should have first tab active by default', async () => {
       const wrapper = await createWrapper();
-      const tabs = wrapper.findAll('.sidebar-nav li');
-      expect(tabs[0].classes()).toContain('active');
-      expect(tabs[1].classes()).not.toContain('active');
+      const links = wrapper.findAll('.sidebar-nav li a');
+      expect(links[0].classes()).toContain('router-link-active');
+      expect(links[1].classes()).not.toContain('router-link-active');
     });
 
     it('should render FixedLengthConverter by default', async () => {
@@ -58,28 +58,28 @@ describe('App.vue', () => {
   describe('Tab Switching', () => {
     it('should switch to NumberingLineConverter when second tab is clicked', async () => {
       const wrapper = await createWrapper();
-      const tabs = wrapper.findAll('.sidebar-nav li');
+      const links = wrapper.findAll('.sidebar-nav li a');
       
-      await tabs[1].trigger('click');
+      await links[1].trigger('click');
       await flushPromises();
       
-      expect(tabs[0].classes()).not.toContain('active');
-      expect(tabs[1].classes()).toContain('active');
+      expect(links[0].classes()).not.toContain('router-link-active');
+      expect(links[1].classes()).toContain('router-link-active');
       expect(wrapper.findComponent({ name: 'FixedLengthConverter' }).exists()).toBe(false);
       expect(wrapper.findComponent({ name: 'NumberingLineConverter' }).exists()).toBe(true);
     });
 
     it('should switch back to FixedLengthConverter when first tab is clicked', async () => {
       const wrapper = await createWrapper();
-      const tabs = wrapper.findAll('.sidebar-nav li');
+      const links = wrapper.findAll('.sidebar-nav li a');
       
-      await tabs[1].trigger('click');
+      await links[1].trigger('click');
       await flushPromises();
-      await tabs[0].trigger('click');
+      await links[0].trigger('click');
       await flushPromises();
       
-      expect(tabs[0].classes()).toContain('active');
-      expect(tabs[1].classes()).not.toContain('active');
+      expect(links[0].classes()).toContain('router-link-active');
+      expect(links[1].classes()).not.toContain('router-link-active');
       expect(wrapper.findComponent({ name: 'FixedLengthConverter' }).exists()).toBe(true);
       expect(wrapper.findComponent({ name: 'NumberingLineConverter' }).exists()).toBe(false);
     });
@@ -100,8 +100,8 @@ describe('App.vue', () => {
       expect(wrapper.findComponent({ name: 'NumberingLineConverter' }).exists()).toBe(false);
       
       // Switch to NumberingLineConverter
-      const tabs = wrapper.findAll('.sidebar-nav li');
-      await tabs[1].trigger('click');
+      const links = wrapper.findAll('.sidebar-nav li a');
+      await links[1].trigger('click');
       await flushPromises();
       
       expect(wrapper.findComponent({ name: 'FixedLengthConverter' }).exists()).toBe(false);

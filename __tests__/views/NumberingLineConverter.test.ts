@@ -1,9 +1,17 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { createPinia } from 'pinia';
 import NumberingLineConverter from '../../src/views/NumberingLineConverter.vue';
 
 describe('NumberingLineConverter.vue', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   const createWrapper = () => {
     return mount(NumberingLineConverter, {
       global: {
@@ -182,7 +190,7 @@ describe('NumberingLineConverter.vue', () => {
       if (convertButton) {
         await convertButton.trigger('click');
         await wrapper.vm.$nextTick();
-        await new Promise(resolve => setTimeout(resolve, 350));
+        await vi.advanceTimersByTimeAsync(350);
       }
       
       // 結果セクションが存在することを確認
@@ -206,7 +214,7 @@ describe('NumberingLineConverter.vue', () => {
       if (convertButton) {
         await convertButton.trigger('click');
         await wrapper.vm.$nextTick();
-        await new Promise(resolve => setTimeout(resolve, 350));
+        await vi.advanceTimersByTimeAsync(350);
       }
       
       // 結果セクションが存在することを確認
@@ -233,7 +241,7 @@ describe('NumberingLineConverter.vue', () => {
       if (convertButton) {
         await convertButton.trigger('click');
         await wrapper.vm.$nextTick();
-        await new Promise(resolve => setTimeout(resolve, 350));
+        await vi.advanceTimersByTimeAsync(350);
       }
       
       // 結果セクションが表示されることを確認
@@ -251,7 +259,7 @@ describe('NumberingLineConverter.vue', () => {
       if (convertButton) {
         await convertButton.trigger('click');
         await wrapper.vm.$nextTick();
-        await new Promise(resolve => setTimeout(resolve, 350));
+        await vi.advanceTimersByTimeAsync(350);
       }
       
       // エラーが発生しても画面が表示されることを確認
@@ -283,7 +291,7 @@ describe('NumberingLineConverter.vue', () => {
       if (convertButton) {
         await convertButton.trigger('click');
         await wrapper.vm.$nextTick();
-        await new Promise(resolve => setTimeout(resolve, 350));
+        await vi.advanceTimersByTimeAsync(350);
       }
       
       // 結果が生成されることを確認
@@ -294,6 +302,8 @@ describe('NumberingLineConverter.vue', () => {
 
   describe('Loading States', () => {
     it('should show loading state during conversion', async () => {
+      vi.useFakeTimers();
+      
       const wrapper = createWrapper();
       const section = wrapper.find('.input-section');
       const textarea = section.find('textarea');
@@ -305,13 +315,75 @@ describe('NumberingLineConverter.vue', () => {
       );
       
       if (convertButton) {
+        // 変換開始前はローディングではない
+        expect(convertButton.classes()).not.toContain('loading');
+        
+        // 変換開始
         await convertButton.trigger('click');
-        // ローディング状態は短時間なので、次のtickを待つ
+        
+        // ローディング状態を確認（同期的に実行されるため即座に完了）
+        // 実際にはconvert()は同期処理なので、ローディング状態は瞬時
+        await wrapper.vm.$nextTick();
+        
+        // 変換完了後はローディングではない
+        expect(convertButton.classes()).not.toContain('loading');
+      }
+      
+      vi.useRealTimers();
+    });
+
+    it('should show loading state during copy operation', async () => {
+      vi.useFakeTimers();
+      
+      const wrapper = createWrapper();
+      
+      // まず変換を実行
+      const section = wrapper.find('.input-section');
+      const textarea = section.find('textarea');
+      await textarea.setValue('test\tdata');
+      
+      const convertButton = wrapper.findAll('button').find(b => 
+        b.text().includes('変換')
+      );
+      if (convertButton) {
+        await convertButton.trigger('click');
         await wrapper.vm.$nextTick();
       }
       
-      // コンポーネントが正常に動作していることを確認
-      expect(wrapper.exists()).toBe(true);
+      // コピーボタンを見つける
+      const copyButton = wrapper.findAll('button').find(b => 
+        b.text().includes('コピー')
+      );
+      
+      if (copyButton) {
+        // コピー開始前
+        expect(copyButton.classes()).not.toContain('loading');
+        
+        // navigator.clipboard.writeTextをモック（遅延を追加）
+        const mockWriteText = vi.fn().mockResolvedValue(undefined);
+        Object.assign(navigator, {
+          clipboard: {
+            writeText: mockWriteText,
+          },
+        });
+        
+        // コピー実行
+        const clickPromise = copyButton.trigger('click');
+        await wrapper.vm.$nextTick();
+        
+        // ローディング中の状態を検証
+        expect(copyButton.classes()).toContain('loading');
+        
+        // タイマーを進めて非同期処理を完了
+        await vi.runAllTimersAsync();
+        await clickPromise;
+        await wrapper.vm.$nextTick();
+        
+        // コピー完了後はローディングではない
+        expect(copyButton.classes()).not.toContain('loading');
+      }
+      
+      vi.useRealTimers();
     });
   });
 
