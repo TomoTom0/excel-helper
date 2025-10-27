@@ -49,11 +49,25 @@ jobs:
       uses: actions/github-script@v7
       with:
         script: |
+          const { data: comments } = await github.rest.issues.listComments({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+          });
+          
+          const hasGeminiReview = comments.some(comment => 
+            comment.body.includes('/gemini review')
+          );
+          
+          const body = hasGeminiReview 
+            ? `✅ **CI/CD Success**\n\nAll tests and build passed successfully.`
+            : `✅ **CI/CD Success**\n\nAll tests and build passed successfully.\n\n/gemini review`;
+          
           github.rest.issues.createComment({
             issue_number: context.issue.number,
             owner: context.repo.owner,
             repo: context.repo.repo,
-            body: `✅ **CI/CD Success**\n\nAll tests and build passed successfully.\n\n/gemini review`
+            body: body
           })
     
     - name: Comment on PR (Failure)
