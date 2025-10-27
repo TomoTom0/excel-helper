@@ -223,7 +223,6 @@ describe('converter - エッジケースと追加テスト', () => {
     it('改行を含むフィールド', () => {
       // NOTE: papaparseはquotes: trueにより、CSV内の改行を含むフィールドを
       // 正しく1つのフィールドとして扱います。
-      // padValueで改行をスペースに置換するため、固定長出力では1行になります。
       const data = '"Multi\nLine\nField",Simple'
       const lengths = [20, 20]
       const options: ColumnOption[] = [
@@ -231,9 +230,11 @@ describe('converter - エッジケースと追加テスト', () => {
         { type: 'string', padding: 'right', padChar: ' ' }
       ]
       const result = tsvToFixed(data, lengths, options, 'csv')
-      // 改行がスペースに置換されるため、1行になります
-      expect(result.split('\n').length).toBe(1)
-      expect(result).toContain('Multi Line Field')
+      // フィールド内改行は保持されるため、3行になります
+      expect(result.split('\n').length).toBe(3)
+      expect(result).toContain('Multi')
+      expect(result).toContain('Line')
+      expect(result).toContain('Field')
       expect(result).toContain('Simple')
     })
   })
