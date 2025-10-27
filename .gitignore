@@ -1,10 +1,17 @@
 node_modules/
 dist/
+coverage/
+.wrangler/
+*.log
+.DS_Store
+.env.local
+.env.*.local
+node_modules/
+dist/
 .DS_Store
 *.log
 .vscode/
 .idea/
-tmp/
 coverage/
 
 # Test coverage
@@ -16,6 +23,7 @@ coverage/
 # Temporary files
 *.tmp
 .cache/
+tmp/
 
 # Environment files
 .env
