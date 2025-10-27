@@ -37,17 +37,23 @@ body {
 }
 
 .sidebar-nav li {
+  list-style: none;
+}
+
+.sidebar-nav li a {
+  display: block;
   padding: 15px 20px;
-  cursor: pointer;
+  color: white;
+  text-decoration: none;
   transition: background-color 0.3s;
   border-left: 3px solid transparent;
 }
 
-.sidebar-nav li:hover {
+.sidebar-nav li a:hover {
   background-color: #34495e;
 }
 
-.sidebar-nav li.active {
+.sidebar-nav li a.router-link-active {
   background-color: #34495e;
   border-left-color: #3498db;
 }

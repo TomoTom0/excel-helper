@@ -89,11 +89,11 @@ export function convertNumberingLines(
         }
         // 数字+ドットを削除
         else if (patternType === 'dotted') {
-          content = line.replace(/^[\d１-９０]+[.．]\s*/, '');
+          content = line.replace(/^[\d０-９]+[.．]\s*/, '');
         }
         // 括弧囲み数字を削除
         else if (patternType === 'parenthesized') {
-          content = line.replace(/^[\(（][\d１-９０]+[\)）]\s*/, '');
+          content = line.replace(/^[\(（][\d０-９]+[\)）]\s*/, '');
         }
         // ダミー文字を削除
         else if (patternType === 'dummy') {
