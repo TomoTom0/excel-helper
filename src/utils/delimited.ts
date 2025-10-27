@@ -8,6 +8,7 @@ function parseDelimited(input: string, delimiter: ',' | '\t'): string[][] {
     delimiter,
     newline: '\n',
     skipEmptyLines: false,
+    quotes: true,
   });
   return result.data as string[][];
 }
