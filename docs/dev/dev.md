@@ -188,7 +188,7 @@ User Input → View Component → Utils (Logic) → Result
 
 6. **App.vueに統合**
    - タブとして追加
-   - ルーティング設定
+   - App.vueへのタブ追加
 
 7. **ドキュメント更新**
    - `docs/usage.md` に使い方を追加

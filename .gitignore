@@ -6,13 +6,8 @@ coverage/
 .DS_Store
 .env.local
 .env.*.local
-node_modules/
-dist/
-.DS_Store
-*.log
 .vscode/
 .idea/
-coverage/
 
 # Test coverage
 .nyc_output/
@@ -27,8 +22,6 @@ tmp/
 
 # Environment files
 .env
-.env.local
-.env.*.local
 
 # Build artifacts
 *.tsbuildinfo
