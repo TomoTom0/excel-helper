@@ -1,9 +1,17 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { createPinia } from 'pinia';
 import NumberingLineConverter from '../../src/views/NumberingLineConverter.vue';
 
 describe('NumberingLineConverter.vue', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   const createWrapper = () => {
     return mount(NumberingLineConverter, {
       global: {
@@ -182,7 +190,7 @@ describe('NumberingLineConverter.vue', () => {
       if (convertButton) {
         await convertButton.trigger('click');
         await wrapper.vm.$nextTick();
-        await new Promise(resolve => setTimeout(resolve, 350));
+        await vi.advanceTimersByTimeAsync(350);
       }
       
       // 結果セクションが存在することを確認
@@ -206,7 +214,7 @@ describe('NumberingLineConverter.vue', () => {
       if (convertButton) {
         await convertButton.trigger('click');
         await wrapper.vm.$nextTick();
-        await new Promise(resolve => setTimeout(resolve, 350));
+        await vi.advanceTimersByTimeAsync(350);
       }
       
       // 結果セクションが存在することを確認
@@ -233,7 +241,7 @@ describe('NumberingLineConverter.vue', () => {
       if (convertButton) {
         await convertButton.trigger('click');
         await wrapper.vm.$nextTick();
-        await new Promise(resolve => setTimeout(resolve, 350));
+        await vi.advanceTimersByTimeAsync(350);
       }
       
       // 結果セクションが表示されることを確認
@@ -251,7 +259,7 @@ describe('NumberingLineConverter.vue', () => {
       if (convertButton) {
         await convertButton.trigger('click');
         await wrapper.vm.$nextTick();
-        await new Promise(resolve => setTimeout(resolve, 350));
+        await vi.advanceTimersByTimeAsync(350);
       }
       
       // エラーが発生しても画面が表示されることを確認
@@ -283,7 +291,7 @@ describe('NumberingLineConverter.vue', () => {
       if (convertButton) {
         await convertButton.trigger('click');
         await wrapper.vm.$nextTick();
-        await new Promise(resolve => setTimeout(resolve, 350));
+        await vi.advanceTimersByTimeAsync(350);
       }
       
       // 結果が生成されることを確認
@@ -352,9 +360,7 @@ describe('NumberingLineConverter.vue', () => {
         expect(copyButton.classes()).not.toContain('loading');
         
         // navigator.clipboard.writeTextをモック（遅延を追加）
-        const mockWriteText = vi.fn().mockImplementation(() => 
-          new Promise(resolve => setTimeout(resolve, 100))
-        );
+        const mockWriteText = vi.fn().mockResolvedValue(undefined);
         Object.assign(navigator, {
           clipboard: {
             writeText: mockWriteText,

@@ -176,6 +176,27 @@ convertNumberingLines(text, ['dummy', 'circled'], 'dotted', 'x')
 
 ---
 
+#### `parseDelimitedData(text: string, delimiterType: 'auto' | 'tsv' | 'csv'): string[][]`
+
+CSV/TSV形式のテキストをパースして2次元配列に変換します。
+
+**パラメータ**:
+- `text`: CSV/TSV形式のテキスト
+- `delimiterType`: デリミタタイプ（`'auto'`, `'tsv'`, `'csv'`）
+
+**戻り値**:
+- `string[][]`: パース結果の2次元配列
+
+**例**:
+```typescript
+parseDelimitedData("項目1\t項目2\n値1\t値2", 'tsv')
+// => [['項目1', '項目2'], ['値1', '値2']]
+```
+
+**注**: `'auto'`を指定した場合、タブが検出されればTSV、カンマが検出されればCSVとして解釈します。
+
+---
+
 #### `parseCSV(text: string): string[][]`
 
 CSV形式のテキストをパースして2次元配列に変換します。
