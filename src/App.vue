@@ -8,7 +8,7 @@ const tabs = [
 <template>
   <div class="sidebar">
     <div class="sidebar-header">
-      <img src="/favicon.svg" alt="YT Excel Helper" class="sidebar-icon">
+      <img src="/favicon-32x32.png" alt="YT Excel Helper" class="sidebar-icon">
       <h1>YT Excel Helper</h1>
     </div>
     <ul class="sidebar-nav">
