@@ -1,7 +1,7 @@
 import { chromium } from '@playwright/test';
 import { config } from 'dotenv';
 import { execSync } from 'child_process';
-import { unlinkSync, readdirSync } from 'fs';
+import { unlinkSync } from 'fs';
 
 config();
 
@@ -65,30 +65,23 @@ async function recordDemo(feature) {
     await page.waitForTimeout(2000); // 最後のフレーム2秒
   }
   
+  const videoPath = await page.video().path();
   await context.close();
   await browser.close();
   
   console.log(`✓ ${feature} demo recorded`);
+  return videoPath;
 }
 
-function convertToGif(feature) {
+function convertToGif(videoPath, feature) {
   console.log(`🔄 Converting ${feature} to GIF...`);
   
-  // tmp/videos/ 内のwebmファイルを探す
-  const files = readdirSync('tmp/videos/');
-  const webmFile = files.find(f => f.endsWith('.webm'));
-  
-  if (!webmFile) {
-    throw new Error('No webm file found');
-  }
-  
-  const webmPath = `tmp/videos/${webmFile}`;
   const outputGif = `imgs/demos/${feature}-demo.gif`;
   
   // webmからmp4に変換（最初の1秒をトリム）
   const mp4Path = `tmp/videos/${feature}-temp.mp4`;
   execSync(
-    `ffmpeg -i "${webmPath}" -ss 1.0 -c:v libx264 -preset fast -crf 23 "${mp4Path}" -y`,
+    `ffmpeg -i "${videoPath}" -ss 1.0 -c:v libx264 -preset fast -crf 23 "${mp4Path}" -y`,
     { stdio: 'pipe' }
   );
   
@@ -99,7 +92,7 @@ function convertToGif(feature) {
   );
   
   // 一時ファイルを削除
-  unlinkSync(webmPath);
+  unlinkSync(videoPath);
   unlinkSync(mp4Path);
   
   console.log(`✓ GIF saved to ${outputGif}`);
@@ -107,12 +100,12 @@ function convertToGif(feature) {
 
 async function main() {
   // 固定長変換
-  await recordDemo('fixed-length');
-  convertToGif('fixed-length');
+  const fixedLengthVideo = await recordDemo('fixed-length');
+  convertToGif(fixedLengthVideo, 'fixed-length');
   
   // ナンバリング行変換
-  await recordDemo('numbering-line');
-  convertToGif('numbering-line');
+  const numberingLineVideo = await recordDemo('numbering-line');
+  convertToGif(numberingLineVideo, 'numbering-line');
   
   console.log('\n✅ All demo GIFs saved to imgs/demos/');
 }
