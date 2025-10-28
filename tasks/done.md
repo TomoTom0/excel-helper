@@ -1,5 +1,36 @@
 # 完了タスク
 
+## 2025-10-28
+
+### ブランチ同期とPR検証ワークフロー追加
+✅ **PR #26-32: ブランチ同期と運用改善**
+
+#### Gemini PR#24 フィードバック対応 (PR #26)
+- papaparse名前付きimport使用（`import { parse, unparse }`）
+- カスタム型定義ファイル削除（src/types/papaparse.d.ts）
+- APIドキュメント更新（関数名の修正）
+
+#### ブランチ同期 (PR #27, #28, #29)
+- mainをdevにマージしてブランチ完全同期
+- PR#18で発生したブランチ分岐問題を解決
+- dev→mainのリリースフロー正常化
+
+#### PR検証ワークフロー追加 (PR #30)
+- `.github/workflows/validate-pr-branches.yml`作成
+- mainへのPRはdevからのみ許可（自動検証）
+- mainからdevへのPRをブロック
+- ブランチ命名規則の検証（feature/, fix/, docs/など）
+- 違反時に自動コメント投稿
+- required status checkに追加（運用ミスを自動防止）
+
+#### その他の改善
+- PR #31, #32: Faviconキャッシュ対応（結果的にパラメータ不要と判明）
+- pre-pushフック追加（ローカルでのCI実行）
+
+**問題の原因と対策:**
+- 問題: PR#18が`sync-dev-to-main`ブランチからmainにsquash mergeされ、devに含まれないコミットが発生
+- 対策: GitHub Actionsでブランチを検証し、運用ミスを自動防止
+
 ## 2025-10-26
 
 ### Vue Router導入とCloudflare Pages自動デプロイ設定
