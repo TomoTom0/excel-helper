@@ -2,7 +2,7 @@
 
 ## 固定長変換 API
 
-### `converter.ts`
+### `utils/converter.ts`
 
 #### `parseColumnLengths(input: string): number[]`
 
@@ -122,7 +122,7 @@ tsvToFixed(data, lengths, options, 'tsv')
 
 ## ナンバリング変換 API
 
-### `numberingConverter.ts`
+### `utils/numberingConverter.ts`
 
 #### 型定義
 
@@ -176,119 +176,50 @@ convertNumberingLines(text, ['dummy', 'circled'], 'dotted', 'x')
 
 ---
 
-#### `parseDelimitedData(text: string, delimiterType: 'auto' | 'tsv' | 'csv'): string[][]`
+### `utils/delimited.ts`
+
+CSV/TSVパーサーとシリアライザー。`papaparse`ライブラリを使用。
+
+#### `parseDelimited(text: string, delimiter: '\t' | ','): string[][]`
 
 CSV/TSV形式のテキストをパースして2次元配列に変換します。
 
 **パラメータ**:
 - `text`: CSV/TSV形式のテキスト
-- `delimiterType`: デリミタタイプ（`'auto'`, `'tsv'`, `'csv'`）
+- `delimiter`: デリミタ文字（`'\t'` または `','`）
 
 **戻り値**:
 - `string[][]`: パース結果の2次元配列
 
 **例**:
 ```typescript
-parseDelimitedData("項目1\t項目2\n値1\t値2", 'tsv')
+parseDelimited("項目1\t項目2\n値1\t値2", '\t')
 // => [['項目1', '項目2'], ['値1', '値2']]
 ```
 
-**注**: `'auto'`を指定した場合、タブが検出されればTSV、カンマが検出されればCSVとして解釈します。
+**実装**: `papaparse`の`parse`関数を使用
 
 ---
 
-#### `parseCSV(text: string): string[][]`
+#### `unparseDelimited(data: string[][], delimiter: '\t' | ','): string`
 
-CSV形式のテキストをパースして2次元配列に変換します。
-
-**パラメータ**:
-- `text`: CSV形式のテキスト
-
-**戻り値**:
-- `string[][]`: パース結果の2次元配列
-
-**例**:
-```typescript
-const csv = '"項目1","項目2"\n"値1","値2"'
-parseCSV(csv)
-// => [['項目1', '項目2'], ['値1', '値2']]
-```
-
-**処理**:
-- ダブルクォートで囲まれたフィールドに対応
-- フィールド内の改行に対応
-- エスケープされたクォート（`""`）に対応
-
----
-
-#### `parseTSV(text: string): string[][]`
-
-TSV形式のテキストをパースして2次元配列に変換します。
-
-**パラメータ**:
-- `text`: TSV形式のテキスト
-
-**戻り値**:
-- `string[][]`: パース結果の2次元配列
-
-**例**:
-```typescript
-const tsv = "項目1\t項目2\n値1\t値2"
-parseTSV(tsv)
-// => [['項目1', '項目2'], ['値1', '値2']]
-```
-
-**処理**:
-- タブ区切りで分割
-- ダブルクォートで囲まれたフィールドに対応
-- フィールド内の改行に対応
-
----
-
-#### `toCSV(data: string[][]): string`
-
-2次元配列をCSV形式の文字列に変換します。
+2次元配列をCSV/TSV形式の文字列に変換します。
 
 **パラメータ**:
 - `data`: 2次元配列
+- `delimiter`: デリミタ文字（`'\t'` または `','`）
 
 **戻り値**:
-- `string`: CSV形式のテキスト
+- `string`: CSV/TSV形式のテキスト
 
 **例**:
 ```typescript
 const data = [['項目1', '項目2'], ['値1', '値2']]
-toCSV(data)
+unparseDelimited(data, ',')
 // => '"項目1","項目2"\n"値1","値2"'
 ```
 
-**処理**:
-- 各フィールドをダブルクォートで囲む
-- フィールド内のダブルクォートをエスケープ（`"` → `""`）
-- カンマで結合
-
----
-
-#### `toTSV(data: string[][]): string`
-
-2次元配列をTSV形式の文字列に変換します。
-
-**パラメータ**:
-- `data`: 2次元配列
-
-**戻り値**:
-- `string`: TSV形式のテキスト
-
-**例**:
-```typescript
-const data = [['項目1', '項目2'], ['値1', '値2']]
-toTSV(data)
-// => "項目1\t項目2\n値1\t値2"
-```
-
-**処理**:
-- 改行やタブを含むフィールドはダブルクォートで囲む
-- タブで結合
+**実装**: `papaparse`の`unparse`関数を使用
 
 ---
 

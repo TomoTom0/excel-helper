@@ -132,9 +132,8 @@ npm test
 ### ドキュメント
 
 - [使い方](docs/usage/README.md) - 利用者向けドキュメント
-- [開発](docs/dev/dev.md) - 開発者向けドキュメント
-- [設計](docs/design/design.md) - アーキテクチャ設計
-- [API](docs/api/api.md) - API仕様
+- [開発](docs/dev/README.md) - 開発者向けドキュメント
+- [API](docs/api/README.md) - API仕様
 
 ## ライセンス
 
