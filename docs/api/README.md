@@ -180,9 +180,9 @@ convertNumberingLines(text, ['dummy', 'circled'], 'dotted', 'x')
 
 CSV/TSVパーサーとシリアライザー。`papaparse`ライブラリを使用。
 
-#### `parseDelimited(text: string, delimiter: '\t' | ','): string[][]`
+#### `parseDelimitedData(text: string, delimiter: '\t' | ','): string[][]`
 
-CSV/TSV形式のテキストをパースして2次元配列に変換します。
+CSV/TSV形式のテキストをパースして2次元配列に変換します。`parseCSV`と`parseTSV`の共通実装です。
 
 **パラメータ**:
 - `text`: CSV/TSV形式のテキスト
@@ -193,7 +193,7 @@ CSV/TSV形式のテキストをパースして2次元配列に変換します。
 
 **例**:
 ```typescript
-parseDelimited("項目1\t項目2\n値1\t値2", '\t')
+parseDelimitedData("項目1\t項目2\n値1\t値2", '\t')
 // => [['項目1', '項目2'], ['値1', '値2']]
 ```
 
@@ -201,22 +201,82 @@ parseDelimited("項目1\t項目2\n値1\t値2", '\t')
 
 ---
 
-#### `unparseDelimited(data: string[][], delimiter: '\t' | ','): string`
+#### `parseCSV(text: string): string[][]`
 
-2次元配列をCSV/TSV形式の文字列に変換します。
+CSV形式のテキストをパースして2次元配列に変換します。
+
+**パラメータ**:
+- `text`: CSV形式のテキスト
+
+**戻り値**:
+- `string[][]`: パース結果の2次元配列
+
+**例**:
+```typescript
+parseCSV("項目1,項目2\n値1,値2")
+// => [['項目1', '項目2'], ['値1', '値2']]
+```
+
+**実装**: `papaparse`の`parse`関数を使用
+
+---
+
+#### `parseTSV(text: string): string[][]`
+
+TSV形式のテキストをパースして2次元配列に変換します。
+
+**パラメータ**:
+- `text`: TSV形式のテキスト
+
+**戻り値**:
+- `string[][]`: パース結果の2次元配列
+
+**例**:
+```typescript
+parseTSV("項目1\t項目2\n値1\t値2")
+// => [['項目1', '項目2'], ['値1', '値2']]
+```
+
+**実装**: `papaparse`の`parse`関数を使用
+
+---
+
+#### `toCSV(data: string[][]): string`
+
+2次元配列をCSV形式の文字列に変換します。
 
 **パラメータ**:
 - `data`: 2次元配列
-- `delimiter`: デリミタ文字（`'\t'` または `','`）
 
 **戻り値**:
-- `string`: CSV/TSV形式のテキスト
+- `string`: CSV形式のテキスト
 
 **例**:
 ```typescript
 const data = [['項目1', '項目2'], ['値1', '値2']]
-unparseDelimited(data, ',')
-// => '"項目1","項目2"\n"値1","値2"'
+toCSV(data)
+// => '項目1,項目2\n値1,値2'
+```
+
+**実装**: `papaparse`の`unparse`関数を使用
+
+---
+
+#### `toTSV(data: string[][]): string`
+
+2次元配列をTSV形式の文字列に変換します。
+
+**パラメータ**:
+- `data`: 2次元配列
+
+**戻り値**:
+- `string`: TSV形式のテキスト
+
+**例**:
+```typescript
+const data = [['項目1', '項目2'], ['値1', '値2']]
+toTSV(data)
+// => '項目1\t項目2\n値1\t値2'
 ```
 
 **実装**: `papaparse`の`unparse`関数を使用
