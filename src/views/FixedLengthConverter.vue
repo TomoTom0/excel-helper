@@ -3,7 +3,7 @@ import { ref, computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useConverterStore } from '../stores/converter'
 import { parseColumnLengths, parseColumnOptions, getDelimiter, convertFromFixed, tsvToFixed as convertTsvToFixed } from '../utils/converter'
-import { parseDelimitedData, toCSV, toTSV } from '../utils/numberingConverter'
+import { parseDelimitedData, toCSV, toTSV } from '../utils/delimited'
 
 const store = useConverterStore()
 const { columnLengths, dataBody, columnTitles, columnOptions, delimiterType, outputFormat } = storeToRefs(store)

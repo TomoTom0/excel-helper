@@ -1,12 +1,7 @@
-import { parseCSV, parseTSV, toCSV, toTSV, parseDelimitedData } from './delimited';
-
 export type NumberFormat = 'circled' | 'dotted' | 'parenthesized';
 export type PatternType = 'circled' | 'dotted' | 'parenthesized' | 'dummy';
 
 const CIRCLED_NUMBERS = '①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳';
-
-// Re-export delimited functions for backward compatibility
-export { parseCSV, parseTSV, toCSV, toTSV, parseDelimitedData };
 
 const PATTERNS: ReadonlyArray<{ type: PatternType; regex: RegExp }> = [
   { type: 'circled', regex: new RegExp(`^[${CIRCLED_NUMBERS}]`) },

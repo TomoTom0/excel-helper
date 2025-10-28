@@ -10,12 +10,9 @@
 import { describe, it, expect } from 'vitest'
 import { 
   convertNumberingLines,
-  parseCSV,
-  parseTSV,
-  toCSV,
-  toTSV,
   formatNumber
 } from '../src/utils/numberingConverter'
+import { parseCSV, parseTSV, toCSV, toTSV } from '../src/utils/delimited'
 
 describe('numberingConverter - エッジケース', () => {
   describe('エラーケース', () => {
