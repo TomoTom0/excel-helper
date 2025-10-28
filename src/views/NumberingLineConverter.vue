@@ -8,6 +8,7 @@ import {
   toCSV, 
   toTSV
 } from '../utils/numberingConverter'
+import { getDelimiter } from '../utils/converter'
 import { useNumberingStore } from '../stores/numbering'
 
 const store = useNumberingStore()
@@ -53,28 +54,12 @@ const showNotification = (message: string, type: 'success' | 'error' = 'success'
   }, 2000)
 }
 
-const autoDetectDelimiter = (text: string): 'tsv' | 'csv' => {
-  const lines = text.split('\n').filter(line => line.trim())
-  if (lines.length === 0) return 'tsv'
-  
-  const firstLine = lines[0]
-  const tabCount = (firstLine.match(/\t/g) || []).length
-  const commaCount = (firstLine.match(/,/g) || []).length
-  
-  return tabCount > commaCount ? 'tsv' : 'csv'
-}
-
 const convert = () => {
   convertLoading.value = true
   try {
-    let actualDelimiter: 'tsv' | 'csv'
-    if (inputDelimiterType.value === 'auto') {
-      actualDelimiter = autoDetectDelimiter(dataBody.value)
-    } else {
-      actualDelimiter = inputDelimiterType.value
-    }
+    const delimiter = getDelimiter(dataBody.value, inputDelimiterType.value)
     
-    const parsed = actualDelimiter === 'tsv' 
+    const parsed = delimiter === '\t' 
       ? parseTSV(dataBody.value)
       : parseCSV(dataBody.value)
     

@@ -1,11 +1,13 @@
 node_modules/
 dist/
-.DS_Store
+coverage/
+.wrangler/
 *.log
+.DS_Store
+.env.local
+.env.*.local
 .vscode/
 .idea/
-tmp/
-coverage/
 
 # Test coverage
 .nyc_output/
@@ -16,11 +18,10 @@ coverage/
 # Temporary files
 *.tmp
 .cache/
+tmp/
 
 # Environment files
 .env
-.env.local
-.env.*.local
 
 # Build artifacts
 *.tsbuildinfo

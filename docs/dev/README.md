@@ -30,8 +30,10 @@ excel-helper/
 │   ├── converter.test.ts        # 固定長変換テスト
 │   └── numberingConverter.test.ts # ナンバリング変換テスト
 ├── docs/
-│   ├── usage.md                 # 使い方ガイド
-│   ├── dev.md                   # 開発者ガイド（このファイル）
+│   ├── usage/
+│   │   └── README.md            # 使い方ガイド
+│   ├── dev/
+│   │   └── README.md            # 開発者ガイド（このファイル）
 │   ├── api.md                   # API仕様書
 │   └── design/
 │       └── chat/
@@ -188,7 +190,7 @@ User Input → View Component → Utils (Logic) → Result
 
 6. **App.vueに統合**
    - タブとして追加
-   - App.vueへのタブ追加
+   - ルーティング設定
 
 7. **ドキュメント更新**
    - `docs/usage.md` に使い方を追加

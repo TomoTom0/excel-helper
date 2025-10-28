@@ -333,7 +333,7 @@ toTSV(data)
 **エラーハンドリングの例**:
 ```typescript
 try {
-  const result = fixedToTsv(data, lengths)
+  const result = convertFromFixed(data, lengths)
 } catch (error) {
   console.error('変換エラー:', error.message)
 }

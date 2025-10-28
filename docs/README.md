@@ -6,18 +6,18 @@ YT Excel Helperは、固定長データとTSV/CSV形式の相互変換、およ�
 
 ## ドキュメント構成
 
-### 📘 [使い方](./usage/usage.md)
+### 📘 [使い方](./usage/README.md)
 アプリケーションの使用方法、機能説明、トラブルシューティング
 
 ### 🎨 デザイン (作成予定)
 UI/UXデザイン、スタイルガイド、コンポーネント設計
 
 ### 🛠️ [開発](./dev/)
-- [開発ガイド](./dev/dev.md)
+- [開発ガイド](./dev/README.md)
 - [CI/CD](./dev/ci-cd.md)
 - [AI統合](./dev/CI_AI_INTEGRATION.md)
 
-### 📡 [API](./api/api.md)
+### 📡 [API](./api/README.md)
 内部API仕様、関数リファレンス
 
 ## クイックスタート
@@ -57,4 +57,4 @@ npm run lint
 
 ## コントリビューション
 
-プルリクエストを歓迎します！詳細は[開発ガイド](./dev/dev.md)を参照してください。
+プルリクエストを歓迎します！詳細は[開発ガイド](./dev/README.md)を参照してください。

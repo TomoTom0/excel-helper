@@ -1,10 +1,10 @@
-import Papa from 'papaparse';
+import { parse, unparse } from 'papaparse';
 
 /**
  * 区切り文字データをパースする（共通関数）
  */
 function parseDelimited(input: string, delimiter: ',' | '\t'): string[][] {
-  const result = Papa.parse(input, {
+  const result = parse(input, {
     delimiter,
     newline: '\n',
     skipEmptyLines: false,
@@ -30,7 +30,7 @@ export function parseTSV(input: string): string[][] {
  * 2次元配列を区切り文字列に変換する（共通関数）
  */
 function unparseDelimited(data: string[][], delimiter: ',' | '\t'): string {
-  return Papa.unparse(data, {
+  return unparse(data, {
     delimiter,
     newline: '\n',
     quotes: false,
