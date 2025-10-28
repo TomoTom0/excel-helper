@@ -1,37 +1,12 @@
 # 作業中タスク
 
-## バージョン管理・リリース管理の整備 Phase 2
+現在作業中のタスクはありません。
 
-**開始日時**: 2025-10-29 02:50  
-**担当**: AI Assistant  
-**関連ドキュメント**: `tmp/wip/version-release-management-plan.md`
+## 完了した作業
 
-### 現在の状況
-- ✅ Phase 1: 基盤整備 - 完了（v1.0.0リリース）
-- 🔄 Phase 2: 自動化 - 作業中
+### バージョン管理・リリース管理の整備（Phase 1-3完了）
+- ✅ Phase 1: 基盤整備（v1.0.0リリース）
+- ✅ Phase 2: 自動化（auto-label, release-please導入）
+- ✅ Phase 3: 改善（過去PR分析、ラベル付与スクリプト作成）
 
-### Phase 2 実施内容
-
-#### 自動ラベル付けワークフロー
-- [x] `.github/workflows/auto-label.yml` 作成
-  - [x] ブランチ名からラベル自動付与
-  - [x] PRテンプレートのチェックボックスからラベル推論
-  - [x] バージョンラベルの優先度ルール実装
-
-#### release-please 導入
-- [x] `.github/workflows/release-please.yml` 作成
-- [x] release-please 設定ファイル作成
-- [ ] Conventional Commits との統合（動作確認待ち）
-- [ ] リリースPR自動作成の確認（mainマージ後）
-
-#### CHANGELOG自動更新
-- [ ] release-please による自動生成設定
-- [ ] カテゴリ別の整理（Added, Changed, Fixed, etc.）
-- [ ] PR番号の自動リンク
-
-### ブロッカー
-- なし
-
-### 次のアクション
-1. 自動ラベル付けワークフローの実装
-2. release-please の導入検討・実装
+詳細は `tasks/done.md` を参照。
