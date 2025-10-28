@@ -3,6 +3,18 @@
 # 過去PRへのラベル付けスクリプト
 # PRタイトルとブランチ名から適切なラベルを推論して付与
 
+# ghコマンドの存在と認証状態をチェック
+if ! command -v gh &> /dev/null; then
+  echo "❌ gh-cliがインストールされていません。GitHub CLIをインストールしてください。" >&2
+  exit 1
+fi
+
+gh auth status &>/dev/null
+if [[ $? -ne 0 ]]; then
+  echo "❌ GitHubにログインしていません。'gh auth login' を実行してください。" >&2
+  exit 1
+fi
+
 echo "🏷️  過去PRへのラベル付けを開始します..."
 
 # PR番号とラベルのマッピング
