@@ -1,0 +1,70 @@
+name: Validate PR Branches
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, edited]
+
+jobs:
+  validate-branches:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate branch rules
+        env:
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+        run: |
+          echo "Base branch: $BASE_REF"
+          echo "Head branch: $HEAD_REF"
+          
+          # Rule: PRs to main must come from dev branch only
+          if [[ "$BASE_REF" == "main" && "$HEAD_REF" != "dev" ]]; then
+            echo "❌ ERROR: PRs to 'main' must come from 'dev' branch only."
+            echo "Current head branch: $HEAD_REF"
+            exit 1
+          fi
+          
+          # Rule: PRs to dev can come from any feature/fix/docs branches
+          if [[ "$BASE_REF" == "dev" ]]; then
+            if [[ "$HEAD_REF" =~ ^(feature|fix|docs|refactor|test|chore)/ ]] || [[ "$HEAD_REF" =~ ^(release|hotfix|sync)/ ]]; then
+              echo "✅ Valid: PR to dev from $HEAD_REF"
+            elif [[ "$HEAD_REF" == "main" ]]; then
+              echo "❌ ERROR: PRs from 'main' to 'dev' are not allowed. Use hotfix branches instead."
+              exit 1
+            else
+              echo "⚠️  WARNING: Unusual branch name pattern: $HEAD_REF"
+              echo "Expected patterns: feature/, fix/, docs/, refactor/, test/, chore/, release/, hotfix/, sync/"
+              echo "Please follow branch naming conventions."
+              # Allow but warn - change to exit 1 if you want to enforce strictly
+            fi
+          fi
+          
+          echo "✅ Branch validation passed"
+
+      - name: Comment on PR if validation fails
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const baseRef = context.payload.pull_request.base.ref;
+            const headRef = context.payload.pull_request.head.ref;
+            let message = '## ❌ Branch Validation Failed\n\n';
+            
+            if (baseRef === 'main' && headRef !== 'dev') {
+              message += `**Error**: PRs to \`main\` must come from \`dev\` branch only.\n\n`;
+              message += `- Current base: \`${baseRef}\`\n`;
+              message += `- Current head: \`${headRef}\`\n\n`;
+              message += `**Required workflow**:\n`;
+              message += `1. Merge your changes to \`dev\` first\n`;
+              message += `2. Test thoroughly on \`dev\`\n`;
+              message += `3. Create PR from \`dev\` to \`main\`\n`;
+            } else if (baseRef === 'dev' && headRef === 'main') {
+              message += `**Error**: PRs from \`main\` to \`dev\` are not allowed.\n\n`;
+              message += `If you need to sync \`main\` changes to \`dev\`, use a \`sync/\` or \`hotfix/\` branch.\n`;
+            }
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: message
+            });
