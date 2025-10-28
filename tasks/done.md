@@ -123,3 +123,96 @@
   - サイトURL: https://3be88f6e.excel-helper.pages.dev
   - masterブランチへのプッシュで自動デプロイ
   - Wrangler CLIでデプロイ
+
+## バージョン管理・リリース管理基盤整備 (Phase 1)
+
+**完了日時**: 2025-10-29 02:44
+**PR**: #35
+**関連リリース**: v1.0.0
+
+### 実施内容
+
+#### ラベル作成（13個）
+- セマンティックバージョニング: `version/major`, `version/minor`, `version/patch`
+- カテゴリ: `type/feature`, `type/fix`, `type/docs`, `type/refactor`, `type/test`, `type/ci`, `type/chore`
+- 優先度: `priority/high`, `priority/medium`, `priority/low`
+
+#### PRテンプレート
+- `.github/pull_request_template.md` 作成
+- 変更の種類チェックボックス（バージョン対応）
+- テスト結果記載欄
+- 関連Issue参照欄
+
+#### CHANGELOG
+- `CHANGELOG.md` 作成（Keep a Changelog形式）
+- v1.0.0 リリースノート
+- [Unreleased] セクション
+- バージョン比較リンク
+
+#### v1.0.0 リリース
+- Git タグ v1.0.0 作成
+- GitHub Release v1.0.0 作成
+- リリースノート公開
+
+### Gemini Code Review
+- 素晴らしい基盤整備との評価
+- 4つの改善提案すべて対応
+- 全レビュースレッドresolve完了
+
+### 成果
+今後のリリースプロセスの基盤が確立され、セマンティックバージョニングとCHANGELOG自動生成の準備が整った。
+
+## バージョン管理・リリース管理自動化 (Phase 2)
+
+**完了日時**: 2025-10-29 03:53
+**PR**: #36
+
+### 実施内容
+
+#### 自動ラベル付けワークフロー (.github/workflows/auto-label.yml)
+- ブランチ名からラベル自動付与（feat/, fix/, docs/, refactor/, test/, ci/, chore/, hotfix/, breaking/）
+- PRテンプレートのチェックボックスからラベル推論
+- 破壊的変更検出（feat!:, breaking）
+- バージョンラベルの優先度ルール（major > minor > patch）
+
+#### release-please ワークフロー (.github/workflows/release-please.yml)
+- mainブランチへのpush時に自動実行
+- Conventional Commitsに基づくバージョン判定
+- CHANGELOG.md自動生成（カテゴリ別整理）
+- リリースPR自動作成
+- package.json, package-lock.json の自動更新
+
+#### 設定ファイル
+- .release-please-config.json: release-please設定
+- .release-please-manifest.json: 現在バージョン管理（v1.0.0）
+
+### Gemini Code Review
+- 冗長な設定削除（bump-*-pre-major）の提案を受け入れ
+- tasks/wip.mdの実装状況矛盾を修正
+- 全レビュースレッドresolve完了
+
+### 成果
+今後のリリースプロセスが完全自動化され、PRへのラベル付けも自動化された。次回のdev→mainマージでrelease-pleaseが自動的にリリースPRを作成する。
+
+## バージョン管理・リリース管理改善 (Phase 3)
+
+**完了日時**: 2025-10-29 04:10
+**成果物**: scripts/label-past-prs.sh
+
+### 実施内容
+
+#### 過去PRの分析とラベル付けスクリプト作成
+- 過去36件のPRを分析
+- PRタイトルとコミットメッセージから適切なラベルを判定
+- ラベル付与スクリプト（scripts/label-past-prs.sh）作成
+- 分類:
+  - type/feature: 7件（#1, #4, #5, #6, #13, #18）
+  - type/fix: 8件（#7, #8, #15, #23, #26, #27, #28, #31）
+  - type/docs: 5件（#10, #12, #21, #33, #34）
+  - type/refactor: 1件（#9）
+  - type/test: 1件（#11）
+  - type/ci: 1件（#30）
+  - type/chore: 4件（#17, #29, #35, #36）
+
+### 成果
+過去のPRも分類され、今後のリリースノート生成やプロジェクト分析に活用可能。Phase 1-3を通じて、プロフェッショナルなバージョン管理とリリースプロセスが確立された。
