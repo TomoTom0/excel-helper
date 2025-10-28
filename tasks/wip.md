@@ -13,16 +13,16 @@
 ### Phase 2 実施内容
 
 #### 自動ラベル付けワークフロー
-- [ ] `.github/workflows/auto-label.yml` 作成
-  - [ ] ブランチ名からラベル自動付与
-  - [ ] PRテンプレートのチェックボックスからラベル推論
-  - [ ] バージョンラベルの優先度ルール実装
+- [x] `.github/workflows/auto-label.yml` 作成
+  - [x] ブランチ名からラベル自動付与
+  - [x] PRテンプレートのチェックボックスからラベル推論
+  - [x] バージョンラベルの優先度ルール実装
 
 #### release-please 導入
-- [ ] `.github/workflows/release-please.yml` 作成
-- [ ] release-please 設定ファイル作成
-- [ ] Conventional Commits との統合
-- [ ] リリースPR自動作成の確認
+- [x] `.github/workflows/release-please.yml` 作成
+- [x] release-please 設定ファイル作成
+- [ ] Conventional Commits との統合（動作確認待ち）
+- [ ] リリースPR自動作成の確認（mainマージ後）
 
 #### CHANGELOG自動更新
 - [ ] release-please による自動生成設定
