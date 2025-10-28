@@ -57,7 +57,8 @@
 5. PRを作成（feature/new-feature → dev）
    gh pr create --base dev --head feature/new-feature
 
-6. CI成功とレビュー承認後、devにマージ
+6. CI成功とレビュー承認後、GitHub上で「Squash and merge」を使用してdevにマージ
+   - Linear historyを維持するため、マージコミットは作成しない
 ```
 
 ### リリースフロー
@@ -68,8 +69,35 @@
 
 2. CI成功を確認
 
-3. mainにマージ
+3. GitHub上で「Squash and merge」を使用してmainにマージ
+   - Linear historyを維持
    - 自動的にCloudflare Pagesにデプロイ
+```
+
+### Hotfixフロー（緊急バグ修正）
+
+```
+1. mainから直接hotfixブランチを作成
+   git checkout main
+   git pull origin main
+   git checkout -b hotfix/critical-bug-fix
+
+2. 修正・コミット・Push
+   git add .
+   git commit -m "hotfix: Fix critical bug"
+   git push origin hotfix/critical-bug-fix
+
+3. mainへのPRを作成してマージ
+   gh pr create --base main --head hotfix/critical-bug-fix
+   # マージ後、自動デプロイ
+
+4. 同じ修正をdevにも反映（sync/ブランチ経由）
+   git checkout dev
+   git pull origin dev
+   git checkout -b sync/hotfix-to-dev
+   git cherry-pick <hotfixのコミットハッシュ>
+   git push origin sync/hotfix-to-dev
+   gh pr create --base dev --head sync/hotfix-to-dev
 ```
 
 ## ブランチ保護ルール
@@ -147,7 +175,61 @@ PR: feature/test → main
    → ビルドが失敗したらpush中止
 ```
 
-スキップしたい場合：
+### セットアップ方法
+
+**注意:** `.git/hooks`ディレクトリはバージョン管理されないため、リポジトリをクローンしただけではフックは有効になりません。
+
+#### 手動セットアップ
+
+```bash
+# リポジトリルートで実行
+cat > .git/hooks/pre-push << 'EOF'
+#!/bin/bash
+
+echo "🔍 Running CI checks before push..."
+
+# Run tests
+echo "Running tests..."
+npm run test -- --run
+if [ $? -ne 0 ]; then
+    echo "❌ Tests failed. Push aborted."
+    exit 1
+fi
+
+# Run build
+echo "Running build..."
+npm run build
+if [ $? -ne 0 ]; then
+    echo "❌ Build failed. Push aborted."
+    exit 1
+fi
+
+echo "✅ All CI checks passed. Proceeding with push..."
+exit 0
+EOF
+
+chmod +x .git/hooks/pre-push
+```
+
+#### 推奨: Huskyを使った自動セットアップ
+
+将来的には[Husky](https://typicode.github.io/husky/)の導入を推奨します：
+
+```bash
+# Huskyのインストール
+npm install --save-dev husky
+npx husky init
+
+# pre-pushフックを設定
+echo "npm run test -- --run && npm run build" > .husky/pre-push
+chmod +x .husky/pre-push
+```
+
+Huskyを使用すると`npm install`時に自動的にフックがセットアップされます。
+
+### スキップ方法
+
+緊急時やCI不要な変更の場合：
 ```bash
 git push --no-verify
 ```
@@ -155,6 +237,8 @@ git push --no-verify
 ## トラブルシューティング
 
 ### ブランチが古くなった場合
+
+#### 方法1: Merge（安全・推奨）
 
 ```bash
 # devブランチを最新に
@@ -164,7 +248,38 @@ git pull origin dev
 # 作業ブランチにdevをマージ
 git checkout feature/my-feature
 git merge dev
+# Conflictがあれば解決してコミット
 ```
+
+**利点:**
+- 安全で元のコミット履歴を保持
+- Conflictの解決が簡単
+
+**欠点:**
+- マージコミットが作成される（最終的にSquash mergeするので問題なし）
+
+#### 方法2: Rebase（履歴をクリーンに）
+
+```bash
+# devブランチを最新に
+git checkout dev
+git pull origin dev
+
+# 作業ブランチをdevにrebase
+git checkout feature/my-feature
+git rebase dev
+# Conflictがあれば解決して git rebase --continue
+```
+
+**利点:**
+- Linear historyを維持
+- コミット履歴がクリーン
+
+**欠点:**
+- Conflictの解決が複雑になることがある
+- 既にpush済みの場合は`git push --force-with-lease`が必要
+
+**推奨:** チーム開発では**Merge**を推奨。最終的にSquash mergeするため、作業ブランチ内のマージコミットは問題ありません。
 
 ### Conflictが発生した場合
 
