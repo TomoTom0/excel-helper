@@ -60,14 +60,14 @@ parseColumnOptions("string:right,number:left:0")
 
 ---
 
-#### `fixedToTsv(data: string, columnLengths: number[], outputFormat: 'tsv' | 'csv' = 'tsv'): string`
+#### `convertFromFixed(data: string, lengths: number[], outputFormat: 'tsv' | 'csv' | 'fixed' = 'tsv'): string`
 
 固定長形式のデータをTSV/CSV形式に変換します。
 
 **パラメータ**:
 - `data`: 固定長形式のデータ
-- `columnLengths`: 各カラムの長さの配列
-- `outputFormat`: 出力形式（`'tsv'` または `'csv'`、デフォルト: `'tsv'`）
+- `lengths`: 各カラムの長さの配列
+- `outputFormat`: 出力形式（`'tsv'`、`'csv'`、または `'fixed'`、デフォルト: `'tsv'`）
 
 **戻り値**:
 - `string`: TSV/CSV形式のデータ
@@ -76,24 +76,25 @@ parseColumnOptions("string:right,number:left:0")
 ```typescript
 const data = "John      Doe       30   "
 const lengths = [10, 10, 5]
-fixedToTsv(data, lengths, 'tsv')
+convertFromFixed(data, lengths, 'tsv')
 // => "John\tDoe\t30"
 ```
 
 **処理**:
-1. 各行を `columnLengths` に基づいて分割
+1. 各行を `lengths` に基づいて分割
 2. 各カラムの前後の空白をトリム
 3. TSV/CSV形式で結合
 
 ---
 
-#### `tsvToFixed(data: string, columnLengths: number[], columnOptions: ColumnOption[], delimiterType: 'auto' | 'tsv' | 'csv' = 'auto'): string`
+#### `tsvToFixed(parsedData: string[][], lengths: number[], options: ColumnOption[]): string`
 
-TSV/CSV形式のデータを固定長形式に変換します。
+パース済みのTSV/CSVデータ（2次元配列）を固定長形式に変換します。
 
 **パラメータ**:
-- `data`: TSV/CSV形式のデータ
-- `columnLengths`: 各カラムの長さの配列
+- `parsedData`: パース済みの2次元配列 `string[][]`
+- `lengths`: 各カラムの長さの配列
+- `options`: 各カラムのオプション配列ムの長さの配列
 - `columnOptions`: 各カラムのオプション配列
 - `delimiterType`: 入力のデリミタタイプ（`'auto'`, `'tsv'`, `'csv'`、デフォルト: `'auto'`）
 
