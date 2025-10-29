@@ -1,5 +1,71 @@
 # 完了タスク
 
+## 2025-10-29
+
+### バージョン管理・リリース管理の完全整備（Phase 1-3完了）
+✅ **PR #35-37, #39: 自動化基盤の完全構築**
+
+#### Phase 1: 基盤整備（PR #35）
+- v1.0.0リリース作成
+- 13個のGitHubラベル作成（version/*, type/*, status/*, priority/*）
+- PRテンプレート作成（`.github/pull_request_template.md`）
+- CHANGELOG.md初期作成
+- .release-please-config.json作成
+- .release-please-manifest.json作成（初期バージョン: 1.0.0）
+
+#### Phase 2: 自動化（PR #36）
+- **自動ラベル付けワークフロー**（`.github/workflows/auto-label.yml`）
+  - PR作成時に自動でtype/*, version/*ラベル付与
+  - Conventional Commitsベース（feat, fix, docs, refactor, test, ci, chore）
+  - breaking changeの検出とversion/majorラベル付与
+- **release-pleaseワークフロー**（`.github/workflows/release-please.yml`）
+  - mainブランチpush時に自動起動
+  - コミット履歴からCHANGELOG.md生成
+  - バージョン番号自動決定（Semantic Versioning）
+  - リリースPR自動作成
+  - タグ作成とGitHub Release作成
+- **PRブランチ検証ワークフロー**（既存）の維持
+
+#### Phase 3: 改善・整理（PR #37）
+- **過去PR分析と分類**
+  - scripts/label-past-prs.sh作成
+  - 過去36件のPRを分析し適切なラベル付与
+  - type/*ラベル: 36件完了
+  - version/*ラベル: 36件完了
+- **タスク管理ファイル更新**
+  - tasks/done.md: Phase 1-2の詳細記録
+  - tasks/wip.md: 作業中タスククリア
+  - tasks/todo.md: 次のタスク明確化
+
+#### Gemini指摘対応（PR #39）
+PR #38のGemini Code Reviewで指摘された5件の問題をすべて修正：
+1. **release-please設定の重複削除**
+   - `.release-please-config.json`の`"type": "feature"`削除
+2. **APIドキュメント更新**
+   - `docs/api/README.md`の関数名・シグネチャ修正
+   - `fixedToTsv` → `convertFromFixed`
+   - `tsvToFixed`のパラメータ型更新（`string[][]`）
+3. **重複ドキュメント削除**
+   - `docs/dev/dev.md`削除（`docs/dev/README.md`と重複）
+4. **不要な再エクスポート削除**
+   - `src/utils/numberingConverter.ts`からdelimited関数の再エクスポート削除
+   - 依存関係の明確化
+5. **インポート元修正**
+   - `src/views/FixedLengthConverter.vue`: `delimited.ts`から直接インポート
+   - `src/views/NumberingLineConverter.vue`: 同様に修正
+   - `__tests__/numberingConverter.test.ts`: テストファイルも修正
+   - `__tests__/numberingConverter.edge.test.ts`: 同様に修正
+
+**成果**:
+- ✅ 完全自動化されたリリース管理フロー
+- ✅ PR作成時の自動ラベル付け
+- ✅ 過去PRの完全分類（36件）
+- ✅ 整合性のあるドキュメント
+- ✅ クリーンなコードベース
+- ✅ devブランチに完全統合完了
+
+**状態**: devブランチで稼働中。mainへのマージは保護ルールにより保留中だが、開発継続に問題なし。
+
 ## 2025-10-28
 
 ### ブランチ同期とPR検証ワークフロー追加
