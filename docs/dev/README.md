@@ -18,26 +18,42 @@ excel-helper/
 │   ├── App.vue                  # ルートコンポーネント
 │   ├── main.ts                  # エントリーポイント
 │   ├── style.css                # グローバルスタイル
+│   ├── router/
+│   │   └── index.ts             # Vue Routerの設定
 │   ├── stores/
-│   │   └── converter.ts         # 固定長変換用ストア
+│   │   ├── converter.ts         # 固定長変換用ストア
+│   │   └── numbering.ts         # ナンバリング変換用ストア
+│   ├── types/
+│   │   └── ...                  # TypeScript型定義
 │   ├── utils/
 │   │   ├── converter.ts         # 固定長変換ロジック
+│   │   ├── delimited.ts         # CSV/TSVパーサー
 │   │   └── numberingConverter.ts # ナンバリング変換ロジック
 │   └── views/
 │       ├── FixedLengthConverter.vue    # 固定長変換UI
 │       └── NumberingLineConverter.vue  # ナンバリング変換UI
 ├── __tests__/
-│   ├── converter.test.ts        # 固定長変換テスト
-│   └── numberingConverter.test.ts # ナンバリング変換テスト
+│   ├── setup.ts                 # テストセットアップ
+│   ├── integration/             # 統合テスト
+│   ├── components/              # コンポーネントテスト
+│   └── stores/                  # ストアテスト
 ├── docs/
 │   ├── usage/
 │   │   └── README.md            # 使い方ガイド
 │   ├── dev/
-│   │   └── README.md            # 開発者ガイド（このファイル）
-│   ├── api.md                   # API仕様書
+│   │   ├── README.md            # 開発者ガイド（このファイル）
+│   │   ├── ci-cd.md             # CI/CD設定
+│   │   ├── CI_AI_INTEGRATION.md # AI統合ガイド
+│   │   └── branch-workflow.md   # ブランチワークフロー
+│   ├── api/
+│   │   └── README.md            # API仕様書
 │   └── design/
-│       └── chat/
-│           └── numbering-line-converter.md
+│       └── chat/                # 初期設計チャット記録
+├── imgs/
+│   ├── demos/                   # デモGIF
+│   └── screenshots/             # スクリーンショット
+├── scripts/                     # 開発用スクリプト
+├── tasks/                       # タスク管理
 ├── public/                      # 静的アセット
 ├── index.html                   # HTMLテンプレート
 ├── package.json

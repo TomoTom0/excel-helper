@@ -9,16 +9,17 @@ YT Excel Helperは、固定長データとTSV/CSV形式の相互変換、およ�
 ### 📘 [使い方](./usage/README.md)
 アプリケーションの使用方法、機能説明、トラブルシューティング
 
-### 🎨 デザイン (作成予定)
-UI/UXデザイン、スタイルガイド、コンポーネント設計
-
 ### 🛠️ [開発](./dev/)
 - [開発ガイド](./dev/README.md)
 - [CI/CD](./dev/ci-cd.md)
 - [AI統合](./dev/CI_AI_INTEGRATION.md)
+- [ブランチワークフロー](./dev/branch-workflow.md)
 
 ### 📡 [API](./api/README.md)
 内部API仕様、関数リファレンス
+
+### 🎨 [設計資料](./design/chat/)
+初期設計時のチャット記録
 
 ## クイックスタート
 

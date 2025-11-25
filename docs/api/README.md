@@ -2,7 +2,7 @@
 
 ## 固定長変換 API
 
-### `converter.ts`
+### `utils/converter.ts`
 
 #### `parseColumnLengths(input: string): number[]`
 
@@ -60,14 +60,14 @@ parseColumnOptions("string:right,number:left:0")
 
 ---
 
-#### `fixedToTsv(data: string, columnLengths: number[], outputFormat: 'tsv' | 'csv' = 'tsv'): string`
+#### `convertFromFixed(data: string, lengths: number[], outputFormat: 'tsv' | 'csv' | 'fixed' = 'tsv'): string`
 
 固定長形式のデータをTSV/CSV形式に変換します。
 
 **パラメータ**:
 - `data`: 固定長形式のデータ
-- `columnLengths`: 各カラムの長さの配列
-- `outputFormat`: 出力形式（`'tsv'` または `'csv'`、デフォルト: `'tsv'`）
+- `lengths`: 各カラムの長さの配列
+- `outputFormat`: 出力形式（`'tsv'`、`'csv'`、または `'fixed'`、デフォルト: `'tsv'`）
 
 **戻り値**:
 - `string`: TSV/CSV形式のデータ
@@ -76,24 +76,25 @@ parseColumnOptions("string:right,number:left:0")
 ```typescript
 const data = "John      Doe       30   "
 const lengths = [10, 10, 5]
-fixedToTsv(data, lengths, 'tsv')
+convertFromFixed(data, lengths, 'tsv')
 // => "John\tDoe\t30"
 ```
 
 **処理**:
-1. 各行を `columnLengths` に基づいて分割
+1. 各行を `lengths` に基づいて分割
 2. 各カラムの前後の空白をトリム
 3. TSV/CSV形式で結合
 
 ---
 
-#### `tsvToFixed(data: string, columnLengths: number[], columnOptions: ColumnOption[], delimiterType: 'auto' | 'tsv' | 'csv' = 'auto'): string`
+#### `tsvToFixed(parsedData: string[][], lengths: number[], options: ColumnOption[]): string`
 
-TSV/CSV形式のデータを固定長形式に変換します。
+パース済みのTSV/CSVデータ（2次元配列）を固定長形式に変換します。
 
 **パラメータ**:
-- `data`: TSV/CSV形式のデータ
-- `columnLengths`: 各カラムの長さの配列
+- `parsedData`: パース済みの2次元配列 `string[][]`
+- `lengths`: 各カラムの長さの配列
+- `options`: 各カラムのオプション配列ムの長さの配列
 - `columnOptions`: 各カラムのオプション配列
 - `delimiterType`: 入力のデリミタタイプ（`'auto'`, `'tsv'`, `'csv'`、デフォルト: `'auto'`）
 
@@ -122,7 +123,7 @@ tsvToFixed(data, lengths, options, 'tsv')
 
 ## ナンバリング変換 API
 
-### `numberingConverter.ts`
+### `utils/numberingConverter.ts`
 
 #### 型定義
 
@@ -176,24 +177,28 @@ convertNumberingLines(text, ['dummy', 'circled'], 'dotted', 'x')
 
 ---
 
-#### `parseDelimitedData(text: string, delimiterType: 'auto' | 'tsv' | 'csv'): string[][]`
+### `utils/delimited.ts`
 
-CSV/TSV形式のテキストをパースして2次元配列に変換します。
+CSV/TSVパーサーとシリアライザー。`papaparse`ライブラリを使用。
+
+#### `parseDelimitedData(text: string, delimiter: '\t' | ','): string[][]`
+
+CSV/TSV形式のテキストをパースして2次元配列に変換します。`parseCSV`と`parseTSV`の共通実装です。
 
 **パラメータ**:
 - `text`: CSV/TSV形式のテキスト
-- `delimiterType`: デリミタタイプ（`'auto'`, `'tsv'`, `'csv'`）
+- `delimiter`: デリミタ文字（`'\t'` または `','`）
 
 **戻り値**:
 - `string[][]`: パース結果の2次元配列
 
 **例**:
 ```typescript
-parseDelimitedData("項目1\t項目2\n値1\t値2", 'tsv')
+parseDelimitedData("項目1\t項目2\n値1\t値2", '\t')
 // => [['項目1', '項目2'], ['値1', '値2']]
 ```
 
-**注**: `'auto'`を指定した場合、タブが検出されればTSV、カンマが検出されればCSVとして解釈します。
+**実装**: `papaparse`の`parse`関数を使用
 
 ---
 
@@ -209,15 +214,11 @@ CSV形式のテキストをパースして2次元配列に変換します。
 
 **例**:
 ```typescript
-const csv = '"項目1","項目2"\n"値1","値2"'
-parseCSV(csv)
+parseCSV("項目1,項目2\n値1,値2")
 // => [['項目1', '項目2'], ['値1', '値2']]
 ```
 
-**処理**:
-- ダブルクォートで囲まれたフィールドに対応
-- フィールド内の改行に対応
-- エスケープされたクォート（`""`）に対応
+**実装**: `papaparse`の`parse`関数を使用
 
 ---
 
@@ -233,15 +234,11 @@ TSV形式のテキストをパースして2次元配列に変換します。
 
 **例**:
 ```typescript
-const tsv = "項目1\t項目2\n値1\t値2"
-parseTSV(tsv)
+parseTSV("項目1\t項目2\n値1\t値2")
 // => [['項目1', '項目2'], ['値1', '値2']]
 ```
 
-**処理**:
-- タブ区切りで分割
-- ダブルクォートで囲まれたフィールドに対応
-- フィールド内の改行に対応
+**実装**: `papaparse`の`parse`関数を使用
 
 ---
 
@@ -259,13 +256,10 @@ parseTSV(tsv)
 ```typescript
 const data = [['項目1', '項目2'], ['値1', '値2']]
 toCSV(data)
-// => '"項目1","項目2"\n"値1","値2"'
+// => '項目1,項目2\n値1,値2'
 ```
 
-**処理**:
-- 各フィールドをダブルクォートで囲む
-- フィールド内のダブルクォートをエスケープ（`"` → `""`）
-- カンマで結合
+**実装**: `papaparse`の`unparse`関数を使用
 
 ---
 
@@ -283,12 +277,10 @@ toCSV(data)
 ```typescript
 const data = [['項目1', '項目2'], ['値1', '値2']]
 toTSV(data)
-// => "項目1\t項目2\n値1\t値2"
+// => '項目1\t項目2\n値1\t値2'
 ```
 
-**処理**:
-- 改行やタブを含むフィールドはダブルクォートで囲む
-- タブで結合
+**実装**: `papaparse`の`unparse`関数を使用
 
 ---
 
