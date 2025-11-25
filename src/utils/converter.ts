@@ -37,8 +37,8 @@ export const getDelimiter = (data: string, type: DelimiterType): '\t' | ',' => {
   if (type === 'auto') return detectDelimiter(data)
   if (type === 'tsv') return '\t'
   if (type === 'csv') return ','
-  // type === 'fixed' の場合はデリミタを検出しない（固定長として扱う）
-  return detectDelimiter(data)
+  // type === 'fixed' の場合はデリミタを検出しないため、呼び出すべきではない
+  throw new Error("getDelimiter should not be called with type 'fixed'")
 }
 
 export const parseColumnLengths = (input: string): number[] => {
@@ -112,10 +112,10 @@ export const convertFromFixed = (data: string, lengths: number[], outputFormat: 
 
     if (outputFormat === 'fixed') {
       // 固定長形式の場合は、抽出した値を再度固定長にフォーマット
+      const option = { type: 'string' as const, padding: 'right' as const, padChar: ' ' }
       let fixedLine = ''
       for (let i = 0; i < lengths.length; i++) {
         const value = columns[i] || ''
-        const option = { type: 'string' as const, padding: 'right' as const, padChar: ' ' }
         fixedLine += padValue(value, lengths[i], option)
       }
       resultLines.push(fixedLine)
