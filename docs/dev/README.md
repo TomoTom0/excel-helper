@@ -205,8 +205,7 @@ User Input → View Component → Utils (Logic) → Result
    - 永続化プラグインを適用
 
 6. **App.vueに統合**
-   - タブとして追加
-   - ルーティング設定
+   - 新機能のコンポーネントをタブとして追加し、ルーティングを設定
 
 7. **ドキュメント更新**
    - `docs/usage.md` に使い方を追加
@@ -236,7 +235,7 @@ describe('myFunction', () => {
   })
 
   it('should throw error for invalid input', () => {
-    expect(() => myFunction(null)).toThrow()
+    expect(() => myFunction('invalid-format')).toThrow()
   })
 })
 ```
