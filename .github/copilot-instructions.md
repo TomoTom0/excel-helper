@@ -41,7 +41,7 @@ gh api graphql -f query='
       }
     }
   }
-}' | jq '.data.repository.pullRequest.reviewThreads.nodes[] | select(.isResolved == false) | {id, comment: .comments.nodes[0].body}'
+}' | jq '.data.repository.pullRequest.reviewThreads.nodes[] | select(.isResolved == false) | {id, comment: .comments.nodes[0]?.body}'
 
 # 2. スレッドをresolve
 gh api graphql -f query='
