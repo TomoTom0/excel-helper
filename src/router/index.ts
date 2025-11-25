@@ -1,6 +1,7 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
 import FixedLengthConverter from '../views/FixedLengthConverter.vue'
 import NumberingLineConverter from '../views/NumberingLineConverter.vue'
+import SqlInsertGenerator from '../views/SqlInsertGenerator.vue'
 
 const router = createRouter({
   history: createWebHashHistory(),
@@ -18,6 +19,11 @@ const router = createRouter({
       path: '/numbering-line',
       name: 'numbering-line',
       component: NumberingLineConverter
+    },
+    {
+      path: '/sql-insert',
+      name: 'sql-insert',
+      component: SqlInsertGenerator
     }
   ]
 })
