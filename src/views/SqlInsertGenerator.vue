@@ -183,14 +183,35 @@ const resultPlaceholder = computed(() => {
       </div>
     </div>
 
-    <InputSection
-      v-model="tableName"
-      label="テーブル名"
-      placeholder="users"
-      :rows="1"
-      @copy="copyFieldToClipboard(tableName, 'テーブル名')"
-      @clear="store.clearTableName()"
-    />
+    <div class="input-section input-section-inline">
+      <div class="input-header">
+        <h3>テーブル名</h3>
+        <div class="input-actions">
+          <button 
+            class="btn btn-icon-small" 
+            @click="copyFieldToClipboard(tableName, 'テーブル名')"
+            :disabled="!tableName"
+            title="コピー"
+          >
+            <i class="mdi mdi-content-copy"></i>
+          </button>
+          <button 
+            class="btn btn-icon-small" 
+            @click="store.clearTableName()"
+            :disabled="!tableName"
+            title="クリア"
+          >
+            <i class="mdi mdi-delete"></i>
+          </button>
+        </div>
+      </div>
+      <input 
+        type="text"
+        v-model="tableName"
+        placeholder="users"
+        class="table-name-input"
+      />
+    </div>
 
     <div class="input-section">
       <div class="input-header">

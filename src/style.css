@@ -496,3 +496,22 @@ textarea:disabled {
 .input-section:has(textarea:disabled) .input-header h3 {
   color: #999;
 }
+
+.input-section-inline input[type="text"] {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 1rem;
+  font-family: inherit;
+}
+
+.input-section-inline input[type="text"]:focus {
+  outline: none;
+  border-color: #42b983;
+  box-shadow: 0 0 0 2px rgba(66, 185, 131, 0.1);
+}
+
+.table-name-input {
+  font-size: 1rem !important;
+}
