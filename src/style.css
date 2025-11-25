@@ -480,3 +480,19 @@ body {
   font-weight: normal;
   margin-left: 0.5rem;
 }
+
+textarea:disabled {
+  background-color: #f0f0f0;
+  color: #999;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.input-section:has(textarea:disabled) {
+  background-color: #fafafa;
+  opacity: 0.7;
+}
+
+.input-section:has(textarea:disabled) .input-header h3 {
+  color: #999;
+}

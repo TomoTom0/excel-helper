@@ -212,15 +212,35 @@ const resultPlaceholder = computed(() => {
       </div>
     </InputSection>
 
-    <InputSection
-      v-if="!useFirstRowAsHeader"
-      v-model="columnHeaders"
-      label="カラムヘッダー"
-      placeholder="id,name,age&#10;(CSV or TSV形式)"
-      :rows="2"
-      @copy="copyFieldToClipboard(columnHeaders, 'カラムヘッダー')"
-      @clear="store.clearColumnHeaders()"
-    />
+    <div class="input-section">
+      <div class="input-header">
+        <h3>カラムヘッダー</h3>
+        <div class="input-actions">
+          <button 
+            class="btn btn-icon-small" 
+            @click="copyFieldToClipboard(columnHeaders, 'カラムヘッダー')"
+            :disabled="!columnHeaders || useFirstRowAsHeader"
+            title="コピー"
+          >
+            <i class="mdi mdi-content-copy"></i>
+          </button>
+          <button 
+            class="btn btn-icon-small" 
+            @click="store.clearColumnHeaders()"
+            :disabled="!columnHeaders || useFirstRowAsHeader"
+            title="クリア"
+          >
+            <i class="mdi mdi-delete"></i>
+          </button>
+        </div>
+      </div>
+      <textarea 
+        v-model="columnHeaders"
+        :disabled="useFirstRowAsHeader"
+        rows="2" 
+        placeholder="id,name,age&#10;(CSV or TSV形式)"
+      ></textarea>
+    </div>
 
     <div class="button-group">
       <button 
