@@ -9,12 +9,16 @@ const store = useConverterStore()
 const { columnLengths, dataBody, columnTitles, columnOptions, delimiterType, outputFormat } = storeToRefs(store)
 
 const result = ref('')
+const conversionType = ref('')
 
 const convertLoading = ref(false)
 const copyLoading = ref(false)
 const downloadLoading = ref(false)
 
 const isDelimitedData = (data: string, expectedColumnCount: number): string[][] | false => {
+  // 固定長として明示的に指定されている場合は区切り文字データとして扱わない
+  if (delimiterType.value === 'fixed') return false
+  
   const trimmedData = data.trim().replace(/\r\n/g, '\n').replace(/\r/g, '\n')
   if (trimmedData.length === 0) return false
 
@@ -28,11 +32,13 @@ const isDelimitedData = (data: string, expectedColumnCount: number): string[][] 
     // 最初の5行をサンプリングしてチェック
     const sample = nonEmptyRows.slice(0, 5)
     
-    // サンプル内のすべての行が同じ列数で、かつ期待される列数と一致するか
+    // 行間でカラム数が一貫しているかチェック
     const firstColumnCount = sample[0].length
-    if (firstColumnCount !== expectedColumnCount) return false
-    
     if (!sample.every(row => row.length === firstColumnCount)) return false
+    
+    // 区切り文字が明確に存在する場合（複数カラム）は、カラム数が期待値と異なってもTSV/CSVとして扱う
+    // ただし、1カラムしかない場合は固定長の可能性があるので期待値と一致する必要がある
+    if (firstColumnCount === 1 && expectedColumnCount !== 1) return false
     
     // パース成功時は全行を返す
     return allRows
@@ -54,20 +60,32 @@ const resultPlaceholder = computed(() => {
 })
 
 const handleDelimitedInput = (lengths: number[], parsedData: string[][]) => {
+  const delimiter = getDelimiter(dataBody.value, delimiterType.value)
+  const inputType = delimiter === '\t' ? 'TSV' : 'CSV'
+  
   if (outputFormat.value === 'fixed') {
     // TSV/CSV → 固定長
+    conversionType.value = `${inputType} → 固定長`
     const options = columnOptions.value.trim() 
       ? parseColumnOptions(columnOptions.value)
       : lengths.map(() => ({ type: 'string' as const, padding: 'right' as const, padChar: ' ' }))
     result.value = convertTsvToFixed(parsedData, lengths, options)
   } else {
     // TSV/CSV → TSV/CSV (区切り文字変換)
+    const outputType = outputFormat.value === 'csv' ? 'CSV' : 'TSV'
+    conversionType.value = `${inputType} → ${outputType}`
     result.value = outputFormat.value === 'csv' ? toCSV(parsedData) : toTSV(parsedData)
   }
 }
 
 const handleFixedWidthInput = (lengths: number[]) => {
-  // 固定長 → TSV/CSV
+  // 固定長 → TSV/CSV/固定長
+  if (outputFormat.value === 'fixed') {
+    conversionType.value = '固定長 → 固定長'
+  } else {
+    const outputType = outputFormat.value === 'csv' ? 'CSV' : 'TSV'
+    conversionType.value = `固定長 → ${outputType}`
+  }
   result.value = convertFromFixed(dataBody.value, lengths, outputFormat.value)
 }
 
@@ -159,6 +177,10 @@ const copyFieldToClipboard = (text: string, fieldName: string) => {
         <label>
           <input type="radio" value="csv" v-model="delimiterType" />
           CSV
+        </label>
+        <label>
+          <input type="radio" value="fixed" v-model="delimiterType" />
+          固定長
         </label>
       </div>
     </div>
@@ -280,7 +302,7 @@ const copyFieldToClipboard = (text: string, fieldName: string) => {
 
     <div class="result-section">
       <div class="input-header">
-        <h3>実行結果</h3>
+        <h3>実行結果<span v-if="conversionType" class="conversion-type">（{{ conversionType }}）</span></h3>
         <div class="input-actions">
           <button 
             class="btn btn-icon-small" 
