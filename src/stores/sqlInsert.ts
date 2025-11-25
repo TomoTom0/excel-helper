@@ -6,7 +6,6 @@ export const useSqlInsertStore = defineStore('sqlInsert', () => {
   const tableName = ref('')
   const dataBody = ref('')
   const columnHeaders = ref('')
-  const columnOptions = ref('')
   const useFirstRowAsHeader = ref(true)
   const delimiterType = ref<DelimiterType>('auto')
   const columnLengths = ref('')
@@ -28,15 +27,10 @@ export const useSqlInsertStore = defineStore('sqlInsert', () => {
     columnLengths.value = ''
   }
 
-  const clearColumnOptions = () => {
-    columnOptions.value = ''
-  }
-
   return {
     tableName,
     dataBody,
     columnHeaders,
-    columnOptions,
     useFirstRowAsHeader,
     delimiterType,
     columnLengths,
@@ -44,8 +38,7 @@ export const useSqlInsertStore = defineStore('sqlInsert', () => {
     clearTableName,
     clearDataBody,
     clearColumnHeaders,
-    clearColumnLengths,
-    clearColumnOptions
+    clearColumnLengths
   }
 }, {
   persist: true

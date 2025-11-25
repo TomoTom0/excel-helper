@@ -4,12 +4,12 @@ import { storeToRefs } from 'pinia'
 import { useSqlInsertStore } from '../stores/sqlInsert'
 import { getDelimiter, parseColumnLengths, convertFromFixed } from '../utils/converter'
 import { parseDelimitedData } from '../utils/delimited'
-import { generateInsertStatements, parseColumnOptions } from '../utils/sqlInsert'
+import { generateInsertStatements } from '../utils/sqlInsert'
 import InputSection from '../components/InputSection.vue'
 import NotificationToast from '../components/NotificationToast.vue'
 
 const store = useSqlInsertStore()
-const { tableName, dataBody, columnHeaders, columnOptions, useFirstRowAsHeader, delimiterType, columnLengths, insertFormat } = storeToRefs(store)
+const { tableName, dataBody, columnHeaders, useFirstRowAsHeader, delimiterType, columnLengths, insertFormat } = storeToRefs(store)
 
 const result = ref('')
 const conversionType = ref('')
@@ -102,11 +102,6 @@ const convert = () => {
       throw new Error('データ行がありません')
     }
 
-    // カラムオプションのパース
-    const columnTypes = columnOptions.value.trim() 
-      ? parseColumnOptions(columnOptions.value) 
-      : undefined
-
     // INSERT文生成
     const inputType = delimiterType.value === 'fixed' ? '固定長' : 
                      getDelimiter(dataBody.value, delimiterType.value) === '\t' ? 'TSV' : 'CSV'
@@ -117,8 +112,7 @@ const convert = () => {
       tableName.value,
       columns,
       dataRows,
-      insertFormat.value,
-      columnTypes
+      insertFormat.value
     )
   } catch (error) {
     result.value = 'エラー: ' + (error as Error).message
@@ -183,65 +177,24 @@ const resultPlaceholder = computed(() => {
       </div>
     </div>
 
-    <div class="input-section input-section-inline">
-      <div class="input-header">
-        <h3>テーブル名</h3>
-        <div class="input-actions">
-          <button 
-            class="btn btn-icon-small" 
-            @click="copyFieldToClipboard(tableName, 'テーブル名')"
-            :disabled="!tableName"
-            title="コピー"
-          >
-            <i class="mdi mdi-content-copy"></i>
-          </button>
-          <button 
-            class="btn btn-icon-small" 
-            @click="store.clearTableName()"
-            :disabled="!tableName"
-            title="クリア"
-          >
-            <i class="mdi mdi-delete"></i>
-          </button>
-        </div>
-      </div>
-      <input 
-        type="text"
-        v-model="tableName"
-        placeholder="users"
-        class="table-name-input"
-      />
-    </div>
+    <InputSection
+      v-model="tableName"
+      label="テーブル名"
+      placeholder="users"
+      :rows="1"
+      @copy="copyFieldToClipboard(tableName, 'テーブル名')"
+      @clear="store.clearTableName()"
+    />
 
-    <div class="input-section">
-      <div class="input-header">
-        <h3>カラム長<span class="optional">（固定長の場合のみ）</span></h3>
-        <div class="input-actions">
-          <button 
-            class="btn btn-icon-small" 
-            @click="copyFieldToClipboard(columnLengths, 'カラム長')"
-            :disabled="!columnLengths || delimiterType !== 'fixed'"
-            title="コピー"
-          >
-            <i class="mdi mdi-content-copy"></i>
-          </button>
-          <button 
-            class="btn btn-icon-small" 
-            @click="store.clearColumnLengths()"
-            :disabled="!columnLengths || delimiterType !== 'fixed'"
-            title="クリア"
-          >
-            <i class="mdi mdi-delete"></i>
-          </button>
-        </div>
-      </div>
-      <textarea 
-        v-model="columnLengths"
-        :disabled="delimiterType !== 'fixed'"
-        rows="2" 
-        placeholder="10,20,15&#10;(CSV or TSV形式)"
-      ></textarea>
-    </div>
+    <InputSection
+      v-if="delimiterType === 'fixed'"
+      v-model="columnLengths"
+      label="カラム長"
+      placeholder="10,20,15&#10;(CSV or TSV形式)"
+      :rows="2"
+      @copy="copyFieldToClipboard(columnLengths, 'カラム長')"
+      @clear="store.clearColumnLengths()"
+    />
 
     <InputSection
       v-model="dataBody"
@@ -259,66 +212,15 @@ const resultPlaceholder = computed(() => {
       </div>
     </InputSection>
 
-    <div class="input-section">
-      <div class="input-header">
-        <h3>カラムヘッダー</h3>
-        <div class="input-actions">
-          <button 
-            class="btn btn-icon-small" 
-            @click="copyFieldToClipboard(columnHeaders, 'カラムヘッダー')"
-            :disabled="!columnHeaders || useFirstRowAsHeader"
-            title="コピー"
-          >
-            <i class="mdi mdi-content-copy"></i>
-          </button>
-          <button 
-            class="btn btn-icon-small" 
-            @click="store.clearColumnHeaders()"
-            :disabled="!columnHeaders || useFirstRowAsHeader"
-            title="クリア"
-          >
-            <i class="mdi mdi-delete"></i>
-          </button>
-        </div>
-      </div>
-      <textarea 
-        v-model="columnHeaders"
-        :disabled="useFirstRowAsHeader"
-        rows="2" 
-        placeholder="id,name,age&#10;(CSV or TSV形式)"
-      ></textarea>
-    </div>
-
-    <div class="input-section">
-      <div class="input-header">
-        <h3>カラムオプション<span class="optional">（省略可）</span></h3>
-        <div class="input-actions">
-          <button 
-            class="btn btn-icon-small" 
-            @click="copyFieldToClipboard(columnOptions, 'カラムオプション')"
-            :disabled="!columnOptions"
-            title="コピー"
-          >
-            <i class="mdi mdi-content-copy"></i>
-          </button>
-          <button 
-            class="btn btn-icon-small" 
-            @click="store.clearColumnOptions()"
-            :disabled="!columnOptions"
-            title="クリア"
-          >
-            <i class="mdi mdi-delete"></i>
-          </button>
-        </div>
-      </div>
-      <textarea 
-        v-model="columnOptions"
-        rows="3" 
-        placeholder="number,string,string&#10;(CSV or TSV形式)&#10;※データ型を指定してSQL値のフォーマットを制御"
-      ></textarea>
-      <p class="field-description">形式: データ型をカンマ区切りで指定（number=引用符なし、string=引用符あり）</p>
-      <p class="field-description field-note">※省略時は全て自動判定（数値は引用符なし、それ以外は引用符あり）</p>
-    </div>
+    <InputSection
+      v-if="!useFirstRowAsHeader"
+      v-model="columnHeaders"
+      label="カラムヘッダー"
+      placeholder="id,name,age&#10;(CSV or TSV形式)"
+      :rows="2"
+      @copy="copyFieldToClipboard(columnHeaders, 'カラムヘッダー')"
+      @clear="store.clearColumnHeaders()"
+    />
 
     <div class="button-group">
       <button 

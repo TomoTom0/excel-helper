@@ -9,16 +9,7 @@ export const isNumeric = (value: string): boolean => {
 /**
  * SQL用に値をエスケープ
  */
-export const escapeSqlValue = (value: string, forceType?: 'number' | 'string'): string => {
-  // 強制的に型が指定されている場合
-  if (forceType === 'number') {
-    return value || '0'
-  }
-  if (forceType === 'string') {
-    return `'${value.replace(/'/g, "''")}'`
-  }
-  
-  // 自動判定
+export const escapeSqlValue = (value: string): string => {
   if (isNumeric(value)) {
     return value
   }
@@ -39,13 +30,10 @@ export const sanitizeColumnName = (name: string): string => {
 export const generateSingleInsert = (
   tableName: string,
   columns: string[],
-  row: string[],
-  columnTypes?: Array<'number' | 'string'>
+  row: string[]
 ): string => {
   const columnNames = columns.map(sanitizeColumnName).join(', ')
-  const values = row.map((value, i) => 
-    escapeSqlValue(value, columnTypes?.[i])
-  ).join(', ')
+  const values = row.map(escapeSqlValue).join(', ')
   return `INSERT INTO \`${tableName}\` (${columnNames}) VALUES (${values});`
 }
 
@@ -55,32 +43,14 @@ export const generateSingleInsert = (
 export const generateMultiInsert = (
   tableName: string,
   columns: string[],
-  rows: string[][],
-  columnTypes?: Array<'number' | 'string'>
+  rows: string[][]
 ): string => {
   const columnNames = columns.map(sanitizeColumnName).join(', ')
   const valuesList = rows.map(row => 
-    `  (${row.map((value, i) => escapeSqlValue(value, columnTypes?.[i])).join(', ')})`
+    `  (${row.map(escapeSqlValue).join(', ')})`
   ).join(',\n')
   
   return `INSERT INTO \`${tableName}\` (${columnNames}) VALUES\n${valuesList};`
-}
-
-/**
- * カラムオプション文字列をパース
- */
-export const parseColumnOptions = (input: string): Array<'number' | 'string'> => {
-  if (!input.trim()) return []
-  
-  const delimiter = input.includes('\t') ? '\t' : ','
-  return input.split(delimiter)
-    .map(v => v.trim().toLowerCase())
-    .map(v => {
-      if (v === 'number' || v === 'num' || v === 'int' || v === 'integer') return 'number'
-      if (v === 'string' || v === 'str' || v === 'text') return 'string'
-      return null
-    })
-    .filter((v): v is 'number' | 'string' => v !== null)
 }
 
 /**
@@ -90,16 +60,15 @@ export const generateInsertStatements = (
   tableName: string,
   columns: string[],
   rows: string[][],
-  format: 'single' | 'multi' = 'single',
-  columnTypes?: Array<'number' | 'string'>
+  format: 'single' | 'multi' = 'single'
 ): string => {
   if (rows.length === 0) {
     return ''
   }
 
   if (format === 'multi') {
-    return generateMultiInsert(tableName, columns, rows, columnTypes)
+    return generateMultiInsert(tableName, columns, rows)
   } else {
-    return rows.map(row => generateSingleInsert(tableName, columns, row, columnTypes)).join('\n')
+    return rows.map(row => generateSingleInsert(tableName, columns, row)).join('\n')
   }
 }
