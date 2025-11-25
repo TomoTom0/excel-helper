@@ -66,9 +66,6 @@ const parseInputData = (data: string): string[][] | false => {
 const convert = () => {
   convertLoading.value = true
   try {
-    if (!tableName.value.trim()) {
-      throw new Error('テーブル名が入力されていません')
-    }
     if (!dataBody.value.trim()) {
       throw new Error('データが空です')
     }
@@ -107,6 +104,9 @@ const convert = () => {
       ? parseColumnOptions(columnOptions.value) 
       : undefined
 
+    // テーブル名（空の場合はデフォルト値）
+    const finalTableName = tableName.value.trim() || 'YOUR_TABLE_NAME'
+
     // INSERT文生成
     const inputType = delimiterType.value === 'fixed' ? '固定長' : 
                      getDelimiter(dataBody.value, delimiterType.value) === '\t' ? 'TSV' : 'CSV'
@@ -114,7 +114,7 @@ const convert = () => {
     conversionType.value = `${inputType} → SQL INSERT (${outputType})`
 
     result.value = generateInsertStatements(
-      tableName.value,
+      finalTableName,
       columns,
       dataRows,
       insertFormat.value,
@@ -155,7 +155,7 @@ const downloadResult = () => {
 }
 
 const resultPlaceholder = computed(() => {
-  return `INSERT INTO table_name (\`id\`, \`name\`, \`age\`) VALUES (1, 'John', 25);\nINSERT INTO table_name (\`id\`, \`name\`, \`age\`) VALUES (2, 'Alice', 30);\n(変換結果がここに表示されます)`
+  return `INSERT INTO \`YOUR_TABLE_NAME\` (\`id\`, \`name\`, \`age\`) VALUES (1, 'John', 25);\nINSERT INTO \`YOUR_TABLE_NAME\` (\`id\`, \`name\`, \`age\`) VALUES (2, 'Alice', 30);\n(変換結果がここに表示されます)`
 })
 </script>
 
@@ -185,7 +185,7 @@ const resultPlaceholder = computed(() => {
 
     <div class="input-section input-section-inline">
       <div class="input-header">
-        <h3>テーブル名</h3>
+        <h3>テーブル名<span class="optional">（省略可）</span></h3>
         <div class="input-actions">
           <button 
             class="btn btn-icon-small" 
@@ -208,7 +208,7 @@ const resultPlaceholder = computed(() => {
       <input 
         type="text"
         v-model="tableName"
-        placeholder="users"
+        placeholder="YOUR_TABLE_NAME"
         class="table-name-input"
       />
     </div>
