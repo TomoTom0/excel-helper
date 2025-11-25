@@ -8,6 +8,8 @@ import { generateInsertStatements, parseColumnOptions } from '../utils/sqlInsert
 import InputSection from '../components/InputSection.vue'
 import NotificationToast from '../components/NotificationToast.vue'
 
+const DEFAULT_TABLE_NAME = 'YOUR_TABLE_NAME'
+
 const store = useSqlInsertStore()
 const { tableName, dataBody, columnHeaders, columnOptions, useFirstRowAsHeader, delimiterType, columnLengths, insertFormat } = storeToRefs(store)
 
@@ -105,7 +107,7 @@ const convert = () => {
       : undefined
 
     // テーブル名（空の場合はデフォルト値）
-    const finalTableName = tableName.value.trim() || 'YOUR_TABLE_NAME'
+    const finalTableName = tableName.value.trim() || DEFAULT_TABLE_NAME
 
     // INSERT文生成
     const inputType = delimiterType.value === 'fixed' ? '固定長' : 
@@ -155,7 +157,7 @@ const downloadResult = () => {
 }
 
 const resultPlaceholder = computed(() => {
-  return `INSERT INTO \`YOUR_TABLE_NAME\` (\`id\`, \`name\`, \`age\`) VALUES (1, 'John', 25);\nINSERT INTO \`YOUR_TABLE_NAME\` (\`id\`, \`name\`, \`age\`) VALUES (2, 'Alice', 30);\n(変換結果がここに表示されます)`
+  return `INSERT INTO \`${DEFAULT_TABLE_NAME}\` (\`id\`, \`name\`, \`age\`) VALUES (1, 'John', 25);\nINSERT INTO \`${DEFAULT_TABLE_NAME}\` (\`id\`, \`name\`, \`age\`) VALUES (2, 'Alice', 30);\n(変換結果がここに表示されます)`
 })
 </script>
 
@@ -208,7 +210,7 @@ const resultPlaceholder = computed(() => {
       <input 
         type="text"
         v-model="tableName"
-        placeholder="YOUR_TABLE_NAME"
+        :placeholder="DEFAULT_TABLE_NAME"
         class="table-name-input"
       />
     </div>
