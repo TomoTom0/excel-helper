@@ -2,7 +2,8 @@
 const tabs = [
   { id: 'fixed-length', name: '固定長相互変換' },
   { id: 'numbering-line', name: 'ナンバリング行変換' },
-  { id: 'sql-insert', name: 'SQL INSERT文生成' }
+  { id: 'sql-insert', name: 'SQL INSERT文生成' },
+  { id: 'settings', name: '設定' }
 ]
 </script>
 
