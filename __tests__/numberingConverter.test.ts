@@ -12,13 +12,10 @@ import { describe, it, expect } from 'vitest';
 import {
   detectNumberingLine,
   convertNumberingLines,
-  parseCSV,
-  parseTSV,
   formatNumber,
   PatternType,
-  toTSV,
-  toCSV,
 } from '../src/utils/numberingConverter';
+import { parseCSV, parseTSV, toCSV, toTSV } from '../src/utils/delimited';
 
 describe('numberingConverter', () => {
   describe('detectNumberingLine', () => {
