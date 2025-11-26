@@ -94,30 +94,27 @@ convertFromFixed(data, lengths, 'tsv')
 **パラメータ**:
 - `parsedData`: パース済みの2次元配列 `string[][]`
 - `lengths`: 各カラムの長さの配列
-- `options`: 各カラムのオプション配列ムの長さの配列
-- `columnOptions`: 各カラムのオプション配列
-- `delimiterType`: 入力のデリミタタイプ（`'auto'`, `'tsv'`, `'csv'`、デフォルト: `'auto'`）
+- `options`: 各カラムのオプション配列
 
 **戻り値**:
 - `string`: 固定長形式のデータ
 
 **例**:
 ```typescript
-const data = "John\tDoe\t30"
+const parsedData = [['John', 'Doe', '30']]
 const lengths = [10, 10, 5]
 const options = [
   { type: 'string', padding: 'right', padChar: ' ' },
   { type: 'string', padding: 'right', padChar: ' ' },
   { type: 'number', padding: 'left', padChar: '0' }
 ]
-tsvToFixed(data, lengths, options, 'tsv')
+tsvToFixed(parsedData, lengths, options)
 // => "John      Doe       00030"
 ```
 
 **処理**:
-1. デリミタに基づいてデータを分割
-2. 各カラムを指定された長さにパディング
-3. 結合して固定長形式に変換
+1. 各カラムを指定された長さにパディング
+2. 結合して固定長形式に変換
 
 ---
 

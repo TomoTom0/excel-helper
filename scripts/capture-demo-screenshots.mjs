@@ -29,7 +29,7 @@ async function captureScreenshots() {
   
   // 変換ボタンをクリック
   await page.locator('button', { hasText: '変換' }).click();
-await expect(page.locator('.result-section textarea')).not.toBeEmpty();
+  await expect(page.locator('.result-section textarea')).not.toBeEmpty();
   
   await page.screenshot({ 
     path: 'imgs/screenshots/screenshot-fixed-length-demo.png',
@@ -47,7 +47,7 @@ await expect(page.locator('.result-section textarea')).not.toBeEmpty();
   
   // 変換ボタンをクリック
   await page.locator('button', { hasText: '変換' }).click();
-await expect(page.locator('.result-section textarea')).not.toBeEmpty();
+  await expect(page.locator('.result-section textarea')).not.toBeEmpty();
   
   await page.screenshot({ 
     path: 'imgs/screenshots/screenshot-numbering-line-demo.png',
