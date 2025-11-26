@@ -1,13 +1,8 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { storeToRefs } from 'pinia'
-import { 
-  convertNumberingLines, 
-  parseCSV, 
-  parseTSV, 
-  toCSV, 
-  toTSV
-} from '../utils/numberingConverter'
+import { convertNumberingLines } from '../utils/numberingConverter'
+import { parseCSV, parseTSV, toCSV, toTSV } from '../utils/delimited'
 import { getDelimiter } from '../utils/converter'
 import { useNumberingStore } from '../stores/numbering'
 
