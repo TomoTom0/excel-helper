@@ -50,6 +50,7 @@ jobs:
         directory: dist
         gitHubToken: ${{ secrets.GITHUB_TOKEN }}
         branch: ${{ steps.deployment-env.outputs.branch }}
+        wranglerVersion: "3"
 
     - name: Output deployment URL
       run: |
