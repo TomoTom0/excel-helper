@@ -2,16 +2,9 @@
 import { ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useSettingsStore } from '../stores/settings'
-import { useConverterStore } from '../stores/converter'
-import { useNumberingStore } from '../stores/numbering'
-import { useSqlInsertStore } from '../stores/sqlInsert'
 
 const settingsStore = useSettingsStore()
 const { persistInputs } = storeToRefs(settingsStore)
-
-const converterStore = useConverterStore()
-const numberingStore = useNumberingStore()
-const sqlInsertStore = useSqlInsertStore()
 
 const showNotification = ref(false)
 const notificationMessage = ref('')
@@ -21,19 +14,7 @@ const clearAllData = () => {
     return
   }
 
-  // 各ストアのデータをクリア
-  converterStore.clearColumnLengths()
-  converterStore.clearDataBody()
-  converterStore.clearColumnTitles()
-  converterStore.clearColumnOptions()
-
-  numberingStore.clearDataBody()
-
-  sqlInsertStore.clearTableName()
-  sqlInsertStore.clearDataBody()
-  sqlInsertStore.clearColumnHeaders()
-  sqlInsertStore.clearColumnLengths()
-  sqlInsertStore.clearColumnOptions()
+  settingsStore.clearAllStoresData()
 
   notificationMessage.value = 'すべてのデータをクリアしました'
   showNotification.value = true
