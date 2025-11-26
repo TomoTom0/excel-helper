@@ -33,7 +33,7 @@ function unparseDelimited(data: string[][], delimiter: ',' | '\t'): string {
   return unparse(data, {
     delimiter,
     newline: '\n',
-    quotes: false,
+    quotes: true,
     quoteChar: '"',
     escapeChar: '"',
   });

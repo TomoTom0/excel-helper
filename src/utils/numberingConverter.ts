@@ -92,7 +92,7 @@ export function convertNumberingLines(
         }
         // ダミー文字を削除
         else if (patternType === 'dummy') {
-          content = line.substring(dummyChar.length);
+          content = line.substring(dummyChar.length).trimStart();
         }
         
         return formatNumber(numberingCount, format) + content;

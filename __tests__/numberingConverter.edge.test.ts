@@ -72,8 +72,8 @@ describe('numberingConverter - エッジケース', () => {
     })
 
     it('空の行を含む配列を変換する', () => {
-      expect(toCSV([['A'], [], ['B']])).toBe('A\n\nB')
-      expect(toTSV([['A'], [], ['B']])).toBe('A\n\nB')
+      expect(toCSV([['A'], [], ['B']])).toBe('"A"\n\n"B"')
+      expect(toTSV([['A'], [], ['B']])).toBe('"A"\n\n"B"')
     })
 
     it('ダブルクォートを含むデータをエスケープする', () => {
@@ -191,7 +191,7 @@ x第四項目
       )
       const output = toCSV(converted)
       
-      expect(output).toBe('1. 項目A,1. 説明A\n1. 項目B,1. 説明B')
+      expect(output).toBe('"1. 項目A","1. 説明A"\n"1. 項目B","1. 説明B"')
     })
   })
 
