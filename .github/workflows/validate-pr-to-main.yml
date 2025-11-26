@@ -1,0 +1,20 @@
+name: Validate PR to main
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  validate-source-branch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check if PR is from dev branch
+        run: |
+          if [ "${{ github.head_ref }}" != "dev" ]; then
+            echo "❌ Error: PRs to main branch must come from dev branch only"
+            echo "Current source branch: ${{ github.head_ref }}"
+            echo "Required source branch: dev"
+            exit 1
+          fi
+          echo "✅ PR is from dev branch - validation passed"
