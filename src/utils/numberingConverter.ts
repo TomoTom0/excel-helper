@@ -80,7 +80,7 @@ export function convertNumberingLines(
         
         // 丸数字を削除
         if (patternType === 'circled') {
-          content = line.substring(1);
+          content = line.substring(1).trimStart();
         }
         // 数字+ドットを削除
         else if (patternType === 'dotted') {
@@ -92,7 +92,7 @@ export function convertNumberingLines(
         }
         // ダミー文字を削除
         else if (patternType === 'dummy') {
-          content = line.substring(dummyChar.length);
+          content = line.substring(dummyChar.length).trimStart();
         }
         
         return formatNumber(numberingCount, format) + content;
