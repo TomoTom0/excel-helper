@@ -231,7 +231,7 @@ describe('numberingConverter', () => {
       );
       
       const output = toTSV(converted);
-      expect(output).toBe('"①項目A\n②項目B"\t"タイトル"\n"①説明"\t"①内容"');
+      expect(output).toBe('"①項目A\n②項目B"\tタイトル\n①説明\t①内容');
     });
   });
 });
