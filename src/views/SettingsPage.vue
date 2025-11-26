@@ -35,11 +35,6 @@ const clearAllData = () => {
   sqlInsertStore.clearColumnLengths()
   sqlInsertStore.clearColumnOptions()
 
-  // localStorageからも削除
-  localStorage.removeItem('converter')
-  localStorage.removeItem('numbering')
-  localStorage.removeItem('sqlInsert')
-
   notificationMessage.value = 'すべてのデータをクリアしました'
   showNotification.value = true
   setTimeout(() => {
