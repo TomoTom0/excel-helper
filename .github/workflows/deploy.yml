@@ -51,6 +51,8 @@ jobs:
         gitHubToken: ${{ secrets.GITHUB_TOKEN }}
         branch: ${{ steps.deployment-env.outputs.branch }}
         wranglerVersion: "3"
+      env:
+        CLOUDFLARE_PAGES_COMMIT_MESSAGE: "Deploy ${{ github.sha }}"
 
     - name: Output deployment URL
       run: |
