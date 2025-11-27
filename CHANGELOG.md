@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.1](https://github.com/TomoTom0/excel-helper/compare/v1.0.0...v1.0.1) (2025-11-27)
+
+
+### Features
+
+* SQL INSERT文生成機能の追加 ([#50](https://github.com/TomoTom0/excel-helper/issues/50)) ([0f8a32a](https://github.com/TomoTom0/excel-helper/commit/0f8a32a31f3fba700653efb17309e53549101614))
+
+
+### Bug Fixes
+
+* Add explicit commit message for Cloudflare deployment ([#63](https://github.com/TomoTom0/excel-helper/issues/63)) ([b361f17](https://github.com/TomoTom0/excel-helper/commit/b361f17ca03230302751b11fff4532b49d5d4482))
+* Address Gemini PR[#38](https://github.com/TomoTom0/excel-helper/issues/38) review feedback ([#39](https://github.com/TomoTom0/excel-helper/issues/39)) ([010fc46](https://github.com/TomoTom0/excel-helper/commit/010fc4673738987b2481e123d21ba40306f152c2))
+* address PR [#51](https://github.com/TomoTom0/excel-helper/issues/51) review comments ([#56](https://github.com/TomoTom0/excel-helper/issues/56)) ([963df8b](https://github.com/TomoTom0/excel-helper/commit/963df8b0e4662e3cc0ff27358ad48377e97a07ae))
+* address review comments ([a3aa742](https://github.com/TomoTom0/excel-helper/commit/a3aa74286482c0b649e065f9caa2687ed1c5734a))
+* Use wrangler v3 to avoid commit message length issues ([#59](https://github.com/TomoTom0/excel-helper/issues/59)) ([3fefbfc](https://github.com/TomoTom0/excel-helper/commit/3fefbfcc21913964b0d74f2c63d0cddd9cbb05f5))
+* タブ文字の処理と区切り文字判定の改善 ([#49](https://github.com/TomoTom0/excel-helper/issues/49)) ([68058bf](https://github.com/TomoTom0/excel-helper/commit/68058bfb77c4d9ca967d10ccfca082adf58cc8d6))
+
+
+### Reverts
+
+* Remove unnecessary version parameters from favicon URLs ([#32](https://github.com/TomoTom0/excel-helper/issues/32)) ([8b2a0f4](https://github.com/TomoTom0/excel-helper/commit/8b2a0f40afd82c4157b555fe790a591f6d482786))
+
 ## [Unreleased]
 
 ### Added
