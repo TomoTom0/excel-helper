@@ -41,16 +41,17 @@ export const getDelimiter = (data: string, type: DelimiterType): '\t' | ',' => {
   throw new Error("getDelimiter should not be called with type 'fixed'")
 }
 
-export const parseColumnLengths = (input: string): number[] => {
-  // タブ区切りまたはカンマ区切りを検出
-  const separator = input.includes('\t') ? '\t' : ','
-  return input.split(separator).map(v => Number(v.trim())).filter(v => !isNaN(v) && v > 0 && Number.isInteger(v))
+export const parseColumnLengths = (input: string, delimiterType: DelimiterType = 'auto'): number[] => {
+  // delimiter を取得（データとして使う）
+  const delimiter = delimiterType === 'auto' ? (input.includes('\t') ? '\t' : ',') : (delimiterType === 'tsv' ? '\t' : ',')
+  return input.split(delimiter).map(v => Number(v.trim())).filter(v => !isNaN(v) && v > 0 && Number.isInteger(v))
 }
 
-export const parseColumnOptions = (input: string): ColumnOption[] => {
-  // タブ区切りまたはカンマ区切りを検出して分割
-  const separator = input.includes('\t') ? '\t' : ','
-  return input.split(separator)
+export const parseColumnOptions = (input: string, delimiterType: DelimiterType = 'auto'): ColumnOption[] => {
+  // delimiter を取得（データとして使う）
+  const delimiter = delimiterType === 'auto' ? (input.includes('\t') ? '\t' : ',') : (delimiterType === 'tsv' ? '\t' : ',')
+  
+  return input.split(delimiter)
     .filter(opt => opt.trim() !== '')
     .map(opt => {
       const parts = opt.trim().split(':')

@@ -67,7 +67,7 @@ const handleDelimitedInput = (lengths: number[], parsedData: string[][]) => {
     // TSV/CSV → 固定長
     conversionType.value = `${inputType} → 固定長`
     const options = columnOptions.value.trim() 
-      ? parseColumnOptions(columnOptions.value)
+      ? parseColumnOptions(columnOptions.value, delimiterType.value)
       : lengths.map(() => ({ type: 'string' as const, padding: 'right' as const, padChar: ' ' }))
     result.value = convertTsvToFixed(parsedData, lengths, options)
   } else {
@@ -92,7 +92,7 @@ const handleFixedWidthInput = (lengths: number[]) => {
 const convert = () => {
   convertLoading.value = true
   try {
-    const lengths = parseColumnLengths(columnLengths.value)
+    const lengths = parseColumnLengths(columnLengths.value, delimiterType.value)
     if (lengths.length === 0) {
       throw new Error('カラム長が指定されていません')
     }
