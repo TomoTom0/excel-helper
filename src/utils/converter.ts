@@ -8,6 +8,31 @@ export interface ColumnOption {
 
 export type DelimiterType = 'auto' | 'tsv' | 'csv' | 'fixed'
 
+/**
+ * Unicode の各種スペース文字と制御文字を正規化
+ * - スペース文字：通常スペースに置換
+ * - 制御文字：削除
+ * - IDEOGRAPHIC SPACE (U+3000) は保持（ユーザーの意図を尊重）
+ */
+const normalizeUnicodeWhitespace = (value: string): string => {
+  // Unicode の各種スペース文字を通常スペースに統一
+  let normalized = value
+    .replace(/\u00A0/g, ' ')  // NO-BREAK SPACE
+    .replace(/[\u2000-\u200A]/g, ' ')  // EN QUAD ～ HAIR SPACE
+    .replace(/\u202F/g, ' ')  // NARROW NO-BREAK SPACE
+    .replace(/\u205F/g, ' ')  // MEDIUM MATHEMATICAL SPACE
+  
+  // 制御文字（幅なしスペースなど）を削除
+  normalized = normalized
+    .replace(/\u200B/g, '')  // ZERO WIDTH SPACE
+    .replace(/[\u200C-\u200D]/g, '')  // ZERO WIDTH NON-JOINER, JOINER
+    .replace(/\u200E/g, '')  // LEFT-TO-RIGHT MARK
+    .replace(/\u200F/g, '')  // RIGHT-TO-LEFT MARK
+    .replace(/\u00AD/g, '')  // SOFT HYPHEN
+  
+  return normalized
+}
+
 export const detectDelimiter = (data: string): '\t' | ',' => {
   const lines = data.split('\n').filter(line => line.trim() !== '').slice(0, 10) // 最初の10行（空行を除く）
   if (lines.length === 0) return '\t'
@@ -84,22 +109,8 @@ export const padValue = (value: string, length: number, option: ColumnOption): s
   // フィールド内の改行とタブをスペースに置換
   let normalizedValue = value.replace(/\r?\n/g, ' ').replace(/\t/g, ' ')
   
-  // Unicode の各種スペース文字を通常スペースに統一
-  // NBSP (U+00A0), EN SPACE (U+2002), EM SPACE (U+2003) など
-  // 注: IDEOGRAPHIC SPACE (U+3000/全角スペース) は意図的に使用される可能性があるため、置換しない
-  normalizedValue = normalizedValue
-    .replace(/\u00A0/g, ' ')  // NO-BREAK SPACE
-    .replace(/[\u2000-\u200A]/g, ' ')  // EN QUAD ～ HAIR SPACE
-    .replace(/\u202F/g, ' ')  // NARROW NO-BREAK SPACE
-    .replace(/\u205F/g, ' ')  // MEDIUM MATHEMATICAL SPACE
-  
-  // 制御文字（幅なしスペースなど）を削除
-  normalizedValue = normalizedValue
-    .replace(/\u200B/g, '')  // ZERO WIDTH SPACE
-    .replace(/[\u200C-\u200D]/g, '')  // ZERO WIDTH NON-JOINER, JOINER
-    .replace(/\u200E/g, '')  // LEFT-TO-RIGHT MARK
-    .replace(/\u200F/g, '')  // RIGHT-TO-LEFT MARK
-    .replace(/\u00AD/g, '')  // SOFT HYPHEN
+  // Unicode の各種スペース文字と制御文字を正規化
+  normalizedValue = normalizeUnicodeWhitespace(normalizedValue)
   
   const padChar = option.padChar || (option.type === 'number' ? '0' : ' ')
   if (normalizedValue.length >= length) {
@@ -128,21 +139,8 @@ export const convertFromFixed = (data: string, lengths: number[], outputFormat: 
     for (const length of lengths) {
       let value = line.substring(position, position + length).trim().replace(/\t/g, ' ')
       
-      // Unicode の各種スペース文字を通常スペースに統一
-      // 注: IDEOGRAPHIC SPACE (U+3000/全角スペース) は意図的に使用される可能性があるため、置換しない
-      value = value
-        .replace(/\u00A0/g, ' ')  // NO-BREAK SPACE
-        .replace(/[\u2000-\u200A]/g, ' ')  // EN QUAD ～ HAIR SPACE
-        .replace(/\u202F/g, ' ')  // NARROW NO-BREAK SPACE
-        .replace(/\u205F/g, ' ')  // MEDIUM MATHEMATICAL SPACE
-      
-      // 制御文字（幅なしスペースなど）を削除
-      value = value
-        .replace(/\u200B/g, '')  // ZERO WIDTH SPACE
-        .replace(/[\u200C-\u200D]/g, '')  // ZERO WIDTH NON-JOINER, JOINER
-        .replace(/\u200E/g, '')  // LEFT-TO-RIGHT MARK
-        .replace(/\u200F/g, '')  // RIGHT-TO-LEFT MARK
-        .replace(/\u00AD/g, '')  // SOFT HYPHEN
+      // Unicode の各種スペース文字と制御文字を正規化
+      value = normalizeUnicodeWhitespace(value)
       
       columns.push(value)
       position += length
