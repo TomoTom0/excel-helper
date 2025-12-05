@@ -246,8 +246,8 @@ jobs:
           # ...
           
           # Test locally
-          npm test
-          npm run build
+          bun run test
+          bun run build
           
           # Commit and push
           git add .

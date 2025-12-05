@@ -48,7 +48,7 @@ const parseInputData = (data: string): string[][] | false => {
 
   // 固定長として明示的に指定されている場合
   if (delimiterType.value === 'fixed') {
-    const lengths = parseColumnLengths(columnLengths.value)
+    const lengths = parseColumnLengths(columnLengths.value, delimiterType.value)
     if (lengths.length === 0) return false
     
     // 固定長→TSVに変換してからパース
@@ -103,7 +103,7 @@ const convert = () => {
 
     // カラムオプションのパース
     const columnTypes = columnOptions.value.trim() 
-      ? parseColumnOptions(columnOptions.value) 
+      ? parseColumnOptions(columnOptions.value, delimiterType.value) 
       : undefined
 
     // テーブル名（空の場合はデフォルト値）
