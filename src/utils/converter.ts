@@ -48,7 +48,9 @@ export const parseColumnLengths = (input: string): number[] => {
 }
 
 export const parseColumnOptions = (input: string): ColumnOption[] => {
-  return input.split(',')
+  // タブ区切りまたはカンマ区切りを検出して分割
+  const separator = input.includes('\t') ? '\t' : ','
+  return input.split(separator)
     .filter(opt => opt.trim() !== '')
     .map(opt => {
       const parts = opt.trim().split(':')
@@ -79,7 +81,25 @@ export const parseColumnOptions = (input: string): ColumnOption[] => {
 
 export const padValue = (value: string, length: number, option: ColumnOption): string => {
   // フィールド内の改行とタブをスペースに置換
-  const normalizedValue = value.replace(/\r?\n/g, ' ').replace(/\t/g, ' ')
+  let normalizedValue = value.replace(/\r?\n/g, ' ').replace(/\t/g, ' ')
+  
+  // Unicode の各種スペース文字を通常スペースに統一
+  // NBSP (U+00A0), EN SPACE (U+2002), EM SPACE (U+2003) など
+  // 注: IDEOGRAPHIC SPACE (U+3000/全角スペース) は意図的に使用される可能性があるため、置換しない
+  normalizedValue = normalizedValue
+    .replace(/\u00A0/g, ' ')  // NO-BREAK SPACE
+    .replace(/[\u2000-\u200A]/g, ' ')  // EN QUAD ～ HAIR SPACE
+    .replace(/\u202F/g, ' ')  // NARROW NO-BREAK SPACE
+    .replace(/\u205F/g, ' ')  // MEDIUM MATHEMATICAL SPACE
+  
+  // 制御文字（幅なしスペースなど）を削除
+  normalizedValue = normalizedValue
+    .replace(/\u200B/g, '')  // ZERO WIDTH SPACE
+    .replace(/[\u200C-\u200D]/g, '')  // ZERO WIDTH NON-JOINER, JOINER
+    .replace(/\u200E/g, '')  // LEFT-TO-RIGHT MARK
+    .replace(/\u200F/g, '')  // RIGHT-TO-LEFT MARK
+    .replace(/\u00AD/g, '')  // SOFT HYPHEN
+  
   const padChar = option.padChar || (option.type === 'number' ? '0' : ' ')
   if (normalizedValue.length >= length) {
     return normalizedValue.substring(0, length)
@@ -105,7 +125,24 @@ export const convertFromFixed = (data: string, lengths: number[], outputFormat: 
     let position = 0
 
     for (const length of lengths) {
-      const value = line.substring(position, position + length).trim().replace(/\t/g, ' ')
+      let value = line.substring(position, position + length).trim().replace(/\t/g, ' ')
+      
+      // Unicode の各種スペース文字を通常スペースに統一
+      // 注: IDEOGRAPHIC SPACE (U+3000/全角スペース) は意図的に使用される可能性があるため、置換しない
+      value = value
+        .replace(/\u00A0/g, ' ')  // NO-BREAK SPACE
+        .replace(/[\u2000-\u200A]/g, ' ')  // EN QUAD ～ HAIR SPACE
+        .replace(/\u202F/g, ' ')  // NARROW NO-BREAK SPACE
+        .replace(/\u205F/g, ' ')  // MEDIUM MATHEMATICAL SPACE
+      
+      // 制御文字（幅なしスペースなど）を削除
+      value = value
+        .replace(/\u200B/g, '')  // ZERO WIDTH SPACE
+        .replace(/[\u200C-\u200D]/g, '')  // ZERO WIDTH NON-JOINER, JOINER
+        .replace(/\u200E/g, '')  // LEFT-TO-RIGHT MARK
+        .replace(/\u200F/g, '')  // RIGHT-TO-LEFT MARK
+        .replace(/\u00AD/g, '')  // SOFT HYPHEN
+      
       columns.push(value)
       position += length
     }

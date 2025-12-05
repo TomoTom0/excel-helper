@@ -44,6 +44,14 @@ describe('Fixed Length Converter', () => {
         { type: 'number', padding: 'left', padChar: '0' }
       ])
     })
+
+    it('should parse tab-separated column options', () => {
+      const result = parseColumnOptions('string:right: \tnumber:left:0')
+      expect(result).toEqual([
+        { type: 'string', padding: 'right', padChar: ' ' },
+        { type: 'number', padding: 'left', padChar: '0' }
+      ])
+    })
   })
 
   describe('padValue', () => {

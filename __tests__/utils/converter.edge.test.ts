@@ -236,5 +236,90 @@ describe('converter - エッジケースと追加テスト', () => {
       expect(result).toContain('Multi Line Field')
       expect(result).toContain('Simple')
     })
+
+    it('NBSP（ノーブレークスペース）を含むフィールド', () => {
+      // UTF-8のNON-BREAKING SPACE (U+00A0)を通常スペースに置換することをテスト
+      const data = 'Field\u00A0with\u00A0NBSP\tNormal'
+      const lengths = [20, 10]
+      const options: ColumnOption[] = [
+        { type: 'string', padding: 'right', padChar: ' ' },
+        { type: 'string', padding: 'right', padChar: ' ' }
+      ]
+      const result = tsvToFixed(data, lengths, options, 'tsv')
+      // NBSPが通常スペースに置換されていることを確認
+      expect(result).not.toContain('\u00A0')
+      expect(result).toContain('Field with NBSP')
+      expect(result).toHaveLength(30)
+    })
+
+    it('convertFromFixedでもNBSPを処理する', () => {
+      // 固定長データに含まれるNBSPを通常スペースに置換することをテスト
+      const data = 'Field\u00A0with\u00A0NBSP       Normal    '
+      const lengths = [20, 10]
+      const result = convertFromFixed(data, lengths, 'tsv')
+      // NBSPが置換され、トリムされていることを確認
+      expect(result).not.toContain('\u00A0')
+      expect(result).toBe('Field with NBSP\tNormal')
+    })
+
+    it('各種 Unicode スペース文字を統一処理する', () => {
+      // 複数の Unicode スペース文字を含むデータをテスト
+      const data = 'Field\u00A0Name\u2002\u2003Data\tValue'  // NBSP + EN SPACE + EM SPACE
+      const lengths = [20, 10]
+      const options: ColumnOption[] = [
+        { type: 'string', padding: 'right', padChar: ' ' },
+        { type: 'string', padding: 'right', padChar: ' ' }
+      ]
+      const result = tsvToFixed(data, lengths, options, 'tsv')
+      // すべての Unicode スペースが通常スペースに置換されていることを確認
+      expect(result).not.toContain('\u00A0')
+      expect(result).not.toContain('\u2002')
+      expect(result).not.toContain('\u2003')
+      // 複数のスペースが連続しても、複数のスペースとして保持される（trim後）
+      expect(result).toContain('Field Name  Data')
+    })
+
+    it('ゼロ幅文字（ZWSP）を削除する', () => {
+      // ゼロ幅スペース (U+200B) を含むデータをテスト
+      const data = 'Field\u200BName\tValue\u200B'
+      const lengths = [15, 10]
+      const options: ColumnOption[] = [
+        { type: 'string', padding: 'right', padChar: ' ' },
+        { type: 'string', padding: 'right', padChar: ' ' }
+      ]
+      const result = tsvToFixed(data, lengths, options, 'tsv')
+      // ゼロ幅文字が削除されていることを確認
+      expect(result).not.toContain('\u200B')
+      expect(result).toContain('FieldName')
+    })
+
+    it('ソフトハイフン（SHY）を削除する', () => {
+      // ソフトハイフン (U+00AD) を含むデータをテスト
+      const data = 'Field\u00ADName\tValue'
+      const lengths = [15, 10]
+      const options: ColumnOption[] = [
+        { type: 'string', padding: 'right', padChar: ' ' },
+        { type: 'string', padding: 'right', padChar: ' ' }
+      ]
+      const result = tsvToFixed(data, lengths, options, 'tsv')
+      // ソフトハイフンが削除されていることを確認
+      expect(result).not.toContain('\u00AD')
+      expect(result).toContain('FieldName')
+    })
+
+    it('全角スペース（IDEOGRAPHIC SPACE）は保持する', () => {
+      // 全角スペース (U+3000) を含むデータをテスト
+      // 全角スペースは意図的に使用される可能性があるため、保持すべき
+      const data = 'Field\u3000Name\tValue'
+      const lengths = [15, 10]
+      const options: ColumnOption[] = [
+        { type: 'string', padding: 'right', padChar: ' ' },
+        { type: 'string', padding: 'right', padChar: ' ' }
+      ]
+      const result = tsvToFixed(data, lengths, options, 'tsv')
+      // 全角スペースが保持されていることを確認
+      expect(result).toContain('\u3000')
+      expect(result).toContain('Field\u3000Name')
+    })
   })
 })
