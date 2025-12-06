@@ -8,6 +8,10 @@ export interface ColumnOption {
 
 export type DelimiterType = 'auto' | 'tsv' | 'csv' | 'fixed'
 
+// Unicode正規表現定数
+const UNICODE_SPACE_REGEX = /[\u00A0\u2000-\u200A\u202F\u205F]/g
+const UNICODE_CONTROL_REGEX = /[\u00AD\u200B-\u200F]/g
+
 /**
  * Unicode の各種スペース文字と制御文字を正規化
  * - スペース文字：通常スペースに置換
@@ -17,8 +21,8 @@ export type DelimiterType = 'auto' | 'tsv' | 'csv' | 'fixed'
 const normalizeUnicodeWhitespace = (value: string): string => {
   // Unicode の各種スペース文字を通常スペースに統一し、制御文字を削除
   return value
-    .replace(/[\u00A0\u2000-\u200A\u202F\u205F]/g, ' ')  // 各種スペースを通常スペースに置換
-    .replace(/[\u00AD\u200B-\u200F]/g, '')  // ソフトハイフンとゼロ幅文字など を削除
+    .replace(UNICODE_SPACE_REGEX, ' ')  // 各種スペースを通常スペースに置換
+    .replace(UNICODE_CONTROL_REGEX, '')  // ソフトハイフンとゼロ幅文字などの制御文字を削除
 }
 
 export const detectDelimiter = (data: string): '\t' | ',' => {
