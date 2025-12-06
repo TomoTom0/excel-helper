@@ -1,6 +1,9 @@
 /**
  * 値が数値かどうかを判定
  */
+import type { DelimiterType } from './converter'
+import { getOptionsDelimiter } from './converter'
+
 export const isNumeric = (value: string): boolean => {
   if (value.trim() === '') return false
   return !isNaN(Number(value))
@@ -69,10 +72,10 @@ export const generateMultiInsert = (
 /**
  * カラムオプション文字列をパース
  */
-export const parseColumnOptions = (input: string): Array<'number' | 'string'> => {
+export const parseColumnOptions = (input: string, delimiterType: DelimiterType = 'auto'): Array<'number' | 'string'> => {
   if (!input.trim()) return []
   
-  const delimiter = input.includes('\t') ? '\t' : ','
+  const delimiter = getOptionsDelimiter(input, delimiterType)
   return input.split(delimiter)
     .map(v => v.trim().toLowerCase())
     .map(v => {

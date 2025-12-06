@@ -8,6 +8,23 @@ export interface ColumnOption {
 
 export type DelimiterType = 'auto' | 'tsv' | 'csv' | 'fixed'
 
+// Unicode正規表現定数
+const UNICODE_SPACE_REGEX = /[\u00A0\u2000-\u200A\u202F\u205F]/g
+const UNICODE_CONTROL_REGEX = /[\u00AD\u200B-\u200F]/g
+
+/**
+ * Unicode の各種スペース文字と制御文字を正規化
+ * - スペース文字：通常スペースに置換
+ * - 制御文字：削除
+ * - IDEOGRAPHIC SPACE (U+3000) は保持（ユーザーの意図を尊重）
+ */
+const normalizeUnicodeWhitespace = (value: string): string => {
+  // Unicode の各種スペース文字を通常スペースに統一し、制御文字を削除
+  return value
+    .replace(UNICODE_SPACE_REGEX, ' ')  // 各種スペースを通常スペースに置換
+    .replace(UNICODE_CONTROL_REGEX, '')  // ソフトハイフンとゼロ幅文字などの制御文字を削除
+}
+
 export const detectDelimiter = (data: string): '\t' | ',' => {
   const lines = data.split('\n').filter(line => line.trim() !== '').slice(0, 10) // 最初の10行（空行を除く）
   if (lines.length === 0) return '\t'
@@ -41,14 +58,26 @@ export const getDelimiter = (data: string, type: DelimiterType): '\t' | ',' => {
   throw new Error("getDelimiter should not be called with type 'fixed'")
 }
 
-export const parseColumnLengths = (input: string): number[] => {
-  // タブ区切りまたはカンマ区切りを検出
-  const separator = input.includes('\t') ? '\t' : ','
-  return input.split(separator).map(v => Number(v.trim())).filter(v => !isNaN(v) && v > 0 && Number.isInteger(v))
+/**
+ * 入力文字列の区切り文字を決定する（parseColumnLengths / parseColumnOptions 用）
+ * delimiterType が 'auto' の場合、入力文字列の内容から自動判別
+ */
+export const getOptionsDelimiter = (input: string, delimiterType: DelimiterType = 'auto'): '\t' | ',' => {
+  if (delimiterType === 'auto') {
+    return input.includes('\t') ? '\t' : ','
+  }
+  return delimiterType === 'tsv' ? '\t' : ','
 }
 
-export const parseColumnOptions = (input: string): ColumnOption[] => {
-  return input.split(',')
+export const parseColumnLengths = (input: string, delimiterType: DelimiterType = 'auto'): number[] => {
+  const delimiter = getOptionsDelimiter(input, delimiterType)
+  return input.split(delimiter).map(v => Number(v.trim())).filter(v => !isNaN(v) && v > 0 && Number.isInteger(v))
+}
+
+export const parseColumnOptions = (input: string, delimiterType: DelimiterType = 'auto'): ColumnOption[] => {
+  const delimiter = getOptionsDelimiter(input, delimiterType)
+  
+  return input.split(delimiter)
     .filter(opt => opt.trim() !== '')
     .map(opt => {
       const parts = opt.trim().split(':')
@@ -79,7 +108,11 @@ export const parseColumnOptions = (input: string): ColumnOption[] => {
 
 export const padValue = (value: string, length: number, option: ColumnOption): string => {
   // フィールド内の改行とタブをスペースに置換
-  const normalizedValue = value.replace(/\r?\n/g, ' ').replace(/\t/g, ' ')
+  let normalizedValue = value.replace(/\r?\n/g, ' ').replace(/\t/g, ' ')
+  
+  // Unicode の各種スペース文字と制御文字を正規化
+  normalizedValue = normalizeUnicodeWhitespace(normalizedValue)
+  
   const padChar = option.padChar || (option.type === 'number' ? '0' : ' ')
   if (normalizedValue.length >= length) {
     return normalizedValue.substring(0, length)
@@ -105,7 +138,11 @@ export const convertFromFixed = (data: string, lengths: number[], outputFormat: 
     let position = 0
 
     for (const length of lengths) {
-      const value = line.substring(position, position + length).trim().replace(/\t/g, ' ')
+      let value = line.substring(position, position + length).trim().replace(/\t/g, ' ')
+      
+      // Unicode の各種スペース文字と制御文字を正規化
+      value = normalizeUnicodeWhitespace(value)
+      
       columns.push(value)
       position += length
     }
