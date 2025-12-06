@@ -2,6 +2,7 @@
  * 値が数値かどうかを判定
  */
 import type { DelimiterType } from './converter'
+import { getOptionsDelimiter } from './converter'
 
 export const isNumeric = (value: string): boolean => {
   if (value.trim() === '') return false
@@ -74,7 +75,7 @@ export const generateMultiInsert = (
 export const parseColumnOptions = (input: string, delimiterType: DelimiterType = 'auto'): Array<'number' | 'string'> => {
   if (!input.trim()) return []
   
-  const delimiter = delimiterType === 'auto' ? (input.includes('\t') ? '\t' : ',') : (delimiterType === 'tsv' ? '\t' : ',')
+  const delimiter = getOptionsDelimiter(input, delimiterType)
   return input.split(delimiter)
     .map(v => v.trim().toLowerCase())
     .map(v => {
