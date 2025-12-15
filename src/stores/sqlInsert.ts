@@ -11,6 +11,8 @@ export const useSqlInsertStore = defineStore('sqlInsert', () => {
   const delimiterType = ref<DelimiterType>('auto')
   const columnLengths = ref('')
   const insertFormat = ref<'single' | 'multi'>('single')
+  const useBacktick = ref(true)
+  const forceAllString = ref(false)
 
   const clearTableName = () => {
     tableName.value = ''
@@ -41,6 +43,8 @@ export const useSqlInsertStore = defineStore('sqlInsert', () => {
     delimiterType,
     columnLengths,
     insertFormat,
+    useBacktick,
+    forceAllString,
     clearTableName,
     clearDataBody,
     clearColumnHeaders,

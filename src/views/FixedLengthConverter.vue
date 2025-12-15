@@ -6,7 +6,7 @@ import { parseColumnLengths, parseColumnOptions, getDelimiter, convertFromFixed,
 import { parseDelimitedData, toCSV, toTSV } from '../utils/delimited'
 
 const store = useConverterStore()
-const { columnLengths, dataBody, columnTitles, columnOptions, delimiterType, outputFormat } = storeToRefs(store)
+const { columnLengths, dataBody, columnTitles, columnOptions, delimiterType, outputFormat, forceAllString } = storeToRefs(store)
 
 const result = ref('')
 const conversionType = ref('')
@@ -74,7 +74,7 @@ const handleDelimitedInput = (lengths: number[], parsedData: string[][]) => {
     // TSV/CSV → TSV/CSV (区切り文字変換)
     const outputType = outputFormat.value === 'csv' ? 'CSV' : 'TSV'
     conversionType.value = `${inputType} → ${outputType}`
-    result.value = outputFormat.value === 'csv' ? toCSV(parsedData) : toTSV(parsedData)
+    result.value = outputFormat.value === 'csv' ? toCSV(parsedData, forceAllString.value) : toTSV(parsedData, forceAllString.value)
   }
 }
 
@@ -86,7 +86,7 @@ const handleFixedWidthInput = (lengths: number[]) => {
     const outputType = outputFormat.value === 'csv' ? 'CSV' : 'TSV'
     conversionType.value = `固定長 → ${outputType}`
   }
-  result.value = convertFromFixed(dataBody.value, lengths, outputFormat.value)
+  result.value = convertFromFixed(dataBody.value, lengths, outputFormat.value, forceAllString.value)
 }
 
 const convert = () => {
@@ -286,6 +286,12 @@ const copyFieldToClipboard = (text: string, fieldName: string) => {
       <p class="field-description">形式: データ型:padding方向[:padding文字]</p>
       <p class="field-description field-note">※省略時は全てstring型、右パディング、半角空白</p>
       <p class="field-description field-note">※padding文字省略時: numberは'0'、stringは半角空白</p>
+      <div class="checkbox-container">
+        <label>
+          <input type="checkbox" v-model="forceAllString" />
+          全て文字列
+        </label>
+      </div>
     </div>
 
     <div class="button-group">

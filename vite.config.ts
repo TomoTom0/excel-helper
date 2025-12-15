@@ -11,7 +11,12 @@ export default defineConfig(({ mode }) => {
     test: {
       environment: 'happy-dom',
       globals: true,
-      setupFiles: ['__tests__/setup.ts']
+      setupFiles: ['__tests__/setup.ts'],
+      server: {
+        deps: {
+          inline: ['@vue', '@vueuse', 'vue-demi']
+        }
+      }
     }
   }
 })

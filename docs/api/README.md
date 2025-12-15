@@ -60,7 +60,7 @@ parseColumnOptions("string:right,number:left:0")
 
 ---
 
-#### `convertFromFixed(data: string, lengths: number[], outputFormat: 'tsv' | 'csv' | 'fixed' = 'tsv'): string`
+#### `convertFromFixed(data: string, lengths: number[], outputFormat: 'tsv' | 'csv' | 'fixed' = 'tsv', forceAllString: boolean = false): string`
 
 固定長形式のデータをTSV/CSV形式に変換します。
 
@@ -68,6 +68,7 @@ parseColumnOptions("string:right,number:left:0")
 - `data`: 固定長形式のデータ
 - `lengths`: 各カラムの長さの配列
 - `outputFormat`: 出力形式（`'tsv'`、`'csv'`、または `'fixed'`、デフォルト: `'tsv'`）
+- `forceAllString`: 全てのフィールドを引用符で囲むかどうか（デフォルト: `false`）
 
 **戻り値**:
 - `string`: TSV/CSV形式のデータ
@@ -78,12 +79,17 @@ const data = "John      Doe       30   "
 const lengths = [10, 10, 5]
 convertFromFixed(data, lengths, 'tsv')
 // => "John\tDoe\t30"
+
+// forceAllStringを使用
+convertFromFixed(data, lengths, 'csv', true)
+// => '"John","Doe","30"'
 ```
 
 **処理**:
 1. 各行を `lengths` に基づいて分割
 2. 各カラムの前後の空白をトリム
 3. TSV/CSV形式で結合
+4. `forceAllString` が `true` の場合、全てのフィールドを引用符で囲む
 
 ---
 
@@ -239,12 +245,13 @@ parseTSV("項目1\t項目2\n値1\t値2")
 
 ---
 
-#### `toCSV(data: string[][]): string`
+#### `toCSV(data: string[][], forceAllString: boolean = false): string`
 
 2次元配列をCSV形式の文字列に変換します。
 
 **パラメータ**:
 - `data`: 2次元配列
+- `forceAllString`: 全てのフィールドを引用符で囲むかどうか（デフォルト: `false`）
 
 **戻り値**:
 - `string`: CSV形式のテキスト
@@ -254,18 +261,23 @@ parseTSV("項目1\t項目2\n値1\t値2")
 const data = [['項目1', '項目2'], ['値1', '値2']]
 toCSV(data)
 // => '項目1,項目2\n値1,値2'
+
+// forceAllStringを使用
+toCSV(data, true)
+// => '"項目1","項目2"\n"値1","値2"'
 ```
 
 **実装**: `papaparse`の`unparse`関数を使用
 
 ---
 
-#### `toTSV(data: string[][]): string`
+#### `toTSV(data: string[][], forceAllString: boolean = false): string`
 
 2次元配列をTSV形式の文字列に変換します。
 
 **パラメータ**:
 - `data`: 2次元配列
+- `forceAllString`: 全てのフィールドを引用符で囲むかどうか（デフォルト: `false`）
 
 **戻り値**:
 - `string`: TSV形式のテキスト
@@ -275,6 +287,10 @@ toCSV(data)
 const data = [['項目1', '項目2'], ['値1', '値2']]
 toTSV(data)
 // => '項目1\t項目2\n値1\t値2'
+
+// forceAllStringを使用
+toTSV(data, true)
+// => '"項目1"\t"項目2"\n"値1"\t"値2"'
 ```
 
 **実装**: `papaparse`の`unparse`関数を使用
@@ -294,8 +310,9 @@ toTSV(data)
   dataBody: string           // データ本体
   columnTitles: string       // カラムタイトル
   columnOptions: string      // カラムごとのオプション
-  delimiterType: 'auto' | 'tsv' | 'csv'  // 区切り文字タイプ
-  outputFormat: 'tsv' | 'csv'  // 出力形式
+  delimiterType: 'auto' | 'tsv' | 'csv' | 'fixed'  // 区切り文字タイプ
+  outputFormat: 'tsv' | 'csv' | 'fixed'  // 出力形式
+  forceAllString: boolean    // 全てのフィールドを引用符で囲むかどうか
 }
 ```
 

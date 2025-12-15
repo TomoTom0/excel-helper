@@ -3,7 +3,9 @@ import { config } from '@vue/test-utils';
 
 // Vue Test Utils configuration
 config.global.mocks = {};
-config.global.stubs = {};
+config.global.stubs = {
+  teleport: true,
+};
 
 // Mock localStorage/sessionStorage
 const storageMock = {

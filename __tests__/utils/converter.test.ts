@@ -136,6 +136,42 @@ describe('Fixed Length Converter', () => {
       const result = convertFromFixed(data, lengths, 'tsv')
       expect(result).toBe('John\tDoe\t30\nJane\tSmith\t25')
     })
+
+    it('should quote all fields when forceAllString is true (TSV)', () => {
+      const data = '001       Tokyo                25       '
+      const lengths = [10, 20, 10]
+      const result = convertFromFixed(data, lengths, 'tsv', true)
+      expect(result).toBe('"001"\t"Tokyo"\t"25"')
+    })
+
+    it('should quote all fields when forceAllString is true (CSV)', () => {
+      const data = '001       Tokyo                25       '
+      const lengths = [10, 20, 10]
+      const result = convertFromFixed(data, lengths, 'csv', true)
+      expect(result).toBe('"001","Tokyo","25"')
+    })
+
+    it('should not quote fields when forceAllString is false', () => {
+      const data = '001       Tokyo                25       '
+      const lengths = [10, 20, 10]
+      const result = convertFromFixed(data, lengths, 'tsv', false)
+      expect(result).toBe('001\tTokyo\t25')
+    })
+
+    it('should escape quotes when forceAllString is true', () => {
+      const data = 'John "JJ" Doe       25        '
+      const lengths = [20, 10]
+      const result = convertFromFixed(data, lengths, 'csv', true)
+      expect(result).toBe('"John ""JJ"" Doe","25"')
+    })
+
+    it('should not apply forceAllString to fixed output format', () => {
+      const data = 'John      Doe                 30       '
+      const lengths = [10, 20, 10]
+      const result = convertFromFixed(data, lengths, 'fixed', true)
+      // 固定長形式では引用符は付けない
+      expect(result).toBe('John      Doe                 30        ')
+    })
   })
 
   describe('tsvToFixed', () => {

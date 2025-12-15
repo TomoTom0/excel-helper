@@ -12,15 +12,20 @@ export const isNumeric = (value: string): boolean => {
 /**
  * SQL用に値をエスケープ
  */
-export const escapeSqlValue = (value: string, forceType?: 'number' | 'string'): string => {
+export const escapeSqlValue = (value: string, forceType?: 'number' | 'string', forceAllString = false): string => {
+  // 全て文字列として扱う場合
+  if (forceAllString) {
+    return `'${value.replace(/'/g, "''")}'`
+  }
+
   // 強制的に型が指定されている場合
   if (forceType === 'number') {
-    return value || '0'
+    return value.trim() === '' ? 'NULL' : value
   }
   if (forceType === 'string') {
     return `'${value.replace(/'/g, "''")}'`
   }
-  
+
   // 自動判定
   if (isNumeric(value)) {
     return value
@@ -32,7 +37,10 @@ export const escapeSqlValue = (value: string, forceType?: 'number' | 'string'): 
 /**
  * カラム名をサニタイズ（バッククォートで囲む）
  */
-export const sanitizeColumnName = (name: string): string => {
+export const sanitizeColumnName = (name: string, useBacktick = true): string => {
+  if (!useBacktick) {
+    return name
+  }
   return `\`${name.replace(/`/g, '``')}\``
 }
 
@@ -43,13 +51,16 @@ export const generateSingleInsert = (
   tableName: string,
   columns: string[],
   row: string[],
-  columnTypes?: Array<'number' | 'string'>
+  columnTypes?: Array<'number' | 'string'>,
+  useBacktick = true,
+  forceAllString = false
 ): string => {
-  const columnNames = columns.map(sanitizeColumnName).join(', ')
-  const values = row.map((value, i) => 
-    escapeSqlValue(value, columnTypes?.[i])
+  const columnNames = columns.map(c => sanitizeColumnName(c, useBacktick)).join(', ')
+  const values = row.map((value, i) =>
+    escapeSqlValue(value, columnTypes?.[i], forceAllString)
   ).join(', ')
-  return `INSERT INTO \`${tableName}\` (${columnNames}) VALUES (${values});`
+  const tableNameFormatted = useBacktick ? `\`${tableName}\`` : tableName
+  return `INSERT INTO ${tableNameFormatted} (${columnNames}) VALUES (${values});`
 }
 
 /**
@@ -59,14 +70,17 @@ export const generateMultiInsert = (
   tableName: string,
   columns: string[],
   rows: string[][],
-  columnTypes?: Array<'number' | 'string'>
+  columnTypes?: Array<'number' | 'string'>,
+  useBacktick = true,
+  forceAllString = false
 ): string => {
-  const columnNames = columns.map(sanitizeColumnName).join(', ')
-  const valuesList = rows.map(row => 
-    `  (${row.map((value, i) => escapeSqlValue(value, columnTypes?.[i])).join(', ')})`
+  const columnNames = columns.map(c => sanitizeColumnName(c, useBacktick)).join(', ')
+  const valuesList = rows.map(row =>
+    `  (${row.map((value, i) => escapeSqlValue(value, columnTypes?.[i], forceAllString)).join(', ')})`
   ).join(',\n')
-  
-  return `INSERT INTO \`${tableName}\` (${columnNames}) VALUES\n${valuesList};`
+  const tableNameFormatted = useBacktick ? `\`${tableName}\`` : tableName
+
+  return `INSERT INTO ${tableNameFormatted} (${columnNames}) VALUES\n${valuesList};`
 }
 
 /**
@@ -94,15 +108,17 @@ export const generateInsertStatements = (
   columns: string[],
   rows: string[][],
   format: 'single' | 'multi' = 'single',
-  columnTypes?: Array<'number' | 'string'>
+  columnTypes?: Array<'number' | 'string'>,
+  useBacktick = true,
+  forceAllString = false
 ): string => {
   if (rows.length === 0) {
     return ''
   }
 
   if (format === 'multi') {
-    return generateMultiInsert(tableName, columns, rows, columnTypes)
+    return generateMultiInsert(tableName, columns, rows, columnTypes, useBacktick, forceAllString)
   } else {
-    return rows.map(row => generateSingleInsert(tableName, columns, row, columnTypes)).join('\n')
+    return rows.map(row => generateSingleInsert(tableName, columns, row, columnTypes, useBacktick, forceAllString)).join('\n')
   }
 }
