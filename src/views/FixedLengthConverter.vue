@@ -286,6 +286,12 @@ const copyFieldToClipboard = (text: string, fieldName: string) => {
       <p class="field-description">形式: データ型:padding方向[:padding文字]</p>
       <p class="field-description field-note">※省略時は全てstring型、右パディング、半角空白</p>
       <p class="field-description field-note">※padding文字省略時: numberは'0'、stringは半角空白</p>
+      <div class="checkbox-container">
+        <label>
+          <input type="checkbox" v-model="forceAllString" />
+          全て文字列として出力（引用符で囲む）
+        </label>
+      </div>
     </div>
 
     <div class="button-group">
@@ -339,12 +345,6 @@ const copyFieldToClipboard = (text: string, fieldName: string) => {
           <label>
             <input type="radio" value="csv" v-model="outputFormat" />
             CSV
-          </label>
-        </div>
-        <div class="checkbox-container">
-          <label>
-            <input type="checkbox" v-model="forceAllString" />
-            全て文字列として出力（引用符で囲む）
           </label>
         </div>
       </div>
