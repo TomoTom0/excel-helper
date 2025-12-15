@@ -157,14 +157,13 @@ export const convertFromFixed = (data: string, lengths: number[], outputFormat: 
       }
       resultLines.push(fixedLine)
     } else {
+      const delimiter = outputFormat === 'csv' ? ',' : '\t'
       // forceAllStringが有効な場合は引用符で囲む
       let line: string
       if (forceAllString) {
         const quotedColumns = columns.map(col => `"${col.replace(/"/g, '""')}"`)
-        const delimiter = outputFormat === 'csv' ? ',' : '\t'
         line = quotedColumns.join(delimiter)
       } else {
-        const delimiter = outputFormat === 'csv' ? ',' : '\t'
         line = columns.join(delimiter)
       }
       resultLines.push(line)
