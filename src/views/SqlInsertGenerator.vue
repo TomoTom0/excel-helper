@@ -11,7 +11,7 @@ import NotificationToast from '../components/NotificationToast.vue'
 const DEFAULT_TABLE_NAME = 'YOUR_TABLE_NAME'
 
 const store = useSqlInsertStore()
-const { tableName, dataBody, columnHeaders, columnOptions, useFirstRowAsHeader, delimiterType, columnLengths, insertFormat } = storeToRefs(store)
+const { tableName, dataBody, columnHeaders, columnOptions, useFirstRowAsHeader, delimiterType, columnLengths, insertFormat, useBacktick, forceAllString } = storeToRefs(store)
 
 const result = ref('')
 const conversionType = ref('')
@@ -120,7 +120,9 @@ const convert = () => {
       columns,
       dataRows,
       insertFormat.value,
-      columnTypes
+      columnTypes,
+      useBacktick.value,
+      forceAllString.value
     )
   } catch (error) {
     result.value = 'エラー: ' + (error as Error).message
@@ -313,13 +315,23 @@ const resultPlaceholder = computed(() => {
           </button>
         </div>
       </div>
-      <textarea 
+      <textarea
         v-model="columnOptions"
-        rows="3" 
+        rows="3"
         placeholder="number,string,string&#10;(CSV or TSV形式)&#10;※データ型を指定してSQL値のフォーマットを制御"
       ></textarea>
       <p class="field-description">形式: データ型をカンマ区切りで指定（number=引用符なし、string=引用符あり）</p>
       <p class="field-description field-note">※省略時は全て自動判定（数値は引用符なし、それ以外は引用符あり）</p>
+      <div class="checkbox-container">
+        <label>
+          <input type="checkbox" v-model="useBacktick" />
+          バッククォートを使用
+        </label>
+        <label>
+          <input type="checkbox" v-model="forceAllString" />
+          全て文字列として出力
+        </label>
+      </div>
     </div>
 
     <div class="button-group">
