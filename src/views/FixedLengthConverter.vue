@@ -341,7 +341,7 @@ const copyFieldToClipboard = (text: string, fieldName: string) => {
             CSV
           </label>
         </div>
-        <div class="force-string-option">
+        <div class="checkbox-container">
           <label>
             <input type="checkbox" v-model="forceAllString" />
             全て文字列として出力（引用符で囲む）
