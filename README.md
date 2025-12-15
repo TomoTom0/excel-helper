@@ -109,22 +109,23 @@ XXXX YYYY ZZZZZZZZZZ
 
 ```bash
 # インストール
-npm install
+bun install
 
 # 開発サーバー起動
-npm run dev
+bun run dev
 
 # ビルド
-npm run build
+bun run build
 
 # テスト実行
-npm test
+bun test
 ```
 
 ### 技術スタック
 
 - **フロントエンド**: Vue 3
 - **言語**: TypeScript
+- **ランタイム**: Bun
 - **ビルドツール**: Vite
 - **状態管理**: Pinia
 - **アイコン**: Material Design Icons

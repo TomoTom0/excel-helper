@@ -8,14 +8,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- CSV/TSV出力時に全てのフィールドを引用符で囲むオプション（forceAllString）を追加
 
 ### Changed
+- パッケージマネージャーをnpmからBunに移行
 
 ### Fixed
 
 ### Tests
+- delimited.tsの新規テストファイルを追加（14テスト）
+- converter.tsにforceAllStringのテストケースを追加（5テスト）
 
 ### Documentation
+- README.mdをBunに対応して更新
 
 ## [1.0.0] - 2025-10-28
 
