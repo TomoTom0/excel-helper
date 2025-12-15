@@ -329,7 +329,7 @@ const resultPlaceholder = computed(() => {
         </label>
         <label>
           <input type="checkbox" v-model="forceAllString" />
-          すべてのカラムをstring型として扱う
+          全て文字列
         </label>
       </div>
     </div>
