@@ -289,7 +289,7 @@ const copyFieldToClipboard = (text: string, fieldName: string) => {
       <div class="checkbox-container">
         <label>
           <input type="checkbox" v-model="forceAllString" />
-          全て文字列として出力（引用符で囲む）
+          すべてのカラムをstring型として扱う
         </label>
       </div>
     </div>
