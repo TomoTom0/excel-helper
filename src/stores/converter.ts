@@ -9,6 +9,7 @@ export const useConverterStore = defineStore('converter', () => {
   const columnOptions = ref('')
   const delimiterType = ref<DelimiterType>('auto')
   const outputFormat = ref<'tsv' | 'csv' | 'fixed'>('tsv')
+  const forceAllString = ref(false)
 
   const clearColumnLengths = () => {
     columnLengths.value = ''
@@ -33,6 +34,7 @@ export const useConverterStore = defineStore('converter', () => {
     columnOptions,
     delimiterType,
     outputFormat,
+    forceAllString,
     clearColumnLengths,
     clearDataBody,
     clearColumnTitles,

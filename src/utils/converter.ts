@@ -124,7 +124,7 @@ export const padValue = (value: string, length: number, option: ColumnOption): s
   }
 }
 
-export const convertFromFixed = (data: string, lengths: number[], outputFormat: 'tsv' | 'csv' | 'fixed' = 'tsv'): string => {
+export const convertFromFixed = (data: string, lengths: number[], outputFormat: 'tsv' | 'csv' | 'fixed' = 'tsv', forceAllString = false): string => {
   const lines = data.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n')
   const resultLines: string[] = []
 
@@ -157,8 +157,17 @@ export const convertFromFixed = (data: string, lengths: number[], outputFormat: 
       }
       resultLines.push(fixedLine)
     } else {
-      const delimiter = outputFormat === 'csv' ? ',' : '\t'
-      resultLines.push(columns.join(delimiter))
+      // forceAllStringが有効な場合は引用符で囲む
+      let line: string
+      if (forceAllString) {
+        const quotedColumns = columns.map(col => `"${col.replace(/"/g, '""')}"`)
+        const delimiter = outputFormat === 'csv' ? ',' : '\t'
+        line = quotedColumns.join(delimiter)
+      } else {
+        const delimiter = outputFormat === 'csv' ? ',' : '\t'
+        line = columns.join(delimiter)
+      }
+      resultLines.push(line)
     }
   }
 
