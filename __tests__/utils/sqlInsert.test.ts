@@ -42,9 +42,11 @@ describe('SQL Insert Generator', () => {
       expect(escapeSqlValue('001', undefined, true)).toBe("'001'")
     })
 
-    it('forceTypeがnumberの場合、引用符なし', () => {
+    it('forceTypeがnumberの場合、数値は引用符なし、非数値はNULL', () => {
       expect(escapeSqlValue('123', 'number')).toBe('123')
-      expect(escapeSqlValue('abc', 'number')).toBe('abc')
+      expect(escapeSqlValue('abc', 'number')).toBe('NULL')
+      expect(escapeSqlValue('', 'number')).toBe('NULL')
+      expect(escapeSqlValue('  ', 'number')).toBe('NULL')
     })
 
     it('forceTypeがstringの場合、引用符あり', () => {
