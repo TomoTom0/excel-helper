@@ -20,7 +20,7 @@ export const escapeSqlValue = (value: string, forceType?: 'number' | 'string', f
 
   // 強制的に型が指定されている場合
   if (forceType === 'number') {
-    return isNumeric(value) ? value : 'NULL'
+    return value.trim() === '' ? 'NULL' : isNumeric(value) ? value : 'NULL'
   }
   if (forceType === 'string') {
     return `'${value.replace(/'/g, "''")}'`

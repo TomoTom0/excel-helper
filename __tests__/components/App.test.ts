@@ -1,31 +1,117 @@
 import { describe, it, expect } from 'vitest';
-import { createPinia, setActivePinia } from 'pinia';
-import { useConverterStore } from '../../src/stores/converter';
-import { useSqlInsertStore } from '../../src/stores/sqlInsert';
+import { mount, flushPromises } from '@vue/test-utils';
+import { createPinia } from 'pinia';
+import { createRouter, createMemoryHistory } from 'vue-router';
+import App from '../../src/App.vue';
+import FixedLengthConverter from '../../src/views/FixedLengthConverter.vue';
+import NumberingLineConverter from '../../src/views/NumberingLineConverter.vue';
+import SqlInsertGenerator from '../../src/views/SqlInsertGenerator.vue';
+import SettingsPage from '../../src/views/SettingsPage.vue';
 
 describe('App.vue', () => {
-  describe('Store Initialization', () => {
-    it('should initialize converter store', () => {
-      setActivePinia(createPinia());
-      const store = useConverterStore();
-      expect(store).toBeDefined();
-      expect(store.columnLengths).toBe('');
-      expect(store.dataBody).toBe('');
+  const createWrapper = async () => {
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [
+        { path: '/', redirect: '/fixed-length' },
+        { path: '/fixed-length', name: 'fixed-length', component: FixedLengthConverter },
+        { path: '/numbering-line', name: 'numbering-line', component: NumberingLineConverter },
+        { path: '/sql-insert', name: 'sql-insert', component: SqlInsertGenerator },
+        { path: '/settings', name: 'settings', component: SettingsPage },
+      ],
+    });
+    
+    router.push('/');
+    await router.isReady();
+    
+    return mount(App, {
+      global: {
+        plugins: [createPinia(), router],
+      },
+    });
+  };
+
+  describe('Rendering', () => {
+    it('should render the sidebar with title', async () => {
+      const wrapper = await createWrapper();
+      expect(wrapper.find('h1').text()).toBe('YT Excel Helper');
     });
 
-    it('should initialize SQL insert store', () => {
-      setActivePinia(createPinia());
-      const store = useSqlInsertStore();
-      expect(store).toBeDefined();
-      expect(store.tableName).toBe('');
-      expect(store.dataBody).toBe('');
+    it('should render all tabs', async () => {
+      const wrapper = await createWrapper();
+      const tabs = wrapper.findAll('.sidebar-nav li');
+      expect(tabs).toHaveLength(4);
+      expect(tabs[0].text()).toBe('固定長相互変換');
+      expect(tabs[1].text()).toBe('ナンバリング行変換');
+      expect(tabs[2].text()).toBe('SQL INSERT文生成');
+      expect(tabs[3].text()).toBe('設定');
+    });
+
+    it('should have first tab active by default', async () => {
+      const wrapper = await createWrapper();
+      const links = wrapper.findAll('.sidebar-nav li a');
+      expect(links[0].classes()).toContain('router-link-active');
+      expect(links[1].classes()).not.toContain('router-link-active');
+    });
+
+    it('should render FixedLengthConverter by default', async () => {
+      const wrapper = await createWrapper();
+      expect(wrapper.findComponent({ name: 'FixedLengthConverter' }).exists()).toBe(true);
+      expect(wrapper.findComponent({ name: 'NumberingLineConverter' }).exists()).toBe(false);
     });
   });
 
-  describe('Store Persistence', () => {
-    it('should have Pinia store available', () => {
-      const pinia = createPinia();
-      expect(pinia).toBeDefined();
+  describe('Tab Switching', () => {
+    it('should switch to NumberingLineConverter when second tab is clicked', async () => {
+      const wrapper = await createWrapper();
+      const links = wrapper.findAll('.sidebar-nav li a');
+      
+      await links[1].trigger('click');
+      await flushPromises();
+      
+      expect(links[0].classes()).not.toContain('router-link-active');
+      expect(links[1].classes()).toContain('router-link-active');
+      expect(wrapper.findComponent({ name: 'FixedLengthConverter' }).exists()).toBe(false);
+      expect(wrapper.findComponent({ name: 'NumberingLineConverter' }).exists()).toBe(true);
+    });
+
+    it('should switch back to FixedLengthConverter when first tab is clicked', async () => {
+      const wrapper = await createWrapper();
+      const links = wrapper.findAll('.sidebar-nav li a');
+      
+      await links[1].trigger('click');
+      await flushPromises();
+      await links[0].trigger('click');
+      await flushPromises();
+      
+      expect(links[0].classes()).toContain('router-link-active');
+      expect(links[1].classes()).not.toContain('router-link-active');
+      expect(wrapper.findComponent({ name: 'FixedLengthConverter' }).exists()).toBe(true);
+      expect(wrapper.findComponent({ name: 'NumberingLineConverter' }).exists()).toBe(false);
+    });
+  });
+
+  describe('Component Structure', () => {
+    it('should have sidebar and main-content elements', async () => {
+      const wrapper = await createWrapper();
+      expect(wrapper.find('.sidebar').exists()).toBe(true);
+      expect(wrapper.find('.main-content').exists()).toBe(true);
+    });
+
+    it('should only show one converter at a time', async () => {
+      const wrapper = await createWrapper();
+      
+      // Initially FixedLengthConverter
+      expect(wrapper.findComponent({ name: 'FixedLengthConverter' }).exists()).toBe(true);
+      expect(wrapper.findComponent({ name: 'NumberingLineConverter' }).exists()).toBe(false);
+      
+      // Switch to NumberingLineConverter
+      const links = wrapper.findAll('.sidebar-nav li a');
+      await links[1].trigger('click');
+      await flushPromises();
+      
+      expect(wrapper.findComponent({ name: 'FixedLengthConverter' }).exists()).toBe(false);
+      expect(wrapper.findComponent({ name: 'NumberingLineConverter' }).exists()).toBe(true);
     });
   });
 });
