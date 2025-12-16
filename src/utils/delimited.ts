@@ -29,11 +29,11 @@ export function parseTSV(input: string): string[][] {
 /**
  * 2次元配列を区切り文字列に変換する（共通関数）
  */
-function unparseDelimited(data: string[][], delimiter: ',' | '\t'): string {
+function unparseDelimited(data: string[][], delimiter: ',' | '\t', forceAllString = false): string {
   return unparse(data, {
     delimiter,
     newline: '\n',
-    quotes: false,
+    quotes: forceAllString,
     quoteChar: '"',
     escapeChar: '"',
   });
@@ -42,15 +42,15 @@ function unparseDelimited(data: string[][], delimiter: ',' | '\t'): string {
 /**
  * 2次元配列をCSV文字列に変換する
  */
-export function toCSV(data: string[][]): string {
-  return unparseDelimited(data, ',');
+export function toCSV(data: string[][], forceAllString = false): string {
+  return unparseDelimited(data, ',', forceAllString);
 }
 
 /**
  * 2次元配列をTSV文字列に変換する
  */
-export function toTSV(data: string[][]): string {
-  return unparseDelimited(data, '\t');
+export function toTSV(data: string[][], forceAllString = false): string {
+  return unparseDelimited(data, '\t', forceAllString);
 }
 
 /**

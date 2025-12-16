@@ -3,6 +3,7 @@
 ## 技術スタック
 
 - **フレームワーク**: Vue 3 (Composition API)
+- **ランタイム**: Bun
 - **ビルドツール**: Vite
 - **言語**: TypeScript
 - **状態管理**: Pinia (永続化プラグイン使用)
@@ -66,29 +67,28 @@ excel-helper/
 
 ### 前提条件
 
-- Node.js 18以上
-- npm または yarn
+- Bun 1.0以上
 
 ### インストール
 
 ```bash
 # 依存関係のインストール
-npm install
+bun install
 
 # 開発サーバーの起動
-npm run dev
+bun run dev
 
 # ビルド
-npm run build
+bun run build
 
 # プレビュー
-npm run preview
+bun run preview
 
 # テスト実行
-npm test
+bun test
 
 # テストUIの起動
-npm run test:ui
+bun run test:ui
 ```
 
 ## 開発ワークフロー
@@ -96,7 +96,7 @@ npm run test:ui
 ### 1. ローカル開発
 
 ```bash
-npm run dev
+bun run dev
 ```
 
 開発サーバーが `http://localhost:5173` で起動します。
@@ -110,23 +110,23 @@ npm run dev
 
 ```bash
 # テストを実行
-npm test
+bun test
 
 # ウォッチモードでテスト
-npm test -- --watch
+bun test --watch
 
 # UIでテスト実行
-npm run test:ui
+bun run test:ui
 ```
 
 ### 3. ビルドと確認
 
 ```bash
 # 本番用ビルド
-npm run build
+bun run build
 
 # ビルド結果をプレビュー
-npm run preview
+bun run preview
 ```
 
 ## コーディング規約
@@ -249,7 +249,7 @@ Vue Devtools を使用してコンポーネントの状態を確認
 ### Vitest UI
 
 ```bash
-npm run test:ui
+bun run test:ui
 ```
 
 テストの実行状況を視覚的に確認
@@ -259,7 +259,7 @@ npm run test:ui
 ### Cloudflare Pages（推奨）
 
 ```bash
-npm run build
+bun run build
 # dist/ ディレクトリをデプロイ
 ```
 
@@ -278,9 +278,9 @@ npm run build
 ### ビルドエラー
 
 ```bash
-# node_modules と package-lock.json を削除して再インストール
-rm -rf node_modules package-lock.json
-npm install
+# node_modules と bun.lock を削除して再インストール
+rm -rf node_modules bun.lock
+bun install
 ```
 
 ### テストが失敗する
@@ -292,7 +292,7 @@ npm install
 
 ```bash
 # 型チェック
-npx vue-tsc --noEmit
+bunx vue-tsc --noEmit
 ```
 
 ## コントリビューション
