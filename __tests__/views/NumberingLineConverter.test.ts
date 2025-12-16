@@ -184,15 +184,14 @@ describe('NumberingLineConverter.vue', () => {
       }
       
       // 変換ボタンをクリック
-      const convertButton = wrapper.findAll('button').find(b => 
+      const convertButton = wrapper.findAll('button').find(b =>
         b.text().includes('変換')
       );
       if (convertButton) {
         await convertButton.trigger('click');
         await wrapper.vm.$nextTick();
-        await vi.advanceTimersByTimeAsync(350);
       }
-      
+
       // 結果セクションが存在することを確認
       const resultSection = wrapper.find('.result-section');
       expect(resultSection.exists()).toBe(true);
@@ -208,15 +207,14 @@ describe('NumberingLineConverter.vue', () => {
       await wrapper.vm.$nextTick();
       
       // 変換ボタンをクリック
-      const convertButton = wrapper.findAll('button').find(b => 
+      const convertButton = wrapper.findAll('button').find(b =>
         b.text().includes('変換')
       );
       if (convertButton) {
         await convertButton.trigger('click');
         await wrapper.vm.$nextTick();
-        await vi.advanceTimersByTimeAsync(350);
       }
-      
+
       // 結果セクションが存在することを確認
       const resultSection = wrapper.find('.result-section');
       expect(resultSection.exists()).toBe(true);
@@ -234,16 +232,15 @@ describe('NumberingLineConverter.vue', () => {
       await wrapper.vm.$nextTick();
       
       // 変換ボタンをクリック
-      const convertButton = wrapper.findAll('button').find(b => 
+      const convertButton = wrapper.findAll('button').find(b =>
         b.text().includes('変換')
       );
       expect(convertButton).toBeDefined();
       if (convertButton) {
         await convertButton.trigger('click');
         await wrapper.vm.$nextTick();
-        await vi.advanceTimersByTimeAsync(350);
       }
-      
+
       // 結果セクションが表示されることを確認
       const resultSection = wrapper.find('.result-section');
       expect(resultSection.exists()).toBe(true);
@@ -253,15 +250,14 @@ describe('NumberingLineConverter.vue', () => {
       const wrapper = createWrapper();
       
       // 変換ボタンをクリック（空のデータ）
-      const convertButton = wrapper.findAll('button').find(b => 
+      const convertButton = wrapper.findAll('button').find(b =>
         b.text().includes('変換')
       );
       if (convertButton) {
         await convertButton.trigger('click');
         await wrapper.vm.$nextTick();
-        await vi.advanceTimersByTimeAsync(350);
       }
-      
+
       // エラーが発生しても画面が表示されることを確認
       expect(wrapper.exists()).toBe(true);
     });
@@ -285,15 +281,14 @@ describe('NumberingLineConverter.vue', () => {
       }
       
       // 変換ボタンをクリック
-      const convertButton = wrapper.findAll('button').find(b => 
+      const convertButton = wrapper.findAll('button').find(b =>
         b.text().includes('変換')
       );
       if (convertButton) {
         await convertButton.trigger('click');
         await wrapper.vm.$nextTick();
-        await vi.advanceTimersByTimeAsync(350);
       }
-      
+
       // 結果が生成されることを確認
       const resultSection = wrapper.find('.result-section');
       expect(resultSection.exists()).toBe(true);
@@ -388,85 +383,94 @@ describe('NumberingLineConverter.vue', () => {
   });
 
   describe('Notification System', () => {
-    it('should show notification with message', async () => {
+    it('should show notification with message when copy succeeds', async () => {
+      vi.useFakeTimers();
+
+      // navigator.clipboard.writeTextをモック（成功）
+      const mockWriteText = vi.fn().mockImplementation(() => Promise.resolve());
+      Object.assign(navigator, {
+        clipboard: {
+          writeText: mockWriteText,
+        },
+      });
+
       const wrapper = createWrapper();
-      
-      // 変換を実行してから、コピーボタンをクリック（通知のトリガー）
+
+      // 変換を実行
       const section = wrapper.find('.input-section');
       const textarea = section.find('textarea');
       await textarea.setValue('test\tdata');
-      
-      const convertButton = wrapper.findAll('button').find(b => 
+
+      const convertButton = wrapper.findAll('button').find(b =>
         b.text().includes('変換')
       );
       if (convertButton) {
         await convertButton.trigger('click');
         await wrapper.vm.$nextTick();
       }
-      
-      // コピーボタンを探す
-      const copyButton = wrapper.findAll('button').find(b => 
+
+      // コピーボタンをクリック
+      const copyButton = wrapper.findAll('button').find(b =>
         b.text().includes('コピー')
       );
-      
-      // ボタンが存在することを確認（実際のクリップボード操作はテスト環境では難しい）
-      expect(copyButton !== undefined || wrapper.exists()).toBe(true);
+
+      if (copyButton) {
+        await copyButton.trigger('click');
+        await vi.runAllTimersAsync();
+        await wrapper.vm.$nextTick();
+
+        // 通知が表示されることを確認
+        const notification = wrapper.find('.notification');
+        expect(notification.exists()).toBe(true);
+        expect(notification.text()).toContain('コピーしました');
+      }
+
+      vi.useRealTimers();
     });
 
-    it('should show error notification', async () => {
-      const wrapper = createWrapper();
-      
-      // エラーを発生させる可能性のある操作
-      // （実際のエラー発生は環境依存のため、コンポーネントの存在を確認）
-      expect(wrapper.exists()).toBe(true);
-    });
-  });
+    it('should show error notification when copy fails', async () => {
+      vi.useFakeTimers();
 
-  describe('Copy to Clipboard', () => {
-    it('should have copy button available after conversion', async () => {
+      // navigator.clipboard.writeTextをモック（失敗）
+      const mockWriteText = vi.fn().mockImplementation(() => Promise.reject(new Error('Copy failed')));
+      Object.assign(navigator, {
+        clipboard: {
+          writeText: mockWriteText,
+        },
+      });
+
       const wrapper = createWrapper();
+
+      // 変換を実行
       const section = wrapper.find('.input-section');
       const textarea = section.find('textarea');
-      
       await textarea.setValue('test\tdata');
-      
-      const convertButton = wrapper.findAll('button').find(b => 
+
+      const convertButton = wrapper.findAll('button').find(b =>
         b.text().includes('変換')
       );
       if (convertButton) {
         await convertButton.trigger('click');
         await wrapper.vm.$nextTick();
       }
-      
-      // コピーボタンが存在するか確認
-      const buttons = wrapper.findAll('button');
-      const hasCopyButton = buttons.some(b => b.text().includes('コピー'));
-      expect(hasCopyButton || buttons.length > 0).toBe(true);
-    });
-  });
 
-  describe('Download', () => {
-    it('should have download button available after conversion', async () => {
-      const wrapper = createWrapper();
-      const section = wrapper.find('.input-section');
-      const textarea = section.find('textarea');
-      
-      await textarea.setValue('test\tdata');
-      
-      const convertButton = wrapper.findAll('button').find(b => 
-        b.text().includes('変換')
+      // コピーボタンをクリック
+      const copyButton = wrapper.findAll('button').find(b =>
+        b.text().includes('コピー')
       );
-      if (convertButton) {
-        await convertButton.trigger('click');
+
+      if (copyButton) {
+        await copyButton.trigger('click');
+        await vi.runAllTimersAsync();
         await wrapper.vm.$nextTick();
+
+        // エラー通知が表示されることを確認
+        const notification = wrapper.find('.notification.error');
+        expect(notification.exists()).toBe(true);
+        expect(notification.text()).toContain('失敗');
       }
-      
-      // ダウンロードボタンが存在するか確認
-      const buttons = wrapper.findAll('button');
-      const hasDownloadButton = buttons.some(b => 
-        b.text().includes('ダウンロード')
-      );
-      expect(hasDownloadButton || buttons.length > 0).toBe(true);
+
+      vi.useRealTimers();
     });
   });
 

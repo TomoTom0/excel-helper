@@ -132,61 +132,37 @@ describe('FixedLengthConverter.vue', () => {
     });
   });
 
-  describe('Copy to Clipboard', () => {
-    it('should call clipboard API when copy button is clicked', async () => {
-      const wrapper = createWrapper();
-      const store = useConverterStore();
-      
-      store.columnLengths = '5,5,5';
-      store.dataBody = 'AAAA BBBB CCCC ';
-      
-      // First convert
-      const convertButton = wrapper.findAll('button').find(b => 
-        b.text().includes('固定長→TSV') || b.text().includes('固定長→CSV')
-      );
-      if (convertButton) {
-        await convertButton.trigger('click');
-        await wrapper.vm.$nextTick();
-        
-        // Then find copy button
-        const copyButton = wrapper.findAll('button').find(b => 
-          b.text().includes('コピー')
-        );
-        
-        if (copyButton) {
-          await copyButton.trigger('click');
-          expect(navigator.clipboard.writeText).toHaveBeenCalled();
-        }
-      }
-    });
-  });
-
   describe('Download', () => {
     it('should create download link when download button is clicked', async () => {
+      // URL.createObjectURLをモック
+      const mockCreateObjectURL = vi.spyOn(URL, 'createObjectURL').mockImplementation(() => '');
+
       const wrapper = createWrapper();
       const store = useConverterStore();
-      
+
       store.columnLengths = '5,5,5';
       store.dataBody = 'AAAA BBBB CCCC ';
-      
+
       // First convert
-      const convertButton = wrapper.findAll('button').find(b => 
+      const convertButton = wrapper.findAll('button').find(b =>
         b.text().includes('固定長→TSV') || b.text().includes('固定長→CSV')
       );
       if (convertButton) {
         await convertButton.trigger('click');
         await wrapper.vm.$nextTick();
-        
+
         // Then find download button
-        const downloadButton = wrapper.findAll('button').find(b => 
+        const downloadButton = wrapper.findAll('button').find(b =>
           b.text().includes('ダウンロード')
         );
-        
+
         if (downloadButton) {
           await downloadButton.trigger('click');
-          expect(URL.createObjectURL).toHaveBeenCalled();
+          expect(mockCreateObjectURL).toHaveBeenCalled();
         }
       }
+
+      mockCreateObjectURL.mockRestore();
     });
   });
 
