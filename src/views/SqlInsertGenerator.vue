@@ -5,33 +5,41 @@ import { useSqlInsertStore } from '../stores/sqlInsert'
 import { getDelimiter, parseColumnLengths, convertFromFixed } from '../utils/converter'
 import { parseDelimitedData } from '../utils/delimited'
 import { generateInsertStatements, parseColumnOptions } from '../utils/sqlInsert'
-import InputSection from '../components/InputSection.vue'
 import NotificationToast from '../components/NotificationToast.vue'
+import { useFileUpload } from '../composables/useFileUpload'
+import { useNotification } from '../composables/useNotification'
+import { useTruncatedDisplay } from '../composables/useTruncatedDisplay'
 
 const DEFAULT_TABLE_NAME = 'YOUR_TABLE_NAME'
 
 const store = useSqlInsertStore()
 const { tableName, dataBody, columnHeaders, columnOptions, useFirstRowAsHeader, delimiterType, columnLengths, insertFormat, useBacktick, forceAllString } = storeToRefs(store)
 
-const result = ref('')
+const fullResult = ref('')
 const conversionType = ref('')
 
 const convertLoading = ref(false)
 const copyLoading = ref(false)
 const downloadLoading = ref(false)
 
-const notificationMessage = ref('')
-const notificationType = ref<'success' | 'error'>('success')
-const showNotificationFlag = ref(false)
+const { notificationMessage, notificationType, showNotificationFlag, showNotification } = useNotification()
+const { displayResult } = useTruncatedDisplay(fullResult)
 
-const showNotification = (message: string, type: 'success' | 'error' = 'success') => {
-  notificationMessage.value = message
-  notificationType.value = type
-  showNotificationFlag.value = true
-  setTimeout(() => {
-    showNotificationFlag.value = false
-  }, 2000)
-}
+// ファイルアップロードコンポーザブルを使用
+const {
+  fileInputRef,
+  uploadedFile,
+  displayDataBody,
+  isDataBodyReadonly,
+  uploadFile,
+  handleFileUpload,
+  clearUploadedFile,
+} = useFileUpload({
+  dataBody,
+  delimiterType,
+  onSuccess: showNotification,
+  onError: (message) => showNotification(message, 'error'),
+})
 
 const copyFieldToClipboard = (text: string, fieldName: string) => {
   navigator.clipboard.writeText(text).then(() => {
@@ -65,14 +73,23 @@ const parseInputData = (data: string): string[][] | false => {
   }
 }
 
-const convert = () => {
+const convert = async () => {
   convertLoading.value = true
   try {
-    if (!dataBody.value.trim()) {
+    // Get data (file or manual input)
+    let data: string
+    if (uploadedFile.value) {
+      // Read full file only on conversion
+      data = await uploadedFile.value.text()
+    } else {
+      data = dataBody.value
+    }
+
+    if (!data.trim()) {
       throw new Error('データが空です')
     }
-    
-    const parsedData = parseInputData(dataBody.value)
+
+    const parsedData = parseInputData(data)
     if (!parsedData || parsedData.length === 0) {
       throw new Error('データのパースに失敗しました')
     }
@@ -110,12 +127,12 @@ const convert = () => {
     const finalTableName = tableName.value.trim() || DEFAULT_TABLE_NAME
 
     // INSERT文生成
-    const inputType = delimiterType.value === 'fixed' ? '固定長' : 
-                     getDelimiter(dataBody.value, delimiterType.value) === '\t' ? 'TSV' : 'CSV'
+    const inputType = delimiterType.value === 'fixed' ? '固定長' :
+                     getDelimiter(data, delimiterType.value) === '\t' ? 'TSV' : 'CSV'
     const outputType = insertFormat.value === 'single' ? '単一行INSERT' : '複数行INSERT'
     conversionType.value = `${inputType} → SQL INSERT (${outputType})`
 
-    result.value = generateInsertStatements(
+    const generatedResult = generateInsertStatements(
       finalTableName,
       columns,
       dataRows,
@@ -124,8 +141,11 @@ const convert = () => {
       useBacktick.value,
       forceAllString.value
     )
+
+    // Store full result
+    fullResult.value = generatedResult
   } catch (error) {
-    result.value = 'エラー: ' + (error as Error).message
+    fullResult.value = 'エラー: ' + (error as Error).message
     conversionType.value = ''
   } finally {
     convertLoading.value = false
@@ -134,9 +154,9 @@ const convert = () => {
 
 const copyToClipboard = () => {
   copyLoading.value = true
-  navigator.clipboard.writeText(result.value).then(() => {
+  navigator.clipboard.writeText(fullResult.value).then(() => {
     copyLoading.value = false
-    showNotification('コピーしました')
+    showNotification('コピーしました（完全なデータ）')
   }).catch(() => {
     copyLoading.value = false
     showNotification('コピーに失敗しました', 'error')
@@ -145,7 +165,7 @@ const copyToClipboard = () => {
 
 const downloadResult = () => {
   downloadLoading.value = true
-  const blob = new Blob([result.value], { type: 'text/plain' })
+  const blob = new Blob([fullResult.value], { type: 'text/plain' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
@@ -154,8 +174,13 @@ const downloadResult = () => {
   URL.revokeObjectURL(url)
   setTimeout(() => {
     downloadLoading.value = false
-    showNotification('ダウンロードしました')
+    showNotification('ダウンロードしました（完全なデータ）')
   }, 300)
+}
+
+const clearInputData = () => {
+  clearUploadedFile()
+  store.clearDataBody()
 }
 
 const resultPlaceholder = computed(() => {
@@ -247,21 +272,55 @@ const resultPlaceholder = computed(() => {
       ></textarea>
     </div>
 
-    <InputSection
-      v-model="dataBody"
-      label="データ本体"
-      placeholder="1,John,25&#10;2,Alice,30&#10;（CSV/TSV/固定長形式）"
-      :rows="8"
-      @copy="copyFieldToClipboard(dataBody, 'データ本体')"
-      @clear="store.clearDataBody()"
-    >
+    <div class="input-section">
+      <input
+        type="file"
+        ref="fileInputRef"
+        @change="handleFileUpload"
+        style="display: none"
+      />
+      <div class="input-header">
+        <h3>データ本体</h3>
+        <div class="input-actions">
+          <button
+            class="btn btn-icon-small"
+            @click="uploadFile"
+            title="ファイルから読み込み"
+          >
+            <i class="mdi mdi-file-upload"></i>
+          </button>
+          <button
+            class="btn btn-icon-small"
+            @click="copyFieldToClipboard(displayDataBody, 'データ本体')"
+            :disabled="!displayDataBody"
+            title="コピー"
+          >
+            <i class="mdi mdi-content-copy"></i>
+          </button>
+          <button
+            class="btn btn-icon-small"
+            @click="clearInputData"
+            :disabled="!displayDataBody"
+            title="クリア"
+          >
+            <i class="mdi mdi-delete"></i>
+          </button>
+        </div>
+      </div>
+      <textarea
+        :value="displayDataBody"
+        @input="!isDataBodyReadonly && (dataBody = ($event.target as HTMLTextAreaElement).value)"
+        :readonly="isDataBodyReadonly"
+        rows="8"
+        placeholder="1,John,25&#10;2,Alice,30&#10;（CSV/TSV/固定長形式）"
+      ></textarea>
       <div class="checkbox-container">
         <label>
           <input type="checkbox" v-model="useFirstRowAsHeader" />
           1行目をヘッダーとして使用
         </label>
       </div>
-    </InputSection>
+    </div>
 
     <div class="input-section">
       <div class="input-header">
@@ -350,27 +409,27 @@ const resultPlaceholder = computed(() => {
       <div class="input-header">
         <h3>実行結果<span v-if="conversionType" class="conversion-type">（{{ conversionType }}）</span></h3>
         <div class="input-actions">
-          <button 
-            class="btn btn-icon-small" 
+          <button
+            class="btn btn-icon-small"
             @click="copyToClipboard"
-            :disabled="copyLoading || !result"
+            :disabled="copyLoading || !fullResult"
             :class="{ loading: copyLoading }"
-            title="コピー"
+            title="コピー（完全なデータ）"
           >
             <i :class="copyLoading ? 'mdi mdi-loading mdi-spin' : 'mdi mdi-content-copy'"></i>
           </button>
-          <button 
-            class="btn btn-icon-small" 
+          <button
+            class="btn btn-icon-small"
             @click="downloadResult"
-            :disabled="downloadLoading || !result"
+            :disabled="downloadLoading || !fullResult"
             :class="{ loading: downloadLoading }"
-            title="ダウンロード"
+            title="ダウンロード（完全なデータ）"
           >
             <i :class="downloadLoading ? 'mdi mdi-loading mdi-spin' : 'mdi mdi-download'"></i>
           </button>
         </div>
       </div>
-      <textarea v-model="result" rows="10" readonly :placeholder="resultPlaceholder"></textarea>
+      <textarea :value="displayResult" rows="10" readonly :placeholder="resultPlaceholder"></textarea>
       <div class="result-actions">
         <div class="output-format-selector">
           <label>INSERT形式:</label>

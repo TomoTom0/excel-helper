@@ -19,6 +19,22 @@ describe('Fixed Length Converter', () => {
     it('should parse tab-separated lengths', () => {
       expect(parseColumnLengths('10\t20\t15')).toEqual([10, 20, 15])
     })
+
+    it('should parse tab-separated lengths with delimiterType=fixed', () => {
+      expect(parseColumnLengths('10\t20\t15', 'fixed')).toEqual([10, 20, 15])
+    })
+
+    it('should parse comma-separated lengths with delimiterType=fixed', () => {
+      expect(parseColumnLengths('10,20,15', 'fixed')).toEqual([10, 20, 15])
+    })
+
+    it('should parse tab-separated lengths with delimiterType=tsv', () => {
+      expect(parseColumnLengths('10\t20\t15', 'tsv')).toEqual([10, 20, 15])
+    })
+
+    it('should parse comma-separated lengths with delimiterType=csv', () => {
+      expect(parseColumnLengths('10,20,15', 'csv')).toEqual([10, 20, 15])
+    })
   })
 
   describe('parseColumnOptions', () => {

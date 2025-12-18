@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - CSV/TSV出力時に全てのフィールドを引用符で囲むオプション（forceAllString）を追加
+- SQL INSERT文生成機能にファイルアップロード機能を追加
+  - 拡張子による形式自動判定（.csv, .tsv, .fix）
+  - バイナリファイルの検証と拒否
+  - Lazy loading（8KB検証、1KBプレビュー、変換時全読込）
+  - 大量データの省略表示（10,000文字制限、コピー・ダウンロードは全データ出力）
 
 ### Changed
 - パッケージマネージャーをnpmからBunに移行
@@ -18,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Tests
 - delimited.tsの新規テストファイルを追加（14テスト）
 - converter.tsにforceAllStringのテストケースを追加（5テスト）
+- SqlInsertGenerator.vueのコンポーネントテストを追加（19テスト）
 
 ### Documentation
 - README.mdをBunに対応して更新
