@@ -5,6 +5,8 @@ import { useConverterStore } from '../stores/converter'
 import { parseColumnLengths, parseColumnOptions, getDelimiter, convertFromFixed, tsvToFixed as convertTsvToFixed } from '../utils/converter'
 import { parseDelimitedData, toCSV, toTSV } from '../utils/delimited'
 import { useFileUpload } from '../composables/useFileUpload'
+import { useNotification } from '../composables/useNotification'
+import { useTruncatedDisplay } from '../composables/useTruncatedDisplay'
 
 const store = useConverterStore()
 const { columnLengths, dataBody, columnTitles, columnOptions, delimiterType, outputFormat, forceAllString } = storeToRefs(store)
@@ -18,18 +20,8 @@ const downloadLoading = ref(false)
 // 結果の完全なデータを保持
 const fullResult = ref('')
 
-const notificationMessage = ref('')
-const notificationType = ref<'success' | 'error'>('success')
-const showNotificationFlag = ref(false)
-
-const showNotification = (message: string, type: 'success' | 'error' = 'success') => {
-  notificationMessage.value = message
-  notificationType.value = type
-  showNotificationFlag.value = true
-  setTimeout(() => {
-    showNotificationFlag.value = false
-  }, 2000)
-}
+const { notificationMessage, notificationType, showNotificationFlag, showNotification } = useNotification()
+const { displayResult } = useTruncatedDisplay(fullResult)
 
 // ファイルアップロードコンポーザブルを使用
 const {
@@ -197,34 +189,6 @@ const clearDataBody = () => {
 
 const hasDataBody = computed(() => {
   return !!(uploadedFile.value || dataBody.value)
-})
-
-// 表示用の制限された結果
-const displayResult = computed(() => {
-  const maxDisplayLength = 10000 // 最大表示文字数
-  if (fullResult.value.length <= maxDisplayLength) {
-    return fullResult.value
-  }
-
-  const lines = fullResult.value.split('\n')
-  const totalLines = lines.length
-  const totalChars = fullResult.value.length
-
-  let displayText = ''
-  let charCount = 0
-  let displayLines = 0
-
-  for (const line of lines) {
-    if (charCount + line.length + 1 > maxDisplayLength) break
-    displayText += line + '\n'
-    charCount += line.length + 1
-    displayLines++
-  }
-
-  displayText += `\n... 以降省略（全体: ${totalLines}行、${totalChars.toLocaleString()}文字）\n`
-  displayText += '※ダウンロードボタンで完全なデータを取得できます'
-
-  return displayText
 })
 </script>
 

@@ -13,6 +13,11 @@ describe('SqlInsertGenerator.vue', () => {
     return mount(SqlInsertGenerator, {
       global: {
         plugins: [createPinia()],
+        stubs: {
+          NotificationToast: {
+            template: '<div></div>',
+          },
+        },
       },
     })
   }
@@ -339,7 +344,7 @@ describe('SqlInsertGenerator.vue', () => {
         await button.trigger('click')
         await wrapper.vm.$nextTick()
 
-        // 同期処理のため即座に完了
+        // ファイルアップロードがない場合は、convert関数内の非同期処理が実行されないためローディング状態は発生しない
         expect(button.classes()).not.toContain('loading')
 
         const resultArea = wrapper.find('textarea[readonly]')
