@@ -59,11 +59,17 @@ export const getDelimiter = (data: string, type: DelimiterType): '\t' | ',' => {
 }
 
 /**
- * 入力文字列の区切り文字を決定する（parseColumnLengths / parseColumnOptions 用）
- * delimiterType が 'auto' の場合、入力文字列の内容から自動判別
+ * 補助データ（カラム長、カラムオプション）の区切り文字を決定する
+ *
+ * 補助データの入力形式は、データ本体の形式とは独立しています。
+ * 通常は delimiterType='auto' で呼び出され、入力文字列の内容から自動判別します。
+ *
+ * @param input - パースする入力文字列
+ * @param delimiterType - 区切り文字タイプ（通常は 'auto' を使用）
+ * @returns タブまたはカンマ
  */
 export const getOptionsDelimiter = (input: string, delimiterType: DelimiterType = 'auto'): '\t' | ',' => {
-  if (delimiterType === 'auto') {
+  if (delimiterType === 'auto' || delimiterType === 'fixed') {
     return input.includes('\t') ? '\t' : ','
   }
   return delimiterType === 'tsv' ? '\t' : ','

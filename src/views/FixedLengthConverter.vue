@@ -8,12 +8,27 @@ import { parseDelimitedData, toCSV, toTSV } from '../utils/delimited'
 const store = useConverterStore()
 const { columnLengths, dataBody, columnTitles, columnOptions, delimiterType, outputFormat, forceAllString } = storeToRefs(store)
 
-const result = ref('')
 const conversionType = ref('')
 
 const convertLoading = ref(false)
 const copyLoading = ref(false)
 const downloadLoading = ref(false)
+
+// 結果の完全なデータを保持
+const fullResult = ref('')
+
+// データ本体の表示用（ファイルプレビューまたは手動入力）
+const displayDataBody = computed(() => {
+  // ファイルがアップロードされている場合はプレビューを表示
+  if (uploadedFile.value && filePreview.value) {
+    return filePreview.value
+  }
+  // 手動入力の場合はそのまま表示
+  return dataBody.value
+})
+
+// データ本体が読み取り専用かどうか（ファイルアップロード時）
+const isDataBodyReadonly = computed(() => uploadedFile.value !== null)
 
 const isDelimitedData = (data: string, expectedColumnCount: number): string[][] | false => {
   // 固定長として明示的に指定されている場合は区切り文字データとして扱わない
@@ -59,26 +74,26 @@ const resultPlaceholder = computed(() => {
   }
 })
 
-const handleDelimitedInput = (lengths: number[], parsedData: string[][]) => {
-  const delimiter = getDelimiter(dataBody.value, delimiterType.value)
+const handleDelimitedInput = (lengths: number[], parsedData: string[][], data: string) => {
+  const delimiter = getDelimiter(data, delimiterType.value)
   const inputType = delimiter === '\t' ? 'TSV' : 'CSV'
-  
+
   if (outputFormat.value === 'fixed') {
     // TSV/CSV → 固定長
     conversionType.value = `${inputType} → 固定長`
-    const options = columnOptions.value.trim() 
-      ? parseColumnOptions(columnOptions.value, delimiterType.value)
+    const options = columnOptions.value.trim()
+      ? parseColumnOptions(columnOptions.value)
       : lengths.map(() => ({ type: 'string' as const, padding: 'right' as const, padChar: ' ' }))
-    result.value = convertTsvToFixed(parsedData, lengths, options)
+    fullResult.value = convertTsvToFixed(parsedData, lengths, options)
   } else {
     // TSV/CSV → TSV/CSV (区切り文字変換)
     const outputType = outputFormat.value === 'csv' ? 'CSV' : 'TSV'
     conversionType.value = `${inputType} → ${outputType}`
-    result.value = outputFormat.value === 'csv' ? toCSV(parsedData, forceAllString.value) : toTSV(parsedData, forceAllString.value)
+    fullResult.value = outputFormat.value === 'csv' ? toCSV(parsedData, forceAllString.value) : toTSV(parsedData, forceAllString.value)
   }
 }
 
-const handleFixedWidthInput = (lengths: number[]) => {
+const handleFixedWidthInput = (lengths: number[], data: string) => {
   // 固定長 → TSV/CSV/固定長
   if (outputFormat.value === 'fixed') {
     conversionType.value = '固定長 → 固定長'
@@ -86,28 +101,39 @@ const handleFixedWidthInput = (lengths: number[]) => {
     const outputType = outputFormat.value === 'csv' ? 'CSV' : 'TSV'
     conversionType.value = `固定長 → ${outputType}`
   }
-  result.value = convertFromFixed(dataBody.value, lengths, outputFormat.value, forceAllString.value)
+  fullResult.value = convertFromFixed(data, lengths, outputFormat.value, forceAllString.value)
 }
 
-const convert = () => {
+const convert = async () => {
   convertLoading.value = true
   try {
-    const lengths = parseColumnLengths(columnLengths.value, delimiterType.value)
+    const lengths = parseColumnLengths(columnLengths.value)
     if (lengths.length === 0) {
       throw new Error('カラム長が指定されていません')
     }
-    if (!dataBody.value.trim()) {
+
+    // データの取得（ファイルまたは手動入力）
+    let data: string
+    if (uploadedFile.value) {
+      // ファイルの場合は変換時に全データを読み込む
+      data = await uploadedFile.value.text()
+    } else {
+      // 手動入力の場合
+      data = dataBody.value
+    }
+
+    if (!data.trim()) {
       throw new Error('データが空です')
     }
-    
-    const parsedData = isDelimitedData(dataBody.value, lengths.length)
+
+    const parsedData = isDelimitedData(data, lengths.length)
     if (parsedData) {
-      handleDelimitedInput(lengths, parsedData)
+      handleDelimitedInput(lengths, parsedData, data)
     } else {
-      handleFixedWidthInput(lengths)
+      handleFixedWidthInput(lengths, data)
     }
   } catch (error) {
-    result.value = 'エラー: ' + (error as Error).message
+    fullResult.value = 'エラー: ' + (error as Error).message
   } finally {
     convertLoading.value = false
   }
@@ -115,9 +141,9 @@ const convert = () => {
 
 const copyToClipboard = () => {
   copyLoading.value = true
-  navigator.clipboard.writeText(result.value).then(() => {
+  navigator.clipboard.writeText(fullResult.value).then(() => {
     copyLoading.value = false
-    showNotification('コピーしました')
+    showNotification('コピーしました（完全なデータ）')
   }).catch(() => {
     copyLoading.value = false
     showNotification('コピーに失敗しました', 'error')
@@ -126,7 +152,7 @@ const copyToClipboard = () => {
 
 const downloadResult = () => {
   downloadLoading.value = true
-  const blob = new Blob([result.value], { type: 'text/plain' })
+  const blob = new Blob([fullResult.value], { type: 'text/plain' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
@@ -135,7 +161,7 @@ const downloadResult = () => {
   URL.revokeObjectURL(url)
   setTimeout(() => {
     downloadLoading.value = false
-    showNotification('ダウンロードしました')
+    showNotification('ダウンロードしました（完全なデータ）')
   }, 300)
 }
 
@@ -159,6 +185,144 @@ const copyFieldToClipboard = (text: string, fieldName: string) => {
     showNotification('コピーに失敗しました', 'error')
   })
 }
+
+const clearDataBody = () => {
+  uploadedFile.value = null
+  filePreview.value = ''
+  store.clearDataBody()
+}
+
+const hasDataBody = computed(() => {
+  return !!(uploadedFile.value || dataBody.value)
+})
+
+const fileInputRef = ref<HTMLInputElement | null>(null)
+const uploadedFile = ref<File | null>(null)
+const filePreview = ref('')
+
+const uploadFile = () => {
+  fileInputRef.value?.click()
+}
+
+/**
+ * ファイルの拡張子に基づいて入力形式を判定する
+ */
+const detectDelimiterTypeFromFilename = (filename: string): 'csv' | 'tsv' | 'fixed' | 'auto' => {
+  const ext = filename.toLowerCase().split('.').pop()
+  if (!ext) return 'auto'
+
+  if (ext === 'csv') return 'csv'
+  if (ext === 'tsv') return 'tsv'
+  if (ext === 'fix') return 'fixed'
+
+  return 'auto'
+}
+
+/**
+ * テキストファイルかどうかを判定する（バイナリチェック）
+ */
+const isTextFile = (text: string): boolean => {
+  // NULL文字（0x00）が含まれていればバイナリと判断
+  if (text.includes('\0')) return false
+
+  // 制御文字（タブ、改行、キャリッジリターン以外）の割合をチェック
+  let controlCharCount = 0
+  const totalLength = Math.min(text.length, 8000) // 最初の8000文字をサンプル
+
+  for (let i = 0; i < totalLength; i++) {
+    const code = text.charCodeAt(i)
+    // 0x00-0x08, 0x0B-0x0C, 0x0E-0x1F は制御文字（0x09=TAB, 0x0A=LF, 0x0D=CR は除外）
+    if ((code >= 0x00 && code <= 0x08) || (code >= 0x0B && code <= 0x0C) || (code >= 0x0E && code <= 0x1F)) {
+      controlCharCount++
+    }
+  }
+
+  // 制御文字が10%以上含まれていればバイナリと判断
+  return controlCharCount / totalLength < 0.1
+}
+
+const handleFileUpload = async (event: Event) => {
+  const target = event.target as HTMLInputElement
+  const file = target.files?.[0]
+  if (!file) return
+
+  try {
+    // 冒頭の一部だけ読み込んでバイナリチェックと拡張子判定
+    const previewSize = 8000 // バイナリチェック用
+    const blob = file.slice(0, previewSize)
+    const previewText = await blob.text()
+
+    // バイナリチェック
+    if (!isTextFile(previewText)) {
+      showNotification('バイナリファイルは読み込めません', 'error')
+      target.value = ''
+      return
+    }
+
+    // ファイル名から入力形式を判定
+    const detectedType = detectDelimiterTypeFromFilename(file.name)
+    delimiterType.value = detectedType
+
+    // ファイルオブジェクトを保持（実際の読み込みは変換時）
+    uploadedFile.value = file
+
+    // プレビュー用に冒頭1000文字を表示
+    const displaySize = 1000
+    const displayBlob = file.slice(0, displaySize)
+    const displayText = await displayBlob.text()
+
+    const fileSizeKB = (file.size / 1024).toFixed(1)
+    const previewMessage = file.size > displaySize
+      ? `\n\n... 以降省略（ファイルサイズ: ${fileSizeKB} KB）\n※変換時に全データを読み込みます`
+      : ''
+
+    filePreview.value = displayText + previewMessage
+    dataBody.value = '' // 手動入力をクリア
+
+    // 判定結果を通知
+    const typeLabel = {
+      csv: 'CSV形式',
+      tsv: 'TSV形式',
+      fixed: '固定長形式',
+      auto: '自動判別'
+    }[detectedType]
+
+    showNotification(`ファイルを読み込みました（${typeLabel}、${fileSizeKB} KB）`)
+  } catch (error) {
+    showNotification('ファイルの読み込みに失敗しました', 'error')
+  } finally {
+    // 同じファイルを再度選択できるようにリセット
+    target.value = ''
+  }
+}
+
+// 表示用の制限された結果
+const displayResult = computed(() => {
+  const maxDisplayLength = 10000 // 最大表示文字数
+  if (fullResult.value.length <= maxDisplayLength) {
+    return fullResult.value
+  }
+
+  const lines = fullResult.value.split('\n')
+  const totalLines = lines.length
+  const totalChars = fullResult.value.length
+
+  let displayText = ''
+  let charCount = 0
+  let displayLines = 0
+
+  for (const line of lines) {
+    if (charCount + line.length + 1 > maxDisplayLength) break
+    displayText += line + '\n'
+    charCount += line.length + 1
+    displayLines++
+  }
+
+  displayText += `\n... 以降省略（全体: ${totalLines}行、${totalChars.toLocaleString()}文字）\n`
+  displayText += '※ダウンロードボタンで完全なデータを取得できます'
+
+  return displayText
+})
 </script>
 
 <template>
@@ -214,25 +378,44 @@ const copyFieldToClipboard = (text: string, fieldName: string) => {
       <div class="input-header">
         <h3>データ本体</h3>
         <div class="input-actions">
-          <button 
-            class="btn btn-icon-small" 
-            @click="copyFieldToClipboard(dataBody, 'データ本体')"
-            :disabled="!dataBody"
+          <input
+            type="file"
+            ref="fileInputRef"
+            @change="handleFileUpload"
+            style="display: none"
+          />
+          <button
+            class="btn btn-icon-small"
+            @click="uploadFile"
+            title="ファイルから読み込み"
+          >
+            <i class="mdi mdi-file-upload"></i>
+          </button>
+          <button
+            class="btn btn-icon-small"
+            @click="copyFieldToClipboard(displayDataBody, 'データ本体')"
+            :disabled="!hasDataBody"
             title="コピー"
           >
             <i class="mdi mdi-content-copy"></i>
           </button>
-          <button 
-            class="btn btn-icon-small" 
-            @click="store.clearDataBody()"
-            :disabled="!dataBody"
+          <button
+            class="btn btn-icon-small"
+            @click="clearDataBody()"
+            :disabled="!hasDataBody"
             title="クリア"
           >
             <i class="mdi mdi-delete"></i>
           </button>
         </div>
       </div>
-      <textarea v-model="dataBody" rows="8" placeholder="John      Tokyo     25&#10;Alice     NewYork   30&#10;（固定長形式）&#10;&#10;John,Tokyo,25&#10;Alice,NewYork,30&#10;（CSV/TSV形式）"></textarea>
+      <textarea
+        :value="displayDataBody"
+        @input="!isDataBodyReadonly && (dataBody = ($event.target as HTMLTextAreaElement).value)"
+        :readonly="isDataBodyReadonly"
+        rows="8"
+        placeholder="John      Tokyo     25&#10;Alice     NewYork   30&#10;（固定長形式）&#10;&#10;John,Tokyo,25&#10;Alice,NewYork,30&#10;（CSV/TSV形式）"
+      ></textarea>
     </div>
 
     <div class="input-section">
@@ -310,27 +493,27 @@ const copyFieldToClipboard = (text: string, fieldName: string) => {
       <div class="input-header">
         <h3>実行結果<span v-if="conversionType" class="conversion-type">（{{ conversionType }}）</span></h3>
         <div class="input-actions">
-          <button 
-            class="btn btn-icon-small" 
+          <button
+            class="btn btn-icon-small"
             @click="copyToClipboard"
-            :disabled="copyLoading || !result"
+            :disabled="copyLoading || !fullResult"
             :class="{ loading: copyLoading }"
-            title="コピー"
+            title="コピー（完全なデータ）"
           >
             <i :class="copyLoading ? 'mdi mdi-loading mdi-spin' : 'mdi mdi-content-copy'"></i>
           </button>
-          <button 
-            class="btn btn-icon-small" 
+          <button
+            class="btn btn-icon-small"
             @click="downloadResult"
-            :disabled="downloadLoading || !result"
+            :disabled="downloadLoading || !fullResult"
             :class="{ loading: downloadLoading }"
-            title="ダウンロード"
+            title="ダウンロード（完全なデータ）"
           >
             <i :class="downloadLoading ? 'mdi mdi-loading mdi-spin' : 'mdi mdi-download'"></i>
           </button>
         </div>
       </div>
-      <textarea v-model="result" rows="10" readonly :placeholder="resultPlaceholder"></textarea>
+      <textarea :value="displayResult" rows="10" readonly :placeholder="resultPlaceholder"></textarea>
       <div class="result-actions">
         <div class="output-format-selector">
           <label>出力形式:</label>
