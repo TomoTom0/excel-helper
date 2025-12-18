@@ -4,6 +4,7 @@ import { storeToRefs } from 'pinia'
 import { useConverterStore } from '../stores/converter'
 import { parseColumnLengths, parseColumnOptions, getDelimiter, convertFromFixed, tsvToFixed as convertTsvToFixed } from '../utils/converter'
 import { parseDelimitedData, toCSV, toTSV } from '../utils/delimited'
+import { useFileUpload } from '../composables/useFileUpload'
 
 const store = useConverterStore()
 const { columnLengths, dataBody, columnTitles, columnOptions, delimiterType, outputFormat, forceAllString } = storeToRefs(store)
@@ -17,18 +18,35 @@ const downloadLoading = ref(false)
 // 結果の完全なデータを保持
 const fullResult = ref('')
 
-// データ本体の表示用（ファイルプレビューまたは手動入力）
-const displayDataBody = computed(() => {
-  // ファイルがアップロードされている場合はプレビューを表示
-  if (uploadedFile.value && filePreview.value) {
-    return filePreview.value
-  }
-  // 手動入力の場合はそのまま表示
-  return dataBody.value
-})
+const notificationMessage = ref('')
+const notificationType = ref<'success' | 'error'>('success')
+const showNotificationFlag = ref(false)
 
-// データ本体が読み取り専用かどうか（ファイルアップロード時）
-const isDataBodyReadonly = computed(() => uploadedFile.value !== null)
+const showNotification = (message: string, type: 'success' | 'error' = 'success') => {
+  notificationMessage.value = message
+  notificationType.value = type
+  showNotificationFlag.value = true
+  setTimeout(() => {
+    showNotificationFlag.value = false
+  }, 2000)
+}
+
+// ファイルアップロードコンポーザブルを使用
+const {
+  fileInputRef,
+  uploadedFile,
+  filePreview,
+  displayDataBody,
+  isDataBodyReadonly,
+  uploadFile,
+  handleFileUpload,
+  clearUploadedFile,
+} = useFileUpload({
+  dataBody,
+  delimiterType,
+  onSuccess: showNotification,
+  onError: (message) => showNotification(message, 'error'),
+})
 
 const isDelimitedData = (data: string, expectedColumnCount: number): string[][] | false => {
   // 固定長として明示的に指定されている場合は区切り文字データとして扱わない
@@ -165,19 +183,6 @@ const downloadResult = () => {
   }, 300)
 }
 
-const notificationMessage = ref('')
-const notificationType = ref<'success' | 'error'>('success')
-const showNotificationFlag = ref(false)
-
-const showNotification = (message: string, type: 'success' | 'error' = 'success') => {
-  notificationMessage.value = message
-  notificationType.value = type
-  showNotificationFlag.value = true
-  setTimeout(() => {
-    showNotificationFlag.value = false
-  }, 2000)
-}
-
 const copyFieldToClipboard = (text: string, fieldName: string) => {
   navigator.clipboard.writeText(text).then(() => {
     showNotification(`${fieldName}をコピーしました`)
@@ -187,114 +192,13 @@ const copyFieldToClipboard = (text: string, fieldName: string) => {
 }
 
 const clearDataBody = () => {
-  uploadedFile.value = null
-  filePreview.value = ''
+  clearUploadedFile()
   store.clearDataBody()
 }
 
 const hasDataBody = computed(() => {
   return !!(uploadedFile.value || dataBody.value)
 })
-
-const fileInputRef = ref<HTMLInputElement | null>(null)
-const uploadedFile = ref<File | null>(null)
-const filePreview = ref('')
-
-const uploadFile = () => {
-  fileInputRef.value?.click()
-}
-
-/**
- * ファイルの拡張子に基づいて入力形式を判定する
- */
-const detectDelimiterTypeFromFilename = (filename: string): 'csv' | 'tsv' | 'fixed' | 'auto' => {
-  const ext = filename.toLowerCase().split('.').pop()
-  if (!ext) return 'auto'
-
-  if (ext === 'csv') return 'csv'
-  if (ext === 'tsv') return 'tsv'
-  if (ext === 'fix') return 'fixed'
-
-  return 'auto'
-}
-
-/**
- * テキストファイルかどうかを判定する（バイナリチェック）
- */
-const isTextFile = (text: string): boolean => {
-  // NULL文字（0x00）が含まれていればバイナリと判断
-  if (text.includes('\0')) return false
-
-  // 制御文字（タブ、改行、キャリッジリターン以外）の割合をチェック
-  let controlCharCount = 0
-  const totalLength = Math.min(text.length, 8000) // 最初の8000文字をサンプル
-
-  for (let i = 0; i < totalLength; i++) {
-    const code = text.charCodeAt(i)
-    // 0x00-0x08, 0x0B-0x0C, 0x0E-0x1F は制御文字（0x09=TAB, 0x0A=LF, 0x0D=CR は除外）
-    if ((code >= 0x00 && code <= 0x08) || (code >= 0x0B && code <= 0x0C) || (code >= 0x0E && code <= 0x1F)) {
-      controlCharCount++
-    }
-  }
-
-  // 制御文字が10%以上含まれていればバイナリと判断
-  return controlCharCount / totalLength < 0.1
-}
-
-const handleFileUpload = async (event: Event) => {
-  const target = event.target as HTMLInputElement
-  const file = target.files?.[0]
-  if (!file) return
-
-  try {
-    // 冒頭の一部だけ読み込んでバイナリチェックと拡張子判定
-    const previewSize = 8000 // バイナリチェック用
-    const blob = file.slice(0, previewSize)
-    const previewText = await blob.text()
-
-    // バイナリチェック
-    if (!isTextFile(previewText)) {
-      showNotification('バイナリファイルは読み込めません', 'error')
-      target.value = ''
-      return
-    }
-
-    // ファイル名から入力形式を判定
-    const detectedType = detectDelimiterTypeFromFilename(file.name)
-    delimiterType.value = detectedType
-
-    // ファイルオブジェクトを保持（実際の読み込みは変換時）
-    uploadedFile.value = file
-
-    // プレビュー用に冒頭1000文字を表示
-    const displaySize = 1000
-    const displayBlob = file.slice(0, displaySize)
-    const displayText = await displayBlob.text()
-
-    const fileSizeKB = (file.size / 1024).toFixed(1)
-    const previewMessage = file.size > displaySize
-      ? `\n\n... 以降省略（ファイルサイズ: ${fileSizeKB} KB）\n※変換時に全データを読み込みます`
-      : ''
-
-    filePreview.value = displayText + previewMessage
-    dataBody.value = '' // 手動入力をクリア
-
-    // 判定結果を通知
-    const typeLabel = {
-      csv: 'CSV形式',
-      tsv: 'TSV形式',
-      fixed: '固定長形式',
-      auto: '自動判別'
-    }[detectedType]
-
-    showNotification(`ファイルを読み込みました（${typeLabel}、${fileSizeKB} KB）`)
-  } catch (error) {
-    showNotification('ファイルの読み込みに失敗しました', 'error')
-  } finally {
-    // 同じファイルを再度選択できるようにリセット
-    target.value = ''
-  }
-}
 
 // 表示用の制限された結果
 const displayResult = computed(() => {
