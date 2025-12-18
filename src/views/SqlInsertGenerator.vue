@@ -37,7 +37,6 @@ const showNotification = (message: string, type: 'success' | 'error' = 'success'
 const {
   fileInputRef,
   uploadedFile,
-  filePreview,
   displayDataBody,
   isDataBodyReadonly,
   uploadFile,
