@@ -7,6 +7,8 @@ import { parseDelimitedData } from '../utils/delimited'
 import { generateInsertStatements, parseColumnOptions } from '../utils/sqlInsert'
 import NotificationToast from '../components/NotificationToast.vue'
 import { useFileUpload } from '../composables/useFileUpload'
+import { useNotification } from '../composables/useNotification'
+import { useTruncatedDisplay } from '../composables/useTruncatedDisplay'
 
 const DEFAULT_TABLE_NAME = 'YOUR_TABLE_NAME'
 
@@ -20,18 +22,8 @@ const convertLoading = ref(false)
 const copyLoading = ref(false)
 const downloadLoading = ref(false)
 
-const notificationMessage = ref('')
-const notificationType = ref<'success' | 'error'>('success')
-const showNotificationFlag = ref(false)
-
-const showNotification = (message: string, type: 'success' | 'error' = 'success') => {
-  notificationMessage.value = message
-  notificationType.value = type
-  showNotificationFlag.value = true
-  setTimeout(() => {
-    showNotificationFlag.value = false
-  }, 2000)
-}
+const { notificationMessage, notificationType, showNotificationFlag, showNotification } = useNotification()
+const { displayResult } = useTruncatedDisplay(fullResult)
 
 // ファイルアップロードコンポーザブルを使用
 const {
@@ -186,33 +178,10 @@ const downloadResult = () => {
   }, 300)
 }
 
-// 表示用の制限された結果
-const displayResult = computed(() => {
-  const maxDisplayLength = 10000
-  if (fullResult.value.length <= maxDisplayLength) {
-    return fullResult.value
-  }
-
-  const lines = fullResult.value.split('\n')
-  const totalLines = lines.length
-  const totalChars = fullResult.value.length
-
-  let displayText = ''
-  let charCount = 0
-  let displayLines = 0
-
-  for (const line of lines) {
-    if (charCount + line.length + 1 > maxDisplayLength) break
-    displayText += line + '\n'
-    charCount += line.length + 1
-    displayLines++
-  }
-
-  displayText += `\n... 以降省略（全体: ${totalLines}行、${totalChars.toLocaleString()}文字）\n`
-  displayText += '※ダウンロードボタンで完全なデータを取得できます'
-
-  return displayText
-})
+const clearInputData = () => {
+  clearUploadedFile()
+  store.clearDataBody()
+}
 
 const resultPlaceholder = computed(() => {
   return `INSERT INTO \`${DEFAULT_TABLE_NAME}\` (\`id\`, \`name\`, \`age\`) VALUES (1, 'John', 25);\nINSERT INTO \`${DEFAULT_TABLE_NAME}\` (\`id\`, \`name\`, \`age\`) VALUES (2, 'Alice', 30);\n(変換結果がここに表示されます)`
@@ -330,7 +299,7 @@ const resultPlaceholder = computed(() => {
           </button>
           <button
             class="btn btn-icon-small"
-            @click="uploadedFile ? clearUploadedFile() : store.clearDataBody()"
+            @click="clearInputData"
             :disabled="!displayDataBody"
             title="クリア"
           >

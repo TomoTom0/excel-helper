@@ -3,6 +3,10 @@ import type { Ref } from 'vue'
 
 export type DelimiterType = 'csv' | 'tsv' | 'fixed' | 'auto'
 
+const CONTROL_CHAR_RATIO_THRESHOLD = 0.1
+const BINARY_CHECK_SIZE = 8000
+const PREVIEW_DISPLAY_SIZE = 1000
+
 export interface UseFileUploadOptions {
   dataBody: Ref<string>
   delimiterType: Ref<DelimiterType>
@@ -34,7 +38,7 @@ export function useFileUpload(options: UseFileUploadOptions) {
 
     // Control character ratio check (exclude TAB, LF, CR)
     let controlCharCount = 0
-    const totalLength = Math.min(text.length, 8000)
+    const totalLength = Math.min(text.length, BINARY_CHECK_SIZE)
 
     for (let i = 0; i < totalLength; i++) {
       const code = text.charCodeAt(i)
@@ -44,7 +48,7 @@ export function useFileUpload(options: UseFileUploadOptions) {
       }
     }
 
-    return controlCharCount / totalLength < 0.1
+    return controlCharCount / totalLength < CONTROL_CHAR_RATIO_THRESHOLD
   }
 
   const uploadFile = () => {
@@ -58,8 +62,7 @@ export function useFileUpload(options: UseFileUploadOptions) {
 
     try {
       // Only read first 8KB for binary check
-      const previewSize = 8000
-      const blob = file.slice(0, previewSize)
+      const blob = file.slice(0, BINARY_CHECK_SIZE)
       const previewText = await blob.text()
 
       // Binary check
@@ -77,16 +80,19 @@ export function useFileUpload(options: UseFileUploadOptions) {
       uploadedFile.value = file
 
       // Show preview (first 1000 chars only)
-      const displaySize = 1000
-      const displayBlob = file.slice(0, displaySize)
+      const displayBlob = file.slice(0, PREVIEW_DISPLAY_SIZE)
       const displayText = await displayBlob.text()
 
       const fileSizeKB = (file.size / 1024).toFixed(1)
-      const typeLabel = detectedType === 'auto' ? '自動判別' :
-                       detectedType === 'csv' ? 'CSV' :
-                       detectedType === 'tsv' ? 'TSV' : '固定長'
+      const typeLabels: Record<DelimiterType, string> = {
+        auto: '自動判別',
+        csv: 'CSV',
+        tsv: 'TSV',
+        fixed: '固定長',
+      }
+      const typeLabel = typeLabels[detectedType]
 
-      const previewMessage = file.size > displaySize
+      const previewMessage = file.size > PREVIEW_DISPLAY_SIZE
         ? `\n\n... 以降省略（ファイルサイズ: ${fileSizeKB} KB）\n※変換時に全データを読み込みます`
         : ''
 
