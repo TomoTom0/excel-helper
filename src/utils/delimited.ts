@@ -104,13 +104,12 @@ export function toPipe(data: string[][]): string {
   if (data.length === 0) return '';
   
   // 各列の最大幅を計算
-  const colWidths: number[] = [];
-  for (const row of data) {
-    for (let i = 0; i < row.length; i++) {
-      const len = (row[i] || '').length;
-      colWidths[i] = Math.max(colWidths[i] || 0, len);
-    }
-  }
+  const colWidths = data.reduce<number[]>((widths, row) => {
+    row.forEach((cell, i) => {
+      widths[i] = Math.max(widths[i] || 0, (cell || '').length);
+    });
+    return widths;
+  }, []);
   
   // 各行をフォーマット
   const lines: string[] = [];
