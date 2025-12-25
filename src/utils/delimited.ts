@@ -51,15 +51,18 @@ export function parsePipe(input: string): string[][] {
     }
 
     // パイプで分割
-    let columns = line.split('|').map(col => col.trim());
-
-    // 行頭・行末のパイプによる空文字列を削除
-    if (columns.length > 0 && columns[0] === '') {
-      columns.shift();
+    let trimmedLine = line.trim();
+    
+    // 行頭のパイプを削除
+    if (trimmedLine.startsWith('|')) {
+      trimmedLine = trimmedLine.slice(1);
     }
-    if (columns.length > 0 && columns[columns.length - 1] === '') {
-      columns.pop();
+    // 行末のパイプを削除
+    if (trimmedLine.endsWith('|')) {
+      trimmedLine = trimmedLine.slice(0, -1);
     }
+    
+    const columns = trimmedLine.split('|').map(col => col.trim());
 
     // 有効なカラムがあれば追加
     if (columns.length > 0) {

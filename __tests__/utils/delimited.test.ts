@@ -129,6 +129,18 @@ describe('Delimited Data Converter', () => {
         ['2', 'Bob']
       ])
     })
+
+    it('空のカラムを含む行を処理できる', () => {
+      const input = '| a |  | c |'
+      const result = parsePipe(input)
+      expect(result).toEqual([['a', '', 'c']])
+    })
+
+    it('行頭・行末にパイプがない空カラムを処理できる', () => {
+      const input = 'a | | c'
+      const result = parsePipe(input)
+      expect(result).toEqual([['a', '', 'c']])
+    })
   })
 
   describe('toPipe', () => {
