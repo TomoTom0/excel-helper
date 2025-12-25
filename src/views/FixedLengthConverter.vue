@@ -60,39 +60,32 @@ const isDelimitedData = (data: string, expectedColumnCount: number): string[][] 
 
   try {
     const delimiter = getDelimiter(trimmedData, delimiterType.value)
-    console.log('detectDelimiter結果:', { delimiterType: delimiterType.value, detectedDelimiter: delimiter })
     let allRows: string[][]
-    
+
     if (delimiter === '|') {
       allRows = parsePipe(trimmedData)
     } else {
       allRows = parseDelimitedData(trimmedData, delimiter)
     }
-    
-    console.log('パース結果:', { rowCount: allRows.length, firstRow: allRows[0] })
-    
+
     const nonEmptyRows = allRows.filter(row => row.length > 1 || (row.length === 1 && row[0] !== ''))
     if (nonEmptyRows.length === 0) return false
 
     // 最初の5行をサンプリングしてチェック
     const sample = nonEmptyRows.slice(0, 5)
-    
+
     // 行間でカラム数が一貫しているかチェック
     const firstColumnCount = sample[0].length
-    const columnCounts = sample.map(row => row.length)
-    console.log('カラム数チェック:', { firstColumnCount, columnCounts, isConsistent: sample.every(row => row.length === firstColumnCount) })
     if (!sample.every(row => row.length === firstColumnCount)) return false
-    
+
     // 区切り文字が明確に存在する場合（複数カラム）は、カラム数が期待値と異なってもTSV/CSVとして扱う
     // ただし、1カラムしかない場合は固定長の可能性があるので期待値と一致する必要がある
     if (firstColumnCount === 1 && expectedColumnCount !== 1) return false
-    
-    console.log('isDelimitedData: true を返します')
+
     // パース成功時は全行を返す
     return allRows
-  } catch (e) {
+  } catch {
     // パースに失敗した場合は区切り文字データではないと判断
-    console.log('isDelimitedData: パース失敗', e)
     return false
   }
 }
@@ -141,12 +134,6 @@ const handleFixedWidthInput = (lengths: number[], data: string) => {
 const convert = async () => {
   convertLoading.value = true
   try {
-    console.log('convert開始:', {
-      uploadedFile: !!uploadedFile.value,
-      dataBodyLength: store.dataBody.length,
-      displayDataBodyLength: displayDataBody.value.length
-    })
-    
     // データの取得（ファイルまたは手動入力）
     let data: string
     if (uploadedFile.value) {
