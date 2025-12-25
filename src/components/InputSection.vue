@@ -11,6 +11,7 @@ interface Props {
 interface Emits {
   (e: 'update:modelValue', value: string): void
   (e: 'copy'): void
+  (e: 'replace'): void
   (e: 'clear'): void
 }
 
@@ -31,7 +32,6 @@ const updateValue = (event: Event) => {
 <template>
   <div class="input-section">
     <div class="input-header">
-      <h3>{{ label }}<span v-if="optional" class="optional">（省略可）</span></h3>
       <div class="input-actions">
         <button 
           class="btn btn-icon-small" 
@@ -43,6 +43,13 @@ const updateValue = (event: Event) => {
         </button>
         <button 
           class="btn btn-icon-small" 
+          @click="emit('replace')"
+          title="ペーストして置換"
+        >
+          <i class="mdi mdi-content-paste"></i>
+        </button>
+        <button 
+          class="btn btn-icon-small" 
           @click="emit('clear')"
           :disabled="!modelValue"
           title="クリア"
@@ -50,6 +57,7 @@ const updateValue = (event: Event) => {
           <i class="mdi mdi-delete"></i>
         </button>
       </div>
+      <h3>{{ label }}<span v-if="optional" class="optional">（省略可）</span></h3>
     </div>
     <textarea 
       :value="modelValue" 

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { toCSV, toTSV, parseCSV, parseTSV } from '../../src/utils/delimited'
+import { toCSV, toTSV, parseCSV, parseTSV, parsePipe, toPipe } from '../../src/utils/delimited'
 
 describe('Delimited Data Converter', () => {
   describe('toCSV', () => {
@@ -97,6 +97,67 @@ describe('Delimited Data Converter', () => {
       const input = '"001"\t"Tokyo"\t"25"'
       const result = parseTSV(input)
       expect(result).toEqual([['001', 'Tokyo', '25']])
+    })
+  })
+
+  describe('parsePipe', () => {
+    it('PostgreSQLパイプ区切り形式をパースできる', () => {
+      const input = ' id | name     | value\n----+----------+-------\n  1 | Alice    |   100\n  2 | Bob      |   200'
+      const result = parsePipe(input)
+      expect(result).toEqual([
+        ['id', 'name', 'value'],
+        ['1', 'Alice', '100'],
+        ['2', 'Bob', '200']
+      ])
+    })
+
+    it('パイプで始まり終わる行をパースできる', () => {
+      const input = '| id | name |\n|----|------|\n|  1 | Alice|'
+      const result = parsePipe(input)
+      expect(result).toEqual([
+        ['id', 'name'],
+        ['1', 'Alice']
+      ])
+    })
+
+    it('空行をスキップする', () => {
+      const input = ' id | name\n\n----+------\n  1 | Alice\n\n  2 | Bob'
+      const result = parsePipe(input)
+      expect(result).toEqual([
+        ['id', 'name'],
+        ['1', 'Alice'],
+        ['2', 'Bob']
+      ])
+    })
+
+    it('空のカラムを含む行を処理できる', () => {
+      const input = '| a |  | c |'
+      const result = parsePipe(input)
+      expect(result).toEqual([['a', '', 'c']])
+    })
+
+    it('行頭・行末にパイプがない空カラムを処理できる', () => {
+      const input = 'a | | c'
+      const result = parsePipe(input)
+      expect(result).toEqual([['a', '', 'c']])
+    })
+  })
+
+  describe('toPipe', () => {
+    it('パイプ区切り形式に変換できる', () => {
+      const data = [['id', 'name', 'value'], ['1', 'Alice', '100'], ['2', 'Bob', '200']]
+      const result = toPipe(data)
+      const lines = result.split('\n')
+      expect(lines[0]).toBe(' id | name  | value ')
+      expect(lines[1]).toBe('----+-------+-------')
+      expect(lines[2]).toBe(' 1  | Alice | 100   ')
+      expect(lines[3]).toBe(' 2  | Bob   | 200   ')
+    })
+
+    it('空データを処理できる', () => {
+      const data: string[][] = []
+      const result = toPipe(data)
+      expect(result).toBe('')
     })
   })
 })

@@ -3,7 +3,7 @@ import { ref, computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useSqlInsertStore } from '../stores/sqlInsert'
 import { getDelimiter, parseColumnLengths, convertFromFixed } from '../utils/converter'
-import { parseDelimitedData } from '../utils/delimited'
+import { parseDelimitedData, parsePipe } from '../utils/delimited'
 import { generateInsertStatements, parseColumnOptions } from '../utils/sqlInsert'
 import NotificationToast from '../components/NotificationToast.vue'
 import { useFileUpload } from '../composables/useFileUpload'
@@ -30,7 +30,6 @@ const {
   fileInputRef,
   uploadedFile,
   displayDataBody,
-  isDataBodyReadonly,
   uploadFile,
   handleFileUpload,
   clearUploadedFile,
@@ -64,9 +63,12 @@ const parseInputData = (data: string): string[][] | false => {
     return parseDelimitedData(tsvData, '\t')
   }
 
-  // TSV/CSVとしてパース
+  // TSV/CSV/パイプとしてパース
   try {
     const delimiter = getDelimiter(trimmedData, delimiterType.value)
+    if (delimiter === '|') {
+      return parsePipe(trimmedData)
+    }
     return parseDelimitedData(trimmedData, delimiter)
   } catch {
     return false
@@ -108,7 +110,12 @@ const convert = async () => {
         throw new Error('ヘッダーが入力されていません')
       }
       const delimiter = getDelimiter(columnHeaders.value, 'auto')
-      const headerData = parseDelimitedData(columnHeaders.value, delimiter)
+      let headerData: string[][]
+      if (delimiter === '|') {
+        headerData = parsePipe(columnHeaders.value)
+      } else {
+        headerData = parseDelimitedData(columnHeaders.value, delimiter)
+      }
       columns = headerData[0]
       dataRows = parsedData
       conversionType.value = '別途入力したヘッダーを使用'
@@ -127,8 +134,10 @@ const convert = async () => {
     const finalTableName = tableName.value.trim() || DEFAULT_TABLE_NAME
 
     // INSERT文生成
+    const delimiter = delimiterType.value === 'fixed' ? null : getDelimiter(data, delimiterType.value)
     const inputType = delimiterType.value === 'fixed' ? '固定長' :
-                     getDelimiter(data, delimiterType.value) === '\t' ? 'TSV' : 'CSV'
+                     delimiter === '\t' ? 'TSV' : 
+                     delimiter === '|' ? 'パイプ' : 'CSV'
     const outputType = insertFormat.value === 'single' ? '単一行INSERT' : '複数行INSERT'
     conversionType.value = `${inputType} → SQL INSERT (${outputType})`
 
@@ -183,6 +192,27 @@ const clearInputData = () => {
   store.clearDataBody()
 }
 
+const pasteFromClipboard = async (field: 'tableName' | 'columnLengths' | 'dataBody' | 'columnHeaders' | 'columnOptions') => {
+  try {
+    const text = await navigator.clipboard.readText()
+    if (field === 'tableName') {
+      tableName.value = text
+    } else if (field === 'columnLengths') {
+      columnLengths.value = text
+    } else if (field === 'dataBody') {
+      clearUploadedFile()
+      dataBody.value = text
+    } else if (field === 'columnHeaders') {
+      columnHeaders.value = text
+    } else if (field === 'columnOptions') {
+      columnOptions.value = text
+    }
+    showNotification('ペーストしました')
+  } catch {
+    showNotification('ペーストに失敗しました', 'error')
+  }
+}
+
 const resultPlaceholder = computed(() => {
   return `INSERT INTO \`${DEFAULT_TABLE_NAME}\` (\`id\`, \`name\`, \`age\`) VALUES (1, 'John', 25);\nINSERT INTO \`${DEFAULT_TABLE_NAME}\` (\`id\`, \`name\`, \`age\`) VALUES (2, 'Alice', 30);\n(変換結果がここに表示されます)`
 })
@@ -206,6 +236,10 @@ const resultPlaceholder = computed(() => {
           CSV
         </label>
         <label>
+          <input type="radio" value="pipe" v-model="delimiterType" />
+          パイプ
+        </label>
+        <label>
           <input type="radio" value="fixed" v-model="delimiterType" />
           固定長
         </label>
@@ -214,7 +248,6 @@ const resultPlaceholder = computed(() => {
 
     <div class="input-section input-section-inline">
       <div class="input-header">
-        <h3>テーブル名<span class="optional">（省略可）</span></h3>
         <div class="input-actions">
           <button 
             class="btn btn-icon-small" 
@@ -226,6 +259,13 @@ const resultPlaceholder = computed(() => {
           </button>
           <button 
             class="btn btn-icon-small" 
+            @click="pasteFromClipboard('tableName')"
+            title="ペーストして置換"
+          >
+            <i class="mdi mdi-content-paste"></i>
+          </button>
+          <button 
+            class="btn btn-icon-small" 
             @click="store.clearTableName()"
             :disabled="!tableName"
             title="クリア"
@@ -233,6 +273,7 @@ const resultPlaceholder = computed(() => {
             <i class="mdi mdi-delete"></i>
           </button>
         </div>
+        <h3>テーブル名<span class="optional">（省略可）</span></h3>
       </div>
       <input 
         type="text"
@@ -244,7 +285,6 @@ const resultPlaceholder = computed(() => {
 
     <div class="input-section">
       <div class="input-header">
-        <h3>カラム長<span class="optional">（固定長の場合のみ）</span></h3>
         <div class="input-actions">
           <button 
             class="btn btn-icon-small" 
@@ -256,6 +296,14 @@ const resultPlaceholder = computed(() => {
           </button>
           <button 
             class="btn btn-icon-small" 
+            @click="pasteFromClipboard('columnLengths')"
+            :disabled="delimiterType !== 'fixed'"
+            title="ペーストして置換"
+          >
+            <i class="mdi mdi-content-paste"></i>
+          </button>
+          <button 
+            class="btn btn-icon-small" 
             @click="store.clearColumnLengths()"
             :disabled="!columnLengths || delimiterType !== 'fixed'"
             title="クリア"
@@ -263,6 +311,7 @@ const resultPlaceholder = computed(() => {
             <i class="mdi mdi-delete"></i>
           </button>
         </div>
+        <h3>カラム長<span class="optional">（固定長の場合のみ）</span></h3>
       </div>
       <textarea 
         v-model="columnLengths"
@@ -280,7 +329,6 @@ const resultPlaceholder = computed(() => {
         style="display: none"
       />
       <div class="input-header">
-        <h3>データ本体</h3>
         <div class="input-actions">
           <button
             class="btn btn-icon-small"
@@ -299,6 +347,13 @@ const resultPlaceholder = computed(() => {
           </button>
           <button
             class="btn btn-icon-small"
+            @click="pasteFromClipboard('dataBody')"
+            title="ペーストして置換"
+          >
+            <i class="mdi mdi-content-paste"></i>
+          </button>
+          <button
+            class="btn btn-icon-small"
             @click="clearInputData"
             :disabled="!displayDataBody"
             title="クリア"
@@ -306,13 +361,19 @@ const resultPlaceholder = computed(() => {
             <i class="mdi mdi-delete"></i>
           </button>
         </div>
+        <h3>データ本体</h3>
       </div>
       <textarea
-        :value="displayDataBody"
-        @input="!isDataBodyReadonly && (dataBody = ($event.target as HTMLTextAreaElement).value)"
-        :readonly="isDataBodyReadonly"
+        v-if="!uploadedFile"
+        v-model="dataBody"
         rows="8"
         placeholder="1,John,25&#10;2,Alice,30&#10;（CSV/TSV/固定長形式）"
+      ></textarea>
+      <textarea
+        v-else
+        :value="displayDataBody"
+        readonly
+        rows="8"
       ></textarea>
       <div class="checkbox-container">
         <label>
@@ -324,7 +385,6 @@ const resultPlaceholder = computed(() => {
 
     <div class="input-section">
       <div class="input-header">
-        <h3>カラムヘッダー</h3>
         <div class="input-actions">
           <button 
             class="btn btn-icon-small" 
@@ -336,6 +396,14 @@ const resultPlaceholder = computed(() => {
           </button>
           <button 
             class="btn btn-icon-small" 
+            @click="pasteFromClipboard('columnHeaders')"
+            :disabled="useFirstRowAsHeader"
+            title="ペーストして置換"
+          >
+            <i class="mdi mdi-content-paste"></i>
+          </button>
+          <button 
+            class="btn btn-icon-small" 
             @click="store.clearColumnHeaders()"
             :disabled="!columnHeaders || useFirstRowAsHeader"
             title="クリア"
@@ -343,6 +411,7 @@ const resultPlaceholder = computed(() => {
             <i class="mdi mdi-delete"></i>
           </button>
         </div>
+        <h3>カラムヘッダー</h3>
       </div>
       <textarea 
         v-model="columnHeaders"
@@ -354,7 +423,6 @@ const resultPlaceholder = computed(() => {
 
     <div class="input-section">
       <div class="input-header">
-        <h3>カラムオプション<span class="optional">（省略可）</span></h3>
         <div class="input-actions">
           <button 
             class="btn btn-icon-small" 
@@ -366,6 +434,13 @@ const resultPlaceholder = computed(() => {
           </button>
           <button 
             class="btn btn-icon-small" 
+            @click="pasteFromClipboard('columnOptions')"
+            title="ペーストして置換"
+          >
+            <i class="mdi mdi-content-paste"></i>
+          </button>
+          <button 
+            class="btn btn-icon-small" 
             @click="store.clearColumnOptions()"
             :disabled="!columnOptions"
             title="クリア"
@@ -373,6 +448,7 @@ const resultPlaceholder = computed(() => {
             <i class="mdi mdi-delete"></i>
           </button>
         </div>
+        <h3>カラムオプション<span class="optional">（省略可）</span></h3>
       </div>
       <textarea
         v-model="columnOptions"
@@ -407,7 +483,6 @@ const resultPlaceholder = computed(() => {
 
     <div class="result-section">
       <div class="input-header">
-        <h3>実行結果<span v-if="conversionType" class="conversion-type">（{{ conversionType }}）</span></h3>
         <div class="input-actions">
           <button
             class="btn btn-icon-small"
@@ -428,6 +503,7 @@ const resultPlaceholder = computed(() => {
             <i :class="downloadLoading ? 'mdi mdi-loading mdi-spin' : 'mdi mdi-download'"></i>
           </button>
         </div>
+        <h3>実行結果<span v-if="conversionType" class="conversion-type">（{{ conversionType }}）</span></h3>
       </div>
       <textarea :value="displayResult" rows="10" readonly :placeholder="resultPlaceholder"></textarea>
       <div class="result-actions">

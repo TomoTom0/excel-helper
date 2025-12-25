@@ -112,18 +112,19 @@ describe('FixedLengthConverter.vue', () => {
     it('should handle conversion errors gracefully', async () => {
       const wrapper = createWrapper();
       const store = useConverterStore();
-      
+
       store.columnLengths = '';
       store.dataBody = 'test data';
-      
-      const button = wrapper.findAll('button').find(b => 
+      store.outputFormat = 'fixed'; // 固定長への変換を指定（カラム長が必要）
+
+      const button = wrapper.findAll('button').find(b =>
         b.text().includes('変換')
       );
-      
+
       if (button) {
         await button.trigger('click');
         await wrapper.vm.$nextTick();
-        
+
         const resultArea = wrapper.find('textarea[readonly]');
         if (resultArea.exists()) {
           expect((resultArea.element as HTMLTextAreaElement).value).toContain('エラー');
