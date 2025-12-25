@@ -111,6 +111,18 @@ const copyFieldToClipboard = (text: string, fieldName: string) => {
   })
 }
 
+const pasteFromClipboard = async (field: 'dataBody') => {
+  try {
+    const text = await navigator.clipboard.readText()
+    if (field === 'dataBody') {
+      dataBody.value = text
+    }
+    showNotification('ペーストしました')
+  } catch {
+    showNotification('ペーストに失敗しました', 'error')
+  }
+}
+
 const { clearDataBody, togglePattern } = store
 </script>
 
@@ -137,7 +149,6 @@ const { clearDataBody, togglePattern } = store
 
     <div class="input-section">
       <div class="input-header">
-        <h3>データ本体</h3>
         <div class="input-actions">
           <button 
             class="btn btn-icon-small" 
@@ -149,6 +160,13 @@ const { clearDataBody, togglePattern } = store
           </button>
           <button 
             class="btn btn-icon-small" 
+            @click="pasteFromClipboard('dataBody')"
+            title="ペーストして置換"
+          >
+            <i class="mdi mdi-content-paste"></i>
+          </button>
+          <button 
+            class="btn btn-icon-small" 
             @click="clearDataBody"
             :disabled="!dataBody"
             title="クリア"
@@ -156,6 +174,7 @@ const { clearDataBody, togglePattern } = store
             <i class="mdi mdi-delete"></i>
           </button>
         </div>
+        <h3>データ本体</h3>
       </div>
       <textarea v-model="dataBody" rows="8" placeholder="項目A	項目B&#10;&quot;①手順1&#10;②手順2&#10;x注意事項&#10;③手順3&quot;	&quot;(1)概要&#10;(2)詳細&#10;(1)まとめ&quot;&#10;(TSV/CSV形式)"></textarea>
     </div>
@@ -203,7 +222,6 @@ const { clearDataBody, togglePattern } = store
 
     <div class="result-section">
       <div class="input-header">
-        <h3>実行結果</h3>
         <div class="input-actions">
           <button 
             class="btn btn-icon-small" 
@@ -224,6 +242,7 @@ const { clearDataBody, togglePattern } = store
             <i :class="downloadLoading ? 'mdi mdi-loading mdi-spin' : 'mdi mdi-download'"></i>
           </button>
         </div>
+        <h3>実行結果</h3>
       </div>
       <textarea v-model="result" rows="10" readonly :placeholder="resultPlaceholder"></textarea>
       <div class="result-actions">

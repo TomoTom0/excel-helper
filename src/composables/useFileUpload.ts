@@ -1,14 +1,14 @@
 import { ref, computed } from 'vue'
 import type { Ref } from 'vue'
 
-export type DelimiterType = 'csv' | 'tsv' | 'fixed' | 'auto'
+export type DelimiterType = 'csv' | 'tsv' | 'fixed' | 'auto' | 'pipe'
 
 const CONTROL_CHAR_RATIO_THRESHOLD = 0.1
 const BINARY_CHECK_SIZE = 8000
 const PREVIEW_DISPLAY_SIZE = 1000
 
 export interface UseFileUploadOptions {
-  dataBody: Ref<string>
+  dataBody: Ref<string> | { value: string }
   delimiterType: Ref<DelimiterType>
   onSuccess?: (message: string) => void
   onError?: (message: string) => void
@@ -89,6 +89,7 @@ export function useFileUpload(options: UseFileUploadOptions) {
         csv: 'CSV',
         tsv: 'TSV',
         fixed: '固定長',
+        pipe: 'パイプ',
       }
       const typeLabel = typeLabels[detectedType]
 
