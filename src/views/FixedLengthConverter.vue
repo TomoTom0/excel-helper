@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, toRef } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useConverterStore } from '../stores/converter'
 import { parseColumnLengths, parseColumnOptions, getDelimiter, convertFromFixed, tsvToFixed as convertTsvToFixed } from '../utils/converter'
 import { parseDelimitedData, parsePipe, toCSV, toTSV } from '../utils/delimited'
 import { useNotification } from '../composables/useNotification'
 import { useTruncatedDisplay } from '../composables/useTruncatedDisplay'
+import { useFileUpload } from '../composables/useFileUpload'
 
 const store = useConverterStore()
 const { columnLengths, columnTitles, columnOptions, delimiterType, outputFormat, forceAllString } = storeToRefs(store)
@@ -22,33 +23,21 @@ const fullResult = ref('')
 const { notificationMessage, notificationType, showNotificationFlag, showNotification } = useNotification()
 const { displayResult } = useTruncatedDisplay(fullResult)
 
-// ファイルアップロードコンポーザブルを使用
-const fileInputRef = ref<HTMLInputElement | null>(null)
-const uploadedFile = ref<File | null>(null)
-const filePreview = ref('')
+// ファイルアップロード機能
+const {
+  fileInputRef,
+  uploadedFile,
+  displayDataBody,
+  uploadFile,
+  handleFileUpload,
+  clearUploadedFile,
+} = useFileUpload({
+  dataBody: toRef(store, 'dataBody'),
+  delimiterType,
+  onSuccess: showNotification,
+  onError: (message) => showNotification(message, 'error'),
+})
 
-const uploadFile = () => {
-  fileInputRef.value?.click()
-}
-
-const handleFileUpload = async (event: Event) => {
-  const target = event.target as HTMLInputElement
-  const file = target.files?.[0]
-  if (!file) return
-  
-  uploadedFile.value = file
-  const text = await file.text()
-  filePreview.value = text.slice(0, 1000) + (file.size > 1000 ? '\n\n... (省略)' : '')
-  store.dataBody = ''
-  showNotification('ファイルを読み込みました')
-}
-
-const clearUploadedFile = () => {
-  uploadedFile.value = null
-  filePreview.value = ''
-}
-
-const displayDataBody = computed(() => uploadedFile.value ? filePreview.value : store.dataBody)
 const hasDataBody = computed(() => !!(uploadedFile.value || store.dataBody))
 
 const isDelimitedData = (data: string, expectedColumnCount: number): string[][] | false => {
