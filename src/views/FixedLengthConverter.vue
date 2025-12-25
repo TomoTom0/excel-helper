@@ -3,13 +3,12 @@ import { ref, computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useConverterStore } from '../stores/converter'
 import { parseColumnLengths, parseColumnOptions, getDelimiter, convertFromFixed, tsvToFixed as convertTsvToFixed } from '../utils/converter'
-import { parseDelimitedData, toCSV, toTSV } from '../utils/delimited'
-import { useFileUpload } from '../composables/useFileUpload'
+import { parseDelimitedData, parsePipe, toCSV, toTSV } from '../utils/delimited'
 import { useNotification } from '../composables/useNotification'
 import { useTruncatedDisplay } from '../composables/useTruncatedDisplay'
 
 const store = useConverterStore()
-const { columnLengths, dataBody, columnTitles, columnOptions, delimiterType, outputFormat, forceAllString } = storeToRefs(store)
+const { columnLengths, columnTitles, columnOptions, delimiterType, outputFormat, forceAllString } = storeToRefs(store)
 
 const conversionType = ref('')
 
@@ -24,20 +23,33 @@ const { notificationMessage, notificationType, showNotificationFlag, showNotific
 const { displayResult } = useTruncatedDisplay(fullResult)
 
 // ファイルアップロードコンポーザブルを使用
-const {
-  fileInputRef,
-  uploadedFile,
-  displayDataBody,
-  isDataBodyReadonly,
-  uploadFile,
-  handleFileUpload,
-  clearUploadedFile,
-} = useFileUpload({
-  dataBody,
-  delimiterType,
-  onSuccess: showNotification,
-  onError: (message) => showNotification(message, 'error'),
-})
+const fileInputRef = ref<HTMLInputElement | null>(null)
+const uploadedFile = ref<File | null>(null)
+const filePreview = ref('')
+
+const uploadFile = () => {
+  fileInputRef.value?.click()
+}
+
+const handleFileUpload = async (event: Event) => {
+  const target = event.target as HTMLInputElement
+  const file = target.files?.[0]
+  if (!file) return
+  
+  uploadedFile.value = file
+  const text = await file.text()
+  filePreview.value = text.slice(0, 1000) + (file.size > 1000 ? '\n\n... (省略)' : '')
+  store.dataBody = ''
+  showNotification('ファイルを読み込みました')
+}
+
+const clearUploadedFile = () => {
+  uploadedFile.value = null
+  filePreview.value = ''
+}
+
+const displayDataBody = computed(() => uploadedFile.value ? filePreview.value : store.dataBody)
+const hasDataBody = computed(() => !!(uploadedFile.value || store.dataBody))
 
 const isDelimitedData = (data: string, expectedColumnCount: number): string[][] | false => {
   // 固定長として明示的に指定されている場合は区切り文字データとして扱わない
@@ -48,22 +60,28 @@ const isDelimitedData = (data: string, expectedColumnCount: number): string[][] 
 
   try {
     const delimiter = getDelimiter(trimmedData, delimiterType.value)
-    const allRows = parseDelimitedData(trimmedData, delimiter)
-    
+    let allRows: string[][]
+
+    if (delimiter === '|') {
+      allRows = parsePipe(trimmedData)
+    } else {
+      allRows = parseDelimitedData(trimmedData, delimiter)
+    }
+
     const nonEmptyRows = allRows.filter(row => row.length > 1 || (row.length === 1 && row[0] !== ''))
     if (nonEmptyRows.length === 0) return false
 
     // 最初の5行をサンプリングしてチェック
     const sample = nonEmptyRows.slice(0, 5)
-    
+
     // 行間でカラム数が一貫しているかチェック
     const firstColumnCount = sample[0].length
     if (!sample.every(row => row.length === firstColumnCount)) return false
-    
+
     // 区切り文字が明確に存在する場合（複数カラム）は、カラム数が期待値と異なってもTSV/CSVとして扱う
     // ただし、1カラムしかない場合は固定長の可能性があるので期待値と一致する必要がある
     if (firstColumnCount === 1 && expectedColumnCount !== 1) return false
-    
+
     // パース成功時は全行を返す
     return allRows
   } catch {
@@ -85,17 +103,17 @@ const resultPlaceholder = computed(() => {
 
 const handleDelimitedInput = (lengths: number[], parsedData: string[][], data: string) => {
   const delimiter = getDelimiter(data, delimiterType.value)
-  const inputType = delimiter === '\t' ? 'TSV' : 'CSV'
+  const inputType = delimiter === '\t' ? 'TSV' : delimiter === '|' ? 'パイプ' : 'CSV'
 
   if (outputFormat.value === 'fixed') {
-    // TSV/CSV → 固定長
+    // TSV/CSV/パイプ → 固定長
     conversionType.value = `${inputType} → 固定長`
     const options = columnOptions.value.trim()
       ? parseColumnOptions(columnOptions.value)
       : lengths.map(() => ({ type: 'string' as const, padding: 'right' as const, padChar: ' ' }))
     fullResult.value = convertTsvToFixed(parsedData, lengths, options)
   } else {
-    // TSV/CSV → TSV/CSV (区切り文字変換)
+    // TSV/CSV/パイプ → TSV/CSV (区切り文字変換)
     const outputType = outputFormat.value === 'csv' ? 'CSV' : 'TSV'
     conversionType.value = `${inputType} → ${outputType}`
     fullResult.value = outputFormat.value === 'csv' ? toCSV(parsedData, forceAllString.value) : toTSV(parsedData, forceAllString.value)
@@ -116,11 +134,6 @@ const handleFixedWidthInput = (lengths: number[], data: string) => {
 const convert = async () => {
   convertLoading.value = true
   try {
-    const lengths = parseColumnLengths(columnLengths.value)
-    if (lengths.length === 0) {
-      throw new Error('カラム長が指定されていません')
-    }
-
     // データの取得（ファイルまたは手動入力）
     let data: string
     if (uploadedFile.value) {
@@ -128,17 +141,31 @@ const convert = async () => {
       data = await uploadedFile.value.text()
     } else {
       // 手動入力の場合
-      data = dataBody.value
+      data = store.dataBody
     }
 
     if (!data.trim()) {
-      throw new Error('データが空です')
+      throw new Error(`データが空です（uploadedFile: ${!!uploadedFile.value}, dataBody長: ${store.dataBody.length}, data長: ${data.length}）`)
     }
 
-    const parsedData = isDelimitedData(data, lengths.length)
+    // まず区切り文字データかどうか判定（カラム長は後で確認）
+    const lengths = parseColumnLengths(columnLengths.value)
+    const parsedData = isDelimitedData(data, lengths.length || 1)
+    
     if (parsedData) {
+      // 区切り文字データ（TSV/CSV/パイプ）の場合
+      // 固定長への変換時のみカラム長が必要
+      if (outputFormat.value === 'fixed') {
+        if (lengths.length === 0) {
+          throw new Error('固定長への変換にはカラム長が必要です')
+        }
+      }
       handleDelimitedInput(lengths, parsedData, data)
     } else {
+      // 固定長データの場合は必ずカラム長が必要
+      if (lengths.length === 0) {
+        throw new Error('カラム長が指定されていません')
+      }
       handleFixedWidthInput(lengths, data)
     }
   } catch (error) {
@@ -182,14 +209,29 @@ const copyFieldToClipboard = (text: string, fieldName: string) => {
   })
 }
 
+const pasteFromClipboard = async (field: 'columnLengths' | 'dataBody' | 'columnTitles' | 'columnOptions') => {
+  try {
+    const text = await navigator.clipboard.readText()
+    if (field === 'columnLengths') {
+      columnLengths.value = text
+    } else if (field === 'dataBody') {
+      clearUploadedFile()
+      store.dataBody = text
+    } else if (field === 'columnTitles') {
+      columnTitles.value = text
+    } else if (field === 'columnOptions') {
+      columnOptions.value = text
+    }
+    showNotification('ペーストしました')
+  } catch {
+    showNotification('ペーストに失敗しました', 'error')
+  }
+}
+
 const clearDataBody = () => {
   clearUploadedFile()
   store.clearDataBody()
 }
-
-const hasDataBody = computed(() => {
-  return !!(uploadedFile.value || dataBody.value)
-})
 </script>
 
 <template>
@@ -210,6 +252,10 @@ const hasDataBody = computed(() => {
           CSV
         </label>
         <label>
+          <input type="radio" value="pipe" v-model="delimiterType" />
+          パイプ
+        </label>
+        <label>
           <input type="radio" value="fixed" v-model="delimiterType" />
           固定長
         </label>
@@ -218,7 +264,6 @@ const hasDataBody = computed(() => {
 
     <div class="input-section">
       <div class="input-header">
-        <h3>カラム長</h3>
         <div class="input-actions">
           <button 
             class="btn btn-icon-small" 
@@ -230,6 +275,13 @@ const hasDataBody = computed(() => {
           </button>
           <button 
             class="btn btn-icon-small" 
+            @click="pasteFromClipboard('columnLengths')"
+            title="ペーストして置換"
+          >
+            <i class="mdi mdi-content-paste"></i>
+          </button>
+          <button 
+            class="btn btn-icon-small" 
             @click="store.clearColumnLengths()"
             :disabled="!columnLengths"
             title="クリア"
@@ -237,13 +289,13 @@ const hasDataBody = computed(() => {
             <i class="mdi mdi-delete"></i>
           </button>
         </div>
+        <h3>カラム長</h3>
       </div>
       <textarea v-model="columnLengths" rows="2" placeholder="10,20,15&#10;(CSV or TSV形式)"></textarea>
     </div>
 
     <div class="input-section">
       <div class="input-header">
-        <h3>データ本体</h3>
         <div class="input-actions">
           <input
             type="file"
@@ -268,6 +320,13 @@ const hasDataBody = computed(() => {
           </button>
           <button
             class="btn btn-icon-small"
+            @click="pasteFromClipboard('dataBody')"
+            title="ペーストして置換"
+          >
+            <i class="mdi mdi-content-paste"></i>
+          </button>
+          <button
+            class="btn btn-icon-small"
             @click="clearDataBody()"
             :disabled="!hasDataBody"
             title="クリア"
@@ -275,19 +334,24 @@ const hasDataBody = computed(() => {
             <i class="mdi mdi-delete"></i>
           </button>
         </div>
+        <h3>データ本体</h3>
       </div>
       <textarea
-        :value="displayDataBody"
-        @input="!isDataBodyReadonly && (dataBody = ($event.target as HTMLTextAreaElement).value)"
-        :readonly="isDataBodyReadonly"
+        v-if="!uploadedFile"
+        v-model="store.dataBody"
         rows="8"
         placeholder="John      Tokyo     25&#10;Alice     NewYork   30&#10;（固定長形式）&#10;&#10;John,Tokyo,25&#10;Alice,NewYork,30&#10;（CSV/TSV形式）"
+      ></textarea>
+      <textarea
+        v-else
+        :value="displayDataBody"
+        readonly
+        rows="8"
       ></textarea>
     </div>
 
     <div class="input-section">
       <div class="input-header">
-        <h3>カラムタイトル<span class="optional">（省略可）</span></h3>
         <div class="input-actions">
           <button 
             class="btn btn-icon-small" 
@@ -299,6 +363,13 @@ const hasDataBody = computed(() => {
           </button>
           <button 
             class="btn btn-icon-small" 
+            @click="pasteFromClipboard('columnTitles')"
+            title="ペーストして置換"
+          >
+            <i class="mdi mdi-content-paste"></i>
+          </button>
+          <button 
+            class="btn btn-icon-small" 
             @click="store.clearColumnTitles()"
             :disabled="!columnTitles"
             title="クリア"
@@ -306,13 +377,13 @@ const hasDataBody = computed(() => {
             <i class="mdi mdi-delete"></i>
           </button>
         </div>
+        <h3>カラムタイトル<span class="optional">（省略可）</span></h3>
       </div>
       <textarea v-model="columnTitles" rows="2" placeholder="ID,Name,Age&#10;(CSV or TSV形式)"></textarea>
     </div>
 
     <div class="input-section">
       <div class="input-header">
-        <h3>カラムオプション<span class="optional">（省略可）</span></h3>
         <div class="input-actions">
           <button 
             class="btn btn-icon-small" 
@@ -324,6 +395,13 @@ const hasDataBody = computed(() => {
           </button>
           <button 
             class="btn btn-icon-small" 
+            @click="pasteFromClipboard('columnOptions')"
+            title="ペーストして置換"
+          >
+            <i class="mdi mdi-content-paste"></i>
+          </button>
+          <button 
+            class="btn btn-icon-small" 
             @click="store.clearColumnOptions()"
             :disabled="!columnOptions"
             title="クリア"
@@ -331,6 +409,7 @@ const hasDataBody = computed(() => {
             <i class="mdi mdi-delete"></i>
           </button>
         </div>
+        <h3>カラムオプション<span class="optional">（省略可）</span></h3>
       </div>
       <textarea v-model="columnOptions" rows="3" placeholder="string:right,string:right,number:left&#10;(CSV or TSV形式)"></textarea>
       <p class="field-description">形式: データ型:padding方向[:padding文字]</p>
@@ -358,7 +437,6 @@ const hasDataBody = computed(() => {
 
     <div class="result-section">
       <div class="input-header">
-        <h3>実行結果<span v-if="conversionType" class="conversion-type">（{{ conversionType }}）</span></h3>
         <div class="input-actions">
           <button
             class="btn btn-icon-small"
@@ -379,6 +457,7 @@ const hasDataBody = computed(() => {
             <i :class="downloadLoading ? 'mdi mdi-loading mdi-spin' : 'mdi mdi-download'"></i>
           </button>
         </div>
+        <h3>実行結果<span v-if="conversionType" class="conversion-type">（{{ conversionType }}）</span></h3>
       </div>
       <textarea :value="displayResult" rows="10" readonly :placeholder="resultPlaceholder"></textarea>
       <div class="result-actions">

@@ -110,6 +110,16 @@ describe('Fixed Length Converter', () => {
       expect(detectDelimiter(data)).toBe(',')
     })
 
+    it('should detect pipe delimiter', () => {
+      const data = 'John | Doe | 30'
+      expect(detectDelimiter(data)).toBe('|')
+    })
+
+    it('should detect pipe delimiter with separator line', () => {
+      const data = ' id | name\n----+------\n  1 | Alice'
+      expect(detectDelimiter(data)).toBe('|')
+    })
+
     it('should default to tab when equal counts', () => {
       const data = 'test'
       expect(detectDelimiter(data)).toBe('\t')
@@ -125,9 +135,14 @@ describe('Fixed Length Converter', () => {
       expect(getDelimiter('any data', 'csv')).toBe(',')
     })
 
+    it('should return pipe for pipe type', () => {
+      expect(getDelimiter('any data', 'pipe')).toBe('|')
+    })
+
     it('should auto-detect for auto type', () => {
       expect(getDelimiter('John,Doe,30', 'auto')).toBe(',')
       expect(getDelimiter('John\tDoe\t30', 'auto')).toBe('\t')
+      expect(getDelimiter('John | Doe | 30', 'auto')).toBe('|')
     })
   })
 
@@ -218,6 +233,7 @@ describe('Fixed Length Converter', () => {
     it('should auto-detect delimiter', () => {
       const csvData = 'John,Doe,30'
       const tsvData = 'John\tDoe\t30'
+      const pipeData = ' John | Doe | 30\n------+---------\n Alice | Smith | 25'
       const lengths = [10, 20, 10]
       const options: ColumnOption[] = [
         { type: 'string', padding: 'right', padChar: ' ' },
@@ -226,6 +242,7 @@ describe('Fixed Length Converter', () => {
       ]
       expect(tsvToFixed(csvData, lengths, options, 'auto')).toBe('John      Doe                         30')
       expect(tsvToFixed(tsvData, lengths, options, 'auto')).toBe('John      Doe                         30')
+      expect(tsvToFixed(pipeData, lengths, options, 'auto')).toContain('John      Doe                         30')
     })
 
     it('should handle multiple lines', () => {

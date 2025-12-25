@@ -1,4 +1,4 @@
-import { parseDelimitedData } from './delimited'
+import { parseDelimitedData, parsePipe } from './delimited'
 
 export interface ColumnOption {
   type: 'string' | 'number'
@@ -6,7 +6,7 @@ export interface ColumnOption {
   padChar: string
 }
 
-export type DelimiterType = 'auto' | 'tsv' | 'csv' | 'fixed'
+export type DelimiterType = 'auto' | 'tsv' | 'csv' | 'fixed' | 'pipe'
 
 // Unicode正規表現定数
 const UNICODE_SPACE_REGEX = /[\u00A0\u2000-\u200A\u202F\u205F]/g
@@ -25,17 +25,28 @@ const normalizeUnicodeWhitespace = (value: string): string => {
     .replace(UNICODE_CONTROL_REGEX, '')  // ソフトハイフンとゼロ幅文字などの制御文字を削除
 }
 
-export const detectDelimiter = (data: string): '\t' | ',' => {
+export const detectDelimiter = (data: string): '\t' | ',' | '|' => {
   const lines = data.split('\n').filter(line => line.trim() !== '').slice(0, 10) // 最初の10行（空行を除く）
   if (lines.length === 0) return '\t'
   
-  // 各行のタブとカンマの数を集計
+  // PostgreSQLパイプ形式の検出（区切り線の存在をチェック）
+  const hasSeparatorLine = lines.some(line => /^[\s|+-]+$/.test(line))
+  if (hasSeparatorLine) {
+    return '|'
+  }
+  
+  // 各行のタブ、カンマ、パイプの数を集計
   const tabCounts = lines.map(line => (line.match(/\t/g) || []).length)
   const commaCounts = lines.map(line => (line.match(/,/g) || []).length)
+  const pipeCounts = lines.map(line => (line.match(/\|/g) || []).length)
   
-  // 各行のタブ数/カンマ数が一貫しているかチェック
+  // 各行のタブ数/カンマ数/パイプ数が一貫しているかチェック
   const tabConsistent = tabCounts.every((count, _, arr) => count === arr[0] && count > 0)
   const commaConsistent = commaCounts.every((count, _, arr) => count === arr[0] && count > 0)
+  const pipeConsistent = pipeCounts.every((count, _, arr) => count === arr[0] && count > 0)
+  
+  // パイプが一貫していて、他は不一致ならPIPE
+  if (pipeConsistent && !tabConsistent && !commaConsistent) return '|'
   
   // タブが一貫していて、カンマは不一致ならTSV
   if (tabConsistent && !commaConsistent) return '\t'
@@ -43,17 +54,23 @@ export const detectDelimiter = (data: string): '\t' | ',' => {
   // カンマが一貫していて、タブは不一致ならCSV
   if (commaConsistent && !tabConsistent) return ','
   
-  // 両方一貫している場合、または両方不一致の場合は、合計数で判定
+  // 複数が一貫している場合、または全て不一致の場合は、合計数で判定
   const totalTabs = tabCounts.reduce((sum, count) => sum + count, 0)
   const totalCommas = commaCounts.reduce((sum, count) => sum + count, 0)
+  const totalPipes = pipeCounts.reduce((sum, count) => sum + count, 0)
   
-  return totalTabs >= totalCommas ? '\t' : ','
+  const max = Math.max(totalTabs, totalCommas, totalPipes)
+  if (max === 0) return '\t' // 区切り文字が全くない場合はタブをデフォルトに
+  if (max === totalPipes) return '|'
+  if (max === totalTabs) return '\t'
+  return ','
 }
 
-export const getDelimiter = (data: string, type: DelimiterType): '\t' | ',' => {
+export const getDelimiter = (data: string, type: DelimiterType): '\t' | ',' | '|' => {
   if (type === 'auto') return detectDelimiter(data)
   if (type === 'tsv') return '\t'
   if (type === 'csv') return ','
+  if (type === 'pipe') return '|'
   // type === 'fixed' の場合はデリミタを検出しないため、呼び出すべきではない
   throw new Error("getDelimiter should not be called with type 'fixed'")
 }
@@ -69,7 +86,7 @@ export const getDelimiter = (data: string, type: DelimiterType): '\t' | ',' => {
  * @returns タブまたはカンマ
  */
 export const getOptionsDelimiter = (input: string, delimiterType: DelimiterType = 'auto'): '\t' | ',' => {
-  if (delimiterType === 'auto' || delimiterType === 'fixed') {
+  if (delimiterType === 'auto' || delimiterType === 'fixed' || delimiterType === 'pipe') {
     return input.includes('\t') ? '\t' : ','
   }
   return delimiterType === 'tsv' ? '\t' : ','
@@ -208,7 +225,13 @@ export const tsvToFixedFromString = (data: string, lengths: number[], options: C
   }
   
   const delimiter = getDelimiter(data, delimiterType)
-  const parsedData = parseDelimitedData(data, delimiter)
+  let parsedData: string[][]
+  
+  if (delimiter === '|') {
+    parsedData = parsePipe(data)
+  } else {
+    parsedData = parseDelimitedData(data, delimiter)
+  }
   
   return tsvToFixed(parsedData, lengths, options)
 }
