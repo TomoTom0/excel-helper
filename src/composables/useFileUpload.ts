@@ -8,7 +8,7 @@ const BINARY_CHECK_SIZE = 8000
 const PREVIEW_DISPLAY_SIZE = 1000
 
 export interface UseFileUploadOptions {
-  dataBody: Ref<string> | { value: string }
+  dataBody: Ref<string>
   delimiterType: Ref<DelimiterType>
   onSuccess?: (message: string) => void
   onError?: (message: string) => void
