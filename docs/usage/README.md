@@ -36,10 +36,79 @@ XXXX	YYYY	ZZZZZZZZZZ
 ```
 
 **オプション:**
-- **入力形式**: 自動判別、TSV、CSV、固定長から選択（デフォルト: 自動判別）
-- **出力形式**: TSV、CSV、固定長から選択（デフォルト: TSV）
+- **入力形式**: 自動判別、TSV、CSV、SQL/MD表、固定長から選択（デフォルト: 自動判別）
+  - SQL/MD表: PostgreSQLパイプ形式、MySQL表形式、Markdown表形式をサポート
+- **出力形式**: TSV、CSV、固定長、md-tbl、html-tblから選択（デフォルト: TSV）
+  - md-tbl: Markdown表形式で出力
+  - html-tbl: HTML表形式で出力（`<table>`, `<tr>`, `<th>`, `<td>`タグ使用）
 - **カラムタイトル**: 任意でカラム名を指定可能
 - **全て文字列として出力**: CSV/TSV出力時に全てのフィールドを引用符で囲むオプション（数値として解釈されたくない文字列データに有効）
+
+#### SQL/MD表形式の入力例
+
+**PostgreSQLパイプ形式:**
+```
+ id | name     | value
+----+----------+-------
+  1 | Alice    |   100
+  2 | Bob      |   200
+```
+
+**MySQL表形式:**
+```
++----+----------+-------+
+| id | name     | value |
++----+----------+-------+
+|  1 | Alice    |   100 |
+|  2 | Bob      |   200 |
++----+----------+-------+
+```
+
+**Markdown表形式:**
+```
+| id | name | value |
+|-----|------|-------|
+| 1 | Alice | 100 |
+| 2 | Bob | 200 |
+```
+
+#### md-tbl / html-tbl 出力例
+
+**入力データ（TSV形式）:**
+```
+id	name	value
+1	Alice	100
+2	Bob	200
+```
+
+**md-tbl出力:**
+```
+| id  | name  | value |
+| --- | ----- | ----- |
+| 1   | Alice | 100   |
+| 2   | Bob   | 200   |
+```
+
+**html-tbl出力:**
+```html
+<table>
+  <tr>
+    <th>id</th>
+    <th>name</th>
+    <th>value</th>
+  </tr>
+  <tr>
+    <td>1</td>
+    <td>Alice</td>
+    <td>100</td>
+  </tr>
+  <tr>
+    <td>2</td>
+    <td>Bob</td>
+    <td>200</td>
+  </tr>
+</table>
+```
 
 #### TSV/CSV → 固定長変換
 

@@ -27,12 +27,24 @@ export function parseTSV(input: string): string[][] {
 }
 
 /**
- * PostgreSQLパイプ区切り形式をパースする
- * 例:
+ * PostgreSQLパイプ区切り形式、MySQL表形式、Markdown表形式をパースする
+ * PostgreSQL例:
  *  id | name     | value
  * ----+----------+-------
  *   1 | Alice    |   100
  *   2 | Bob      |   200
+ *
+ * MySQL例:
+ * +----+----------+-------+
+ * | id | name     | value |
+ * +----+----------+-------+
+ * |  1 | Alice    |   100 |
+ * +----+----------+-------+
+ *
+ * Markdown例:
+ * | id | name     | value |
+ * |----|----------|-------|
+ * |  1 | Alice    |   100 |
  */
 export function parsePipe(input: string): string[][] {
   const lines = input.split('\n');
@@ -45,14 +57,17 @@ export function parsePipe(input: string): string[][] {
       continue;
     }
 
-    // 区切り線をスキップ（"-", "+", "|", スペースのみで構成される行）
-    if (/^[\s|+-]+$/.test(line)) {
+    // 区切り線をスキップ（"-", "+", "|", ":", スペースのみで構成される行）
+    // PostgreSQL: ----+----------+-------
+    // MySQL: +----+----------+-------+
+    // Markdown: |----|----------|-------| または |:---|:---:|---:|
+    if (/^[\s|+:-]+$/.test(line)) {
       continue;
     }
 
     // パイプで分割
     let trimmedLine = line.trim();
-    
+
     // 行頭のパイプを削除
     if (trimmedLine.startsWith('|')) {
       trimmedLine = trimmedLine.slice(1);
@@ -61,7 +76,7 @@ export function parsePipe(input: string): string[][] {
     if (trimmedLine.endsWith('|')) {
       trimmedLine = trimmedLine.slice(0, -1);
     }
-    
+
     const columns = trimmedLine.split('|').map(col => col.trim());
 
     // 有効なカラムがあれば追加
@@ -101,11 +116,11 @@ export function toTSV(data: string[][], forceAllString = false): string {
 }
 
 /**
- * 2次元配列をパイプ区切り文字列に変換する
+ * 2次元配列をパイプ区切り文字列に変換する（PostgreSQL形式）
  */
 export function toPipe(data: string[][]): string {
   if (data.length === 0) return '';
-  
+
   // 各列の最大幅を計算
   const colWidths = data.reduce<number[]>((widths, row) => {
     row.forEach((cell, i) => {
@@ -113,7 +128,7 @@ export function toPipe(data: string[][]): string {
     });
     return widths;
   }, []);
-  
+
   // 各行をフォーマット
   const lines: string[] = [];
   for (let rowIndex = 0; rowIndex < data.length; rowIndex++) {
@@ -123,14 +138,84 @@ export function toPipe(data: string[][]): string {
       return (col || '').padEnd(width, ' ');
     });
     lines.push(' ' + paddedCols.join(' | ') + ' ');
-    
+
     // ヘッダー行の後に区切り線を追加
     if (rowIndex === 0) {
       const separators = colWidths.map(w => '-'.repeat(w));
       lines.push('-' + separators.join('-+-') + '-');
     }
   }
-  
+
+  return lines.join('\n');
+}
+
+/**
+ * 2次元配列をMarkdown表形式に変換する
+ */
+export function toMarkdown(data: string[][]): string {
+  if (data.length === 0) return '';
+
+  // 各列の最大幅を計算（最低3文字）
+  const colWidths = data.reduce<number[]>((widths, row) => {
+    row.forEach((cell, i) => {
+      const cellLen = (cell || '').length;
+      widths[i] = Math.max(widths[i] || 3, cellLen);
+    });
+    return widths;
+  }, []);
+
+  // 各行をフォーマット
+  const lines: string[] = [];
+  for (let rowIndex = 0; rowIndex < data.length; rowIndex++) {
+    const row = data[rowIndex];
+    const paddedCols = row.map((col, i) => {
+      const width = colWidths[i] || 3;
+      return (col || '').padEnd(width, ' ');
+    });
+    lines.push('| ' + paddedCols.join(' | ') + ' |');
+
+    // ヘッダー行の後に区切り線を追加
+    if (rowIndex === 0) {
+      const separators = colWidths.map(w => '-'.repeat(w));
+      lines.push('| ' + separators.join(' | ') + ' |');
+    }
+  }
+
+  return lines.join('\n');
+}
+
+/**
+ * HTML特殊文字をエスケープする
+ */
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+/**
+ * 2次元配列をHTML表形式に変換する
+ */
+export function toHtmlTable(data: string[][]): string {
+  if (data.length === 0) return '';
+
+  const lines: string[] = ['<table>'];
+
+  for (let rowIndex = 0; rowIndex < data.length; rowIndex++) {
+    const row = data[rowIndex];
+    const tag = rowIndex === 0 ? 'th' : 'td';
+
+    lines.push('  <tr>');
+    for (const cell of row) {
+      lines.push(`    <${tag}>${escapeHtml(cell || '')}</${tag}>`);
+    }
+    lines.push('  </tr>');
+  }
+
+  lines.push('</table>');
   return lines.join('\n');
 }
 

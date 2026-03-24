@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { toCSV, toTSV, parseCSV, parseTSV, parsePipe, toPipe } from '../../src/utils/delimited'
+import { toCSV, toTSV, parseCSV, parseTSV, parsePipe, toPipe, toMarkdown, toHtmlTable } from '../../src/utils/delimited'
 
 describe('Delimited Data Converter', () => {
   describe('toCSV', () => {
@@ -141,6 +141,73 @@ describe('Delimited Data Converter', () => {
       const result = parsePipe(input)
       expect(result).toEqual([['a', '', 'c']])
     })
+
+    it('MySQL表形式をパースできる', () => {
+      const input = '+----+----------+-------+\n| id | name     | value |\n+----+----------+-------+\n|  1 | Alice    |   100 |\n|  2 | Bob      |   200 |\n+----+----------+-------+'
+      const result = parsePipe(input)
+      expect(result).toEqual([
+        ['id', 'name', 'value'],
+        ['1', 'Alice', '100'],
+        ['2', 'Bob', '200']
+      ])
+    })
+
+    it('MySQL表形式（ヘッダーなし）をパースできる', () => {
+      const input = '+---+-------+-----+\n| 1 | Alice | 100 |\n| 2 | Bob   | 200 |\n+---+-------+-----+'
+      const result = parsePipe(input)
+      expect(result).toEqual([
+        ['1', 'Alice', '100'],
+        ['2', 'Bob', '200']
+      ])
+    })
+
+    it('PostgreSQL形式（ヘッダーなし）をパースできる', () => {
+      const input = '  1 | Alice    |   100\n  2 | Bob      |   200'
+      const result = parsePipe(input)
+      expect(result).toEqual([
+        ['1', 'Alice', '100'],
+        ['2', 'Bob', '200']
+      ])
+    })
+
+    it('MySQL表形式（末尾区切り線なし）をパースできる', () => {
+      const input = '+----+------+-------+\n| id | name | value |\n+----+------+-------+\n|  1 | Alice|   100 |\n|  2 | Bob  |   200 |'
+      const result = parsePipe(input)
+      expect(result).toEqual([
+        ['id', 'name', 'value'],
+        ['1', 'Alice', '100'],
+        ['2', 'Bob', '200']
+      ])
+    })
+
+    it('Markdown表形式をパースできる', () => {
+      const input = '| id | name     | value |\n|----|----------|-------|\n|  1 | Alice    |   100 |\n|  2 | Bob      |   200 |'
+      const result = parsePipe(input)
+      expect(result).toEqual([
+        ['id', 'name', 'value'],
+        ['1', 'Alice', '100'],
+        ['2', 'Bob', '200']
+      ])
+    })
+
+    it('Markdown表形式（アライメント指定あり）をパースできる', () => {
+      const input = '| id | name     | value |\n|:---|:--------:|------:|\n|  1 | Alice    |   100 |\n|  2 | Bob      |   200 |'
+      const result = parsePipe(input)
+      expect(result).toEqual([
+        ['id', 'name', 'value'],
+        ['1', 'Alice', '100'],
+        ['2', 'Bob', '200']
+      ])
+    })
+
+    it('Markdown表形式（ヘッダーなし）をパースできる', () => {
+      const input = '| 1 | Alice | 100 |\n| 2 | Bob   | 200 |'
+      const result = parsePipe(input)
+      expect(result).toEqual([
+        ['1', 'Alice', '100'],
+        ['2', 'Bob', '200']
+      ])
+    })
   })
 
   describe('toPipe', () => {
@@ -158,6 +225,64 @@ describe('Delimited Data Converter', () => {
       const data: string[][] = []
       const result = toPipe(data)
       expect(result).toBe('')
+    })
+  })
+
+  describe('toMarkdown', () => {
+    it('Markdown表形式に変換できる', () => {
+      const data = [['id', 'name', 'value'], ['1', 'Alice', '100'], ['2', 'Bob', '200']]
+      const result = toMarkdown(data)
+      const lines = result.split('\n')
+      expect(lines[0]).toBe('| id  | name  | value |')
+      expect(lines[1]).toBe('| --- | ----- | ----- |')
+      expect(lines[2]).toBe('| 1   | Alice | 100   |')
+      expect(lines[3]).toBe('| 2   | Bob   | 200   |')
+    })
+
+    it('空データを処理できる', () => {
+      const data: string[][] = []
+      const result = toMarkdown(data)
+      expect(result).toBe('')
+    })
+
+    it('短いカラム名でも最低3文字の幅を確保する', () => {
+      const data = [['a', 'b'], ['1', '2']]
+      const result = toMarkdown(data)
+      const lines = result.split('\n')
+      expect(lines[0]).toBe('| a   | b   |')
+      expect(lines[1]).toBe('| --- | --- |')
+    })
+  })
+
+  describe('toHtmlTable', () => {
+    it('HTML表形式に変換できる', () => {
+      const data = [['id', 'name', 'value'], ['1', 'Alice', '100'], ['2', 'Bob', '200']]
+      const result = toHtmlTable(data)
+      const lines = result.split('\n')
+      expect(lines[0]).toBe('<table>')
+      expect(lines[1]).toBe('  <tr>')
+      expect(lines[2]).toBe('    <th>id</th>')
+      expect(lines[3]).toBe('    <th>name</th>')
+      expect(lines[4]).toBe('    <th>value</th>')
+      expect(lines[5]).toBe('  </tr>')
+      expect(lines[6]).toBe('  <tr>')
+      expect(lines[7]).toBe('    <td>1</td>')
+      expect(lines[8]).toBe('    <td>Alice</td>')
+      expect(lines[9]).toBe('    <td>100</td>')
+      expect(lines[10]).toBe('  </tr>')
+    })
+
+    it('空データを処理できる', () => {
+      const data: string[][] = []
+      const result = toHtmlTable(data)
+      expect(result).toBe('')
+    })
+
+    it('HTML特殊文字をエスケープする', () => {
+      const data = [['name', 'desc'], ['<script>', 'a & b < c > d "e" \'f\'']]
+      const result = toHtmlTable(data)
+      expect(result).toContain('&lt;script&gt;')
+      expect(result).toContain('a &amp; b &lt; c &gt; d &quot;e&quot; &#039;f&#039;')
     })
   })
 })
