@@ -115,8 +115,18 @@ describe('Fixed Length Converter', () => {
       expect(detectDelimiter(data)).toBe('|')
     })
 
-    it('should detect pipe delimiter with separator line', () => {
+    it('should detect pipe delimiter with separator line (PostgreSQL)', () => {
       const data = ' id | name\n----+------\n  1 | Alice'
+      expect(detectDelimiter(data)).toBe('|')
+    })
+
+    it('should detect MySQL table format', () => {
+      const data = '+----+------+\n| id | name |\n+----+------+\n|  1 | Alice|'
+      expect(detectDelimiter(data)).toBe('|')
+    })
+
+    it('should detect MySQL table format without header', () => {
+      const data = '+---+-------+\n| 1 | Alice |\n| 2 | Bob   |\n+---+-------+'
       expect(detectDelimiter(data)).toBe('|')
     })
 

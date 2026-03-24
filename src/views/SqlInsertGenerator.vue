@@ -27,7 +27,7 @@ const { displayResult } = useTruncatedDisplay(fullResult)
 
 // ファイルアップロードコンポーザブルを使用
 const {
-  fileInputRef,
+  fileInputRef: fileInput,
   uploadedFile,
   displayDataBody,
   uploadFile,
@@ -39,6 +39,10 @@ const {
   onSuccess: showNotification,
   onError: (message) => showNotification(message, 'error'),
 })
+
+// テンプレート参照（vue-tscのnoUnusedLocals対策）
+const fileInputRef = fileInput
+void fileInputRef // テンプレートで使用されるが、スクリプト内では未使用
 
 const copyFieldToClipboard = (text: string, fieldName: string) => {
   navigator.clipboard.writeText(text).then(() => {
@@ -63,7 +67,7 @@ const parseInputData = (data: string): string[][] | false => {
     return parseDelimitedData(tsvData, '\t')
   }
 
-  // TSV/CSV/パイプとしてパース
+  // TSV/CSV/SQL表としてパース
   try {
     const delimiter = getDelimiter(trimmedData, delimiterType.value)
     if (delimiter === '|') {
@@ -137,7 +141,7 @@ const convert = async () => {
     const delimiter = delimiterType.value === 'fixed' ? null : getDelimiter(data, delimiterType.value)
     const inputType = delimiterType.value === 'fixed' ? '固定長' :
                      delimiter === '\t' ? 'TSV' : 
-                     delimiter === '|' ? 'パイプ' : 'CSV'
+                     delimiter === '|' ? 'SQL/MD表' : 'CSV'
     const outputType = insertFormat.value === 'single' ? '単一行INSERT' : '複数行INSERT'
     conversionType.value = `${inputType} → SQL INSERT (${outputType})`
 
@@ -237,7 +241,7 @@ const resultPlaceholder = computed(() => {
         </label>
         <label>
           <input type="radio" value="pipe" v-model="delimiterType" />
-          パイプ
+          SQL/MD表
         </label>
         <label>
           <input type="radio" value="fixed" v-model="delimiterType" />

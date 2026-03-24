@@ -3,7 +3,7 @@ import { ref, computed, toRef } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useConverterStore } from '../stores/converter'
 import { parseColumnLengths, parseColumnOptions, getDelimiter, convertFromFixed, tsvToFixed as convertTsvToFixed } from '../utils/converter'
-import { parseDelimitedData, parsePipe, toCSV, toTSV } from '../utils/delimited'
+import { parseDelimitedData, parsePipe, toCSV, toTSV, toMarkdown, toHtmlTable } from '../utils/delimited'
 import { useNotification } from '../composables/useNotification'
 import { useTruncatedDisplay } from '../composables/useTruncatedDisplay'
 import { useFileUpload } from '../composables/useFileUpload'
@@ -25,7 +25,7 @@ const { displayResult } = useTruncatedDisplay(fullResult)
 
 // ファイルアップロード機能
 const {
-  fileInputRef,
+  fileInputRef: fileInput,
   uploadedFile,
   displayDataBody,
   uploadFile,
@@ -37,6 +37,10 @@ const {
   onSuccess: showNotification,
   onError: (message) => showNotification(message, 'error'),
 })
+
+// テンプレート参照（vue-tscのnoUnusedLocals対策）
+const fileInputRef = fileInput
+void fileInputRef // テンプレートで使用されるが、スクリプト内では未使用
 
 const hasDataBody = computed(() => !!(uploadedFile.value || store.dataBody))
 
@@ -85,6 +89,10 @@ const resultPlaceholder = computed(() => {
     return 'John      Tokyo     25\nAlice     NewYork   30\n(変換結果がここに表示されます)'
   } else if (outputFormat.value === 'tsv') {
     return 'John\tTokyo\t25\nAlice\tNewYork\t30\n(変換結果がここに表示されます)'
+  } else if (outputFormat.value === 'md-tbl') {
+    return '| name | city    | age |\n| ---- | ------- | --- |\n| John | Tokyo   | 25  |\n| Alice| NewYork | 30  |\n(変換結果がここに表示されます)'
+  } else if (outputFormat.value === 'html-tbl') {
+    return '<table>\n  <tr>\n    <th>name</th>\n    <th>city</th>\n    <th>age</th>\n  </tr>\n  ...\n</table>\n(変換結果がここに表示されます)'
   } else {
     return 'John,Tokyo,25\nAlice,NewYork,30\n(変換結果がここに表示されます)'
   }
@@ -92,17 +100,25 @@ const resultPlaceholder = computed(() => {
 
 const handleDelimitedInput = (lengths: number[], parsedData: string[][], data: string) => {
   const delimiter = getDelimiter(data, delimiterType.value)
-  const inputType = delimiter === '\t' ? 'TSV' : delimiter === '|' ? 'パイプ' : 'CSV'
+  const inputType = delimiter === '\t' ? 'TSV' : delimiter === '|' ? 'SQL/MD表' : 'CSV'
 
   if (outputFormat.value === 'fixed') {
-    // TSV/CSV/パイプ → 固定長
+    // TSV/CSV/SQL/MD表 → 固定長
     conversionType.value = `${inputType} → 固定長`
     const options = columnOptions.value.trim()
       ? parseColumnOptions(columnOptions.value)
       : lengths.map(() => ({ type: 'string' as const, padding: 'right' as const, padChar: ' ' }))
     fullResult.value = convertTsvToFixed(parsedData, lengths, options)
+  } else if (outputFormat.value === 'md-tbl') {
+    // TSV/CSV/SQL/MD表 → md-tbl
+    conversionType.value = `${inputType} → md-tbl`
+    fullResult.value = toMarkdown(parsedData)
+  } else if (outputFormat.value === 'html-tbl') {
+    // TSV/CSV/SQL/MD表 → html-tbl
+    conversionType.value = `${inputType} → html-tbl`
+    fullResult.value = toHtmlTable(parsedData)
   } else {
-    // TSV/CSV/パイプ → TSV/CSV (区切り文字変換)
+    // TSV/CSV/SQL/MD表 → TSV/CSV (区切り文字変換)
     const outputType = outputFormat.value === 'csv' ? 'CSV' : 'TSV'
     conversionType.value = `${inputType} → ${outputType}`
     fullResult.value = outputFormat.value === 'csv' ? toCSV(parsedData, forceAllString.value) : toTSV(parsedData, forceAllString.value)
@@ -110,14 +126,27 @@ const handleDelimitedInput = (lengths: number[], parsedData: string[][], data: s
 }
 
 const handleFixedWidthInput = (lengths: number[], data: string) => {
-  // 固定長 → TSV/CSV/固定長
+  // 固定長 → TSV/CSV/md-tbl/html-tbl/固定長
   if (outputFormat.value === 'fixed') {
     conversionType.value = '固定長 → 固定長'
+    fullResult.value = convertFromFixed(data, lengths, 'fixed', forceAllString.value)
+  } else if (outputFormat.value === 'md-tbl') {
+    conversionType.value = '固定長 → md-tbl'
+    // 一旦TSVに変換してから2次元配列にパースし、Markdownに変換
+    const tsvData = convertFromFixed(data, lengths, 'tsv', forceAllString.value)
+    const parsedData = parseDelimitedData(tsvData, '\t')
+    fullResult.value = toMarkdown(parsedData)
+  } else if (outputFormat.value === 'html-tbl') {
+    conversionType.value = '固定長 → html-tbl'
+    // 一旦TSVに変換してから2次元配列にパースし、HTML表に変換
+    const tsvData = convertFromFixed(data, lengths, 'tsv', forceAllString.value)
+    const parsedData = parseDelimitedData(tsvData, '\t')
+    fullResult.value = toHtmlTable(parsedData)
   } else {
     const outputType = outputFormat.value === 'csv' ? 'CSV' : 'TSV'
     conversionType.value = `固定長 → ${outputType}`
+    fullResult.value = convertFromFixed(data, lengths, outputFormat.value, forceAllString.value)
   }
-  fullResult.value = convertFromFixed(data, lengths, outputFormat.value, forceAllString.value)
 }
 
 const convert = async () => {
@@ -142,7 +171,7 @@ const convert = async () => {
     const parsedData = isDelimitedData(data, lengths.length || 1)
     
     if (parsedData) {
-      // 区切り文字データ（TSV/CSV/パイプ）の場合
+      // 区切り文字データ（TSV/CSV/SQL表）の場合
       // 固定長への変換時のみカラム長が必要
       if (outputFormat.value === 'fixed') {
         if (lengths.length === 0) {
@@ -242,7 +271,7 @@ const clearDataBody = () => {
         </label>
         <label>
           <input type="radio" value="pipe" v-model="delimiterType" />
-          パイプ
+          SQL/MD表
         </label>
         <label>
           <input type="radio" value="fixed" v-model="delimiterType" />
@@ -463,6 +492,14 @@ const clearDataBody = () => {
           <label>
             <input type="radio" value="csv" v-model="outputFormat" />
             CSV
+          </label>
+          <label>
+            <input type="radio" value="md-tbl" v-model="outputFormat" />
+            md-tbl
+          </label>
+          <label>
+            <input type="radio" value="html-tbl" v-model="outputFormat" />
+            html-tbl
           </label>
         </div>
       </div>
