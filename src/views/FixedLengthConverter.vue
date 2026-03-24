@@ -2,7 +2,7 @@
 import { ref, computed, toRef } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useConverterStore } from '../stores/converter'
-import { parseColumnLengths, parseColumnOptions, getDelimiter, convertFromFixed, tsvToFixed as convertTsvToFixed } from '../utils/converter'
+import { parseColumnLengths, parseColumnOptions, getDelimiter, convertFromFixed, parseFixed, tsvToFixed as convertTsvToFixed } from '../utils/converter'
 import { parseDelimitedData, parsePipe, toCSV, toTSV, toMarkdown, toHtmlTable } from '../utils/delimited'
 import { useNotification } from '../composables/useNotification'
 import { useTruncatedDisplay } from '../composables/useTruncatedDisplay'
@@ -132,15 +132,11 @@ const handleFixedWidthInput = (lengths: number[], data: string) => {
     fullResult.value = convertFromFixed(data, lengths, 'fixed', forceAllString.value)
   } else if (outputFormat.value === 'md-tbl') {
     conversionType.value = '固定長 → md-tbl'
-    // 一旦TSVに変換してから2次元配列にパースし、Markdownに変換
-    const tsvData = convertFromFixed(data, lengths, 'tsv', forceAllString.value)
-    const parsedData = parseDelimitedData(tsvData, '\t')
+    const parsedData = parseFixed(data, lengths)
     fullResult.value = toMarkdown(parsedData)
   } else if (outputFormat.value === 'html-tbl') {
     conversionType.value = '固定長 → html-tbl'
-    // 一旦TSVに変換してから2次元配列にパースし、HTML表に変換
-    const tsvData = convertFromFixed(data, lengths, 'tsv', forceAllString.value)
-    const parsedData = parseDelimitedData(tsvData, '\t')
+    const parsedData = parseFixed(data, lengths)
     fullResult.value = toHtmlTable(parsedData)
   } else {
     const outputType = outputFormat.value === 'csv' ? 'CSV' : 'TSV'

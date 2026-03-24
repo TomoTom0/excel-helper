@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { parseColumnLengths, parseColumnOptions, padValue, convertFromFixed, tsvToFixedFromString as tsvToFixed, detectDelimiter, getDelimiter } from '../../src/utils/converter'
+import { parseColumnLengths, parseColumnOptions, padValue, parseFixed, convertFromFixed, tsvToFixedFromString as tsvToFixed, detectDelimiter, getDelimiter } from '../../src/utils/converter'
 import type { ColumnOption } from '../../src/utils/converter'
 
 describe('Fixed Length Converter', () => {
@@ -153,6 +153,61 @@ describe('Fixed Length Converter', () => {
       expect(getDelimiter('John,Doe,30', 'auto')).toBe(',')
       expect(getDelimiter('John\tDoe\t30', 'auto')).toBe('\t')
       expect(getDelimiter('John | Doe | 30', 'auto')).toBe('|')
+    })
+  })
+
+  describe('parseFixed', () => {
+    it('should parse fixed length data to 2D array', () => {
+      const data = 'John      Doe                 30       '
+      const lengths = [10, 20, 10]
+      const result = parseFixed(data, lengths)
+      expect(result).toEqual([['John', 'Doe', '30']])
+    })
+
+    it('should handle multiple lines', () => {
+      const data = 'John      Doe                 30       \nJane      Smith               25       '
+      const lengths = [10, 20, 10]
+      const result = parseFixed(data, lengths)
+      expect(result).toEqual([
+        ['John', 'Doe', '30'],
+        ['Jane', 'Smith', '25']
+      ])
+    })
+
+    it('should handle empty lines', () => {
+      const data = 'John      Doe                 30       \n\nJane      Smith               25       '
+      const lengths = [10, 20, 10]
+      const result = parseFixed(data, lengths)
+      expect(result).toEqual([
+        ['John', 'Doe', '30'],
+        [],
+        ['Jane', 'Smith', '25']
+      ])
+    })
+
+    it('should handle CRLF line endings', () => {
+      const data = 'John      Doe                 30       \r\nJane      Smith               25       '
+      const lengths = [10, 20, 10]
+      const result = parseFixed(data, lengths)
+      expect(result).toEqual([
+        ['John', 'Doe', '30'],
+        ['Jane', 'Smith', '25']
+      ])
+    })
+
+    it('should trim values', () => {
+      const data = '  John      Doe                 30       '
+      const lengths = [10, 20, 10]
+      const result = parseFixed(data, lengths)
+      expect(result).toEqual([['John', 'Doe', '30']])
+    })
+
+    it('should normalize Unicode whitespace', () => {
+      // NO-BREAK SPACE (U+00A0) is normalized to regular space and then trimmed
+      const data = 'John' + '\u00A0'.repeat(6) + 'Doe' + '\u00A0'.repeat(17) + '30' + '\u00A0'.repeat(8)
+      const lengths = [10, 20, 10]
+      const result = parseFixed(data, lengths)
+      expect(result).toEqual([['John', 'Doe', '30']])
     })
   })
 
