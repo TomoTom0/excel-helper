@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, watch } from 'vue'
+import { watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useSettingsStore } from './stores/settings'
 
@@ -21,14 +21,9 @@ watch(darkMode, (isDark) => {
     document.documentElement.classList.remove('dark-mode')
   }
 }, { immediate: true })
-
-const appClass = computed(() => ({
-  'dark-mode': darkMode.value
-}))
 </script>
 
 <template>
-  <div :class="appClass">
   <div class="sidebar">
     <div class="sidebar-header">
       <img src="/favicon-32x32.png" alt="YT Excel Helper" class="sidebar-icon">
@@ -52,6 +47,5 @@ const appClass = computed(() => ({
   </div>
   <div class="main-content">
     <router-view />
-  </div>
   </div>
 </template>

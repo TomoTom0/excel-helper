@@ -2,7 +2,7 @@
 import { ref, computed, toRef } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useConverterStore } from '../stores/converter'
-import { parseColumnLengths, parseColumnOptions, getDelimiter, convertFromFixed, parseFixed, tsvToFixed as convertTsvToFixed } from '../utils/converter'
+import { parseColumnLengths, parseColumnOptions, getDelimiter, parseFixed, tsvToFixed as convertTsvToFixed } from '../utils/converter'
 import { parseDelimitedData, parsePipe, toCSV, toTSV, toMarkdown, toHtmlTable } from '../utils/delimited'
 import { useNotification } from '../composables/useNotification'
 import { useTruncatedDisplay } from '../composables/useTruncatedDisplay'
@@ -147,7 +147,10 @@ const handleFixedWidthInput = (lengths: number[], data: string) => {
 
   if (outputFormat.value === 'fixed') {
     conversionType.value = '固定長 → 固定長'
-    fullResult.value = convertFromFixed(data, lengths, 'fixed', forceAllString.value)
+    const options = columnOptions.value.trim()
+      ? parseColumnOptions(columnOptions.value)
+      : lengths.map(() => ({ type: 'string' as const, padding: 'right' as const, padChar: ' ' }))
+    fullResult.value = convertTsvToFixed(dataWithHeaders, lengths, options)
   } else if (outputFormat.value === 'md-tbl') {
     conversionType.value = '固定長 → md-tbl'
     fullResult.value = toMarkdown(dataWithHeaders)

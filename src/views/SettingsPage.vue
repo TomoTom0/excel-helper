@@ -16,6 +16,14 @@ const sqlInsertStore = useSqlInsertStore()
 const showNotification = ref(false)
 const notificationMessage = ref('')
 
+const showTempNotification = (message: string) => {
+  notificationMessage.value = message
+  showNotification.value = true
+  setTimeout(() => {
+    showNotification.value = false
+  }, 2000)
+}
+
 const clearAllData = () => {
   if (!confirm('すべての保存データをクリアしますか？この操作は取り消せません。')) {
     return
@@ -35,31 +43,21 @@ const clearAllData = () => {
   sqlInsertStore.clearColumnLengths()
   sqlInsertStore.clearColumnOptions()
 
-  notificationMessage.value = 'すべてのデータをクリアしました'
-  showNotification.value = true
-  setTimeout(() => {
-    showNotification.value = false
-  }, 2000)
+  showTempNotification('すべてのデータをクリアしました')
 }
 
 const handlePersistChange = () => {
-  notificationMessage.value = persistInputs.value
+  const message = persistInputs.value
     ? '入力値の保存を有効にしました'
     : '入力値の保存を無効にしました'
-  showNotification.value = true
-  setTimeout(() => {
-    showNotification.value = false
-  }, 2000)
+  showTempNotification(message)
 }
 
 const handleDarkModeChange = () => {
-  notificationMessage.value = darkMode.value
+  const message = darkMode.value
     ? 'ダークモードを有効にしました'
     : 'ライトモードを有効にしました'
-  showNotification.value = true
-  setTimeout(() => {
-    showNotification.value = false
-  }, 2000)
+  showTempNotification(message)
 }
 </script>
 
