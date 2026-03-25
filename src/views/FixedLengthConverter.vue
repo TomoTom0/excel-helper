@@ -2,14 +2,14 @@
 import { ref, computed, toRef } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useConverterStore } from '../stores/converter'
-import { parseColumnLengths, parseColumnOptions, getDelimiter, convertFromFixed, parseFixed, tsvToFixed as convertTsvToFixed } from '../utils/converter'
+import { parseColumnLengths, parseColumnOptions, getDelimiter, parseFixed, tsvToFixed as convertTsvToFixed } from '../utils/converter'
 import { parseDelimitedData, parsePipe, toCSV, toTSV, toMarkdown, toHtmlTable } from '../utils/delimited'
 import { useNotification } from '../composables/useNotification'
 import { useTruncatedDisplay } from '../composables/useTruncatedDisplay'
 import { useFileUpload } from '../composables/useFileUpload'
 
 const store = useConverterStore()
-const { columnLengths, columnTitles, columnOptions, delimiterType, outputFormat, forceAllString } = storeToRefs(store)
+const { columnLengths, columnHeaders, columnOptions, delimiterType, outputFormat, forceAllString, useFirstRowAsHeader } = storeToRefs(store)
 
 const conversionType = ref('')
 
@@ -102,46 +102,65 @@ const handleDelimitedInput = (lengths: number[], parsedData: string[][], data: s
   const delimiter = getDelimiter(data, delimiterType.value)
   const inputType = delimiter === '\t' ? 'TSV' : delimiter === '|' ? 'SQL/MD表' : 'CSV'
 
+  // useFirstRowAsHeaderがtrueの場合、1行目をスキップ
+  let dataRows = parsedData
+  if (useFirstRowAsHeader.value) {
+    dataRows = parsedData.slice(1)
+  }
+
   if (outputFormat.value === 'fixed') {
     // TSV/CSV/SQL/MD表 → 固定長
     conversionType.value = `${inputType} → 固定長`
     const options = columnOptions.value.trim()
       ? parseColumnOptions(columnOptions.value)
       : lengths.map(() => ({ type: 'string' as const, padding: 'right' as const, padChar: ' ' }))
-    fullResult.value = convertTsvToFixed(parsedData, lengths, options)
+    fullResult.value = convertTsvToFixed(dataRows, lengths, options)
   } else if (outputFormat.value === 'md-tbl') {
     // TSV/CSV/SQL/MD表 → md-tbl
     conversionType.value = `${inputType} → md-tbl`
-    fullResult.value = toMarkdown(parsedData)
+    fullResult.value = toMarkdown(dataRows)
   } else if (outputFormat.value === 'html-tbl') {
     // TSV/CSV/SQL/MD表 → html-tbl
     conversionType.value = `${inputType} → html-tbl`
-    fullResult.value = toHtmlTable(parsedData)
+    fullResult.value = toHtmlTable(dataRows)
   } else {
     // TSV/CSV/SQL/MD表 → TSV/CSV (区切り文字変換)
     const outputType = outputFormat.value === 'csv' ? 'CSV' : 'TSV'
     conversionType.value = `${inputType} → ${outputType}`
-    fullResult.value = outputFormat.value === 'csv' ? toCSV(parsedData, forceAllString.value) : toTSV(parsedData, forceAllString.value)
+    fullResult.value = outputFormat.value === 'csv' ? toCSV(dataRows, forceAllString.value) : toTSV(dataRows, forceAllString.value)
   }
 }
 
 const handleFixedWidthInput = (lengths: number[], data: string) => {
   // 固定長 → TSV/CSV/md-tbl/html-tbl/固定長
+  const parsedData = parseFixed(data, lengths)
+
+  // columnHeadersがある場合は先頭に追加
+  let dataWithHeaders = parsedData
+  if (columnHeaders.value.trim() && !useFirstRowAsHeader.value) {
+    const headerDelimiter = getDelimiter(columnHeaders.value, 'auto')
+    const headers = headerDelimiter === '|'
+      ? parsePipe(columnHeaders.value)[0]
+      : parseDelimitedData(columnHeaders.value, headerDelimiter)[0]
+    dataWithHeaders = [headers, ...parsedData]
+  }
+
   if (outputFormat.value === 'fixed') {
     conversionType.value = '固定長 → 固定長'
-    fullResult.value = convertFromFixed(data, lengths, 'fixed', forceAllString.value)
+    const options = columnOptions.value.trim()
+      ? parseColumnOptions(columnOptions.value)
+      : lengths.map(() => ({ type: 'string' as const, padding: 'right' as const, padChar: ' ' }))
+    fullResult.value = convertTsvToFixed(dataWithHeaders, lengths, options)
   } else if (outputFormat.value === 'md-tbl') {
     conversionType.value = '固定長 → md-tbl'
-    const parsedData = parseFixed(data, lengths)
-    fullResult.value = toMarkdown(parsedData)
+    fullResult.value = toMarkdown(dataWithHeaders)
   } else if (outputFormat.value === 'html-tbl') {
     conversionType.value = '固定長 → html-tbl'
-    const parsedData = parseFixed(data, lengths)
-    fullResult.value = toHtmlTable(parsedData)
+    fullResult.value = toHtmlTable(dataWithHeaders)
   } else {
     const outputType = outputFormat.value === 'csv' ? 'CSV' : 'TSV'
     conversionType.value = `固定長 → ${outputType}`
-    fullResult.value = convertFromFixed(data, lengths, outputFormat.value, forceAllString.value)
+    fullResult.value = outputFormat.value === 'csv' ? toCSV(dataWithHeaders, forceAllString.value) : toTSV(dataWithHeaders, forceAllString.value)
   }
 }
 
@@ -223,7 +242,7 @@ const copyFieldToClipboard = (text: string, fieldName: string) => {
   })
 }
 
-const pasteFromClipboard = async (field: 'columnLengths' | 'dataBody' | 'columnTitles' | 'columnOptions') => {
+const pasteFromClipboard = async (field: 'columnLengths' | 'dataBody' | 'columnHeaders' | 'columnOptions') => {
   try {
     const text = await navigator.clipboard.readText()
     if (field === 'columnLengths') {
@@ -231,8 +250,8 @@ const pasteFromClipboard = async (field: 'columnLengths' | 'dataBody' | 'columnT
     } else if (field === 'dataBody') {
       clearUploadedFile()
       store.dataBody = text
-    } else if (field === 'columnTitles') {
-      columnTitles.value = text
+    } else if (field === 'columnHeaders') {
+      columnHeaders.value = text
     } else if (field === 'columnOptions') {
       columnOptions.value = text
     }
@@ -362,38 +381,50 @@ const clearDataBody = () => {
         readonly
         rows="8"
       ></textarea>
+      <div class="checkbox-container">
+        <label>
+          <input type="checkbox" v-model="useFirstRowAsHeader" />
+          1行目をヘッダーとして使用
+        </label>
+      </div>
     </div>
 
     <div class="input-section">
       <div class="input-header">
         <div class="input-actions">
-          <button 
-            class="btn btn-icon-small" 
-            @click="copyFieldToClipboard(columnTitles, 'カラムタイトル')"
-            :disabled="!columnTitles"
+          <button
+            class="btn btn-icon-small"
+            @click="copyFieldToClipboard(columnHeaders, 'カラムヘッダー')"
+            :disabled="!columnHeaders || useFirstRowAsHeader"
             title="コピー"
           >
             <i class="mdi mdi-content-copy"></i>
           </button>
-          <button 
-            class="btn btn-icon-small" 
-            @click="pasteFromClipboard('columnTitles')"
+          <button
+            class="btn btn-icon-small"
+            @click="pasteFromClipboard('columnHeaders')"
+            :disabled="useFirstRowAsHeader"
             title="ペーストして置換"
           >
             <i class="mdi mdi-content-paste"></i>
           </button>
-          <button 
-            class="btn btn-icon-small" 
-            @click="store.clearColumnTitles()"
-            :disabled="!columnTitles"
+          <button
+            class="btn btn-icon-small"
+            @click="store.clearColumnHeaders()"
+            :disabled="!columnHeaders || useFirstRowAsHeader"
             title="クリア"
           >
             <i class="mdi mdi-delete"></i>
           </button>
         </div>
-        <h3>カラムタイトル<span class="optional">（省略可）</span></h3>
+        <h3>カラムヘッダー</h3>
       </div>
-      <textarea v-model="columnTitles" rows="2" placeholder="ID,Name,Age&#10;(CSV or TSV形式)"></textarea>
+      <textarea
+        v-model="columnHeaders"
+        :disabled="useFirstRowAsHeader"
+        rows="2"
+        placeholder="ID,Name,Age&#10;(CSV or TSV形式)"
+      ></textarea>
     </div>
 
     <div class="input-section">

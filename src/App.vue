@@ -1,10 +1,26 @@
 <script setup lang="ts">
+import { watch } from 'vue'
+import { storeToRefs } from 'pinia'
+import { useSettingsStore } from './stores/settings'
+
+const settingsStore = useSettingsStore()
+const { darkMode } = storeToRefs(settingsStore)
+
 const tabs = [
   { id: 'fixed-length', name: '固定長相互変換' },
   { id: 'numbering-line', name: 'ナンバリング行変換' },
   { id: 'sql-insert', name: 'SQL INSERT文生成' },
   { id: 'settings', name: '設定' }
 ]
+
+// ダークモードのクラスを適用
+watch(darkMode, (isDark) => {
+  if (isDark) {
+    document.documentElement.classList.add('dark-mode')
+  } else {
+    document.documentElement.classList.remove('dark-mode')
+  }
+}, { immediate: true })
 </script>
 
 <template>

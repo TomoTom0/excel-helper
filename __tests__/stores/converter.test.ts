@@ -18,9 +18,14 @@ describe('converterStore', () => {
       expect(store.dataBody).toBe('');
     });
 
-    it('should have empty columnTitles by default', () => {
+    it('should have empty columnHeaders by default', () => {
       const store = useConverterStore();
-      expect(store.columnTitles).toBe('');
+      expect(store.columnHeaders).toBe('');
+    });
+
+    it('should have useFirstRowAsHeader as false by default', () => {
+      const store = useConverterStore();
+      expect(store.useFirstRowAsHeader).toBe(false);
     });
 
     it('should have empty columnOptions by default', () => {
@@ -52,10 +57,16 @@ describe('converterStore', () => {
       expect(store.dataBody).toBe('test data');
     });
 
-    it('should update columnTitles', () => {
+    it('should update columnHeaders', () => {
       const store = useConverterStore();
-      store.columnTitles = 'Name,Age,City';
-      expect(store.columnTitles).toBe('Name,Age,City');
+      store.columnHeaders = 'Name,Age,City';
+      expect(store.columnHeaders).toBe('Name,Age,City');
+    });
+
+    it('should update useFirstRowAsHeader', () => {
+      const store = useConverterStore();
+      store.useFirstRowAsHeader = true;
+      expect(store.useFirstRowAsHeader).toBe(true);
     });
 
     it('should update columnOptions', () => {
@@ -92,11 +103,11 @@ describe('converterStore', () => {
       expect(store.dataBody).toBe('');
     });
 
-    it('should clear columnTitles', () => {
+    it('should clear columnHeaders', () => {
       const store = useConverterStore();
-      store.columnTitles = 'Name,Age,City';
-      store.clearColumnTitles();
-      expect(store.columnTitles).toBe('');
+      store.columnHeaders = 'Name,Age,City';
+      store.clearColumnHeaders();
+      expect(store.columnHeaders).toBe('');
     });
 
     it('should clear columnOptions', () => {

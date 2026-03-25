@@ -7,7 +7,7 @@ import { useNumberingStore } from '../stores/numbering'
 import { useSqlInsertStore } from '../stores/sqlInsert'
 
 const settingsStore = useSettingsStore()
-const { persistInputs } = storeToRefs(settingsStore)
+const { persistInputs, darkMode } = storeToRefs(settingsStore)
 
 const converterStore = useConverterStore()
 const numberingStore = useNumberingStore()
@@ -15,6 +15,14 @@ const sqlInsertStore = useSqlInsertStore()
 
 const showNotification = ref(false)
 const notificationMessage = ref('')
+
+const showTempNotification = (message: string) => {
+  notificationMessage.value = message
+  showNotification.value = true
+  setTimeout(() => {
+    showNotification.value = false
+  }, 2000)
+}
 
 const clearAllData = () => {
   if (!confirm('すべての保存データをクリアしますか？この操作は取り消せません。')) {
@@ -24,7 +32,7 @@ const clearAllData = () => {
   // 各ストアのデータをクリア
   converterStore.clearColumnLengths()
   converterStore.clearDataBody()
-  converterStore.clearColumnTitles()
+  converterStore.clearColumnHeaders()
   converterStore.clearColumnOptions()
 
   numberingStore.clearDataBody()
@@ -35,21 +43,21 @@ const clearAllData = () => {
   sqlInsertStore.clearColumnLengths()
   sqlInsertStore.clearColumnOptions()
 
-  notificationMessage.value = 'すべてのデータをクリアしました'
-  showNotification.value = true
-  setTimeout(() => {
-    showNotification.value = false
-  }, 2000)
+  showTempNotification('すべてのデータをクリアしました')
 }
 
 const handlePersistChange = () => {
-  notificationMessage.value = persistInputs.value 
-    ? '入力値の保存を有効にしました' 
+  const message = persistInputs.value
+    ? '入力値の保存を有効にしました'
     : '入力値の保存を無効にしました'
-  showNotification.value = true
-  setTimeout(() => {
-    showNotification.value = false
-  }, 2000)
+  showTempNotification(message)
+}
+
+const handleDarkModeChange = () => {
+  const message = darkMode.value
+    ? 'ダークモードを有効にしました'
+    : 'ライトモードを有効にしました'
+  showTempNotification(message)
 }
 </script>
 
@@ -60,6 +68,23 @@ const handlePersistChange = () => {
     </div>
 
     <div class="settings-section">
+      <div class="setting-item">
+        <div class="setting-header">
+          <h3>ダークモード</h3>
+          <label class="toggle-switch">
+            <input
+              type="checkbox"
+              v-model="darkMode"
+              @change="handleDarkModeChange"
+            />
+            <span class="slider"></span>
+          </label>
+        </div>
+        <p class="setting-description">
+          ダークテーマを適用します。
+        </p>
+      </div>
+
       <div class="setting-item">
         <div class="setting-header">
           <h3>入力値の保存</h3>
@@ -112,10 +137,11 @@ const handlePersistChange = () => {
 }
 
 .setting-item {
-  background: white;
+  background: var(--bg-secondary);
   padding: 20px;
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 4px var(--shadow-color);
+  transition: background-color 0.3s ease;
 }
 
 .setting-header {
@@ -128,18 +154,18 @@ const handlePersistChange = () => {
 .setting-header h3 {
   margin: 0;
   font-size: 1.1rem;
-  color: #2c3e50;
+  color: var(--text-primary);
 }
 
 .setting-description {
   margin: 10px 0;
-  color: #666;
+  color: var(--text-muted);
   font-size: 0.9rem;
   line-height: 1.5;
 }
 
 .setting-note {
-  color: #999;
+  color: var(--text-hint);
   font-size: 0.85rem;
 }
 
@@ -163,7 +189,7 @@ const handlePersistChange = () => {
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: #ccc;
+  background-color: var(--toggle-bg);
   transition: .4s;
   border-radius: 24px;
 }
@@ -181,7 +207,7 @@ const handlePersistChange = () => {
 }
 
 input:checked + .slider {
-  background-color: #42b983;
+  background-color: var(--toggle-active);
 }
 
 input:checked + .slider:before {
