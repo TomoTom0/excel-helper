@@ -43,8 +43,9 @@ npm run lint
 ## 主な機能
 
 1. **固定長相互変換**
-   - 固定長 → TSV/CSV
-   - TSV/CSV → 固定長
+   - 固定長 ↔ TSV/CSV
+   - SQL/MD表（PostgreSQL、MySQL、Markdown表形式）の入力対応
+   - md-tbl（Markdown表）、html-tbl（HTML表）出力対応
 
 2. **ナンバリング行変換**
    - 複数パターンの自動検出

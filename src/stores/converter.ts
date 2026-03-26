@@ -5,11 +5,12 @@ import type { DelimiterType } from '../utils/converter'
 export const useConverterStore = defineStore('converter', () => {
   const columnLengths = ref('')
   const dataBody = ref('')
-  const columnTitles = ref('')
+  const columnHeaders = ref('')
   const columnOptions = ref('')
   const delimiterType = ref<DelimiterType>('auto')
-  const outputFormat = ref<'tsv' | 'csv' | 'fixed'>('tsv')
+  const outputFormat = ref<'tsv' | 'csv' | 'fixed' | 'md-tbl' | 'html-tbl'>('tsv')
   const forceAllString = ref(false)
+  const useFirstRowAsHeader = ref(false)
 
   const clearColumnLengths = () => {
     columnLengths.value = ''
@@ -19,8 +20,8 @@ export const useConverterStore = defineStore('converter', () => {
     dataBody.value = ''
   }
 
-  const clearColumnTitles = () => {
-    columnTitles.value = ''
+  const clearColumnHeaders = () => {
+    columnHeaders.value = ''
   }
 
   const clearColumnOptions = () => {
@@ -30,14 +31,15 @@ export const useConverterStore = defineStore('converter', () => {
   return {
     columnLengths,
     dataBody,
-    columnTitles,
+    columnHeaders,
     columnOptions,
     delimiterType,
     outputFormat,
     forceAllString,
+    useFirstRowAsHeader,
     clearColumnLengths,
     clearDataBody,
-    clearColumnTitles,
+    clearColumnHeaders,
     clearColumnOptions
   }
 }, {

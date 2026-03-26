@@ -89,7 +89,7 @@ export function useFileUpload(options: UseFileUploadOptions) {
         csv: 'CSV',
         tsv: 'TSV',
         fixed: '固定長',
-        pipe: 'パイプ',
+        pipe: 'SQL/MD表',
       }
       const typeLabel = typeLabels[detectedType]
 

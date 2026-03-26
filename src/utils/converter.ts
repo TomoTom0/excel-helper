@@ -147,27 +147,49 @@ export const padValue = (value: string, length: number, option: ColumnOption): s
   }
 }
 
-export const convertFromFixed = (data: string, lengths: number[], outputFormat: 'tsv' | 'csv' | 'fixed' = 'tsv', forceAllString = false): string => {
+/**
+ * 固定長データを2次元配列にパースする
+ * @param data - 固定長形式の文字列データ
+ * @param lengths - 各カラムの長さ
+ * @returns 2次元配列（各行のカラム値の配列）
+ */
+export const parseFixed = (data: string, lengths: number[]): string[][] => {
   const lines = data.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n')
-  const resultLines: string[] = []
+  const result: string[][] = []
 
   for (const line of lines) {
     if (line.trim() === '') {
-      resultLines.push('')
+      result.push([])
       continue
     }
-    
+
     const columns: string[] = []
     let position = 0
 
     for (const length of lengths) {
       let value = line.substring(position, position + length).trim().replace(/\t/g, ' ')
-      
+
       // Unicode の各種スペース文字と制御文字を正規化
       value = normalizeUnicodeWhitespace(value)
-      
+
       columns.push(value)
       position += length
+    }
+
+    result.push(columns)
+  }
+
+  return result
+}
+
+export const convertFromFixed = (data: string, lengths: number[], outputFormat: 'tsv' | 'csv' | 'fixed' = 'tsv', forceAllString = false): string => {
+  const parsedData = parseFixed(data, lengths)
+  const resultLines: string[] = []
+
+  for (const columns of parsedData) {
+    if (columns.length === 0) {
+      resultLines.push('')
+      continue
     }
 
     if (outputFormat === 'fixed') {

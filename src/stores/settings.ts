@@ -6,6 +6,7 @@ import { useSqlInsertStore } from './sqlInsert'
 
 export const useSettingsStore = defineStore('settings', () => {
   const persistInputs = ref(true)
+  const darkMode = ref(false)
 
   // 設定変更時に他のストアのデータをクリア
   watch(persistInputs, (newValue) => {
@@ -17,7 +18,7 @@ export const useSettingsStore = defineStore('settings', () => {
 
       converterStore.clearColumnLengths()
       converterStore.clearDataBody()
-      converterStore.clearColumnTitles()
+      converterStore.clearColumnHeaders()
       converterStore.clearColumnOptions()
 
       numberingStore.clearDataBody()
@@ -31,7 +32,8 @@ export const useSettingsStore = defineStore('settings', () => {
   })
 
   return {
-    persistInputs
+    persistInputs,
+    darkMode
   }
 }, {
   persist: true
