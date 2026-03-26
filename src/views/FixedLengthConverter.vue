@@ -135,20 +135,17 @@ const handleFixedWidthInput = (lengths: number[], data: string) => {
   // 固定長 → TSV/CSV/md-tbl/html-tbl/固定長
   const parsedData = parseFixed(data, lengths)
 
-  // useFirstRowAsHeaderがtrueの場合、1行目をスキップ
-  let dataRows = parsedData
+  let processedData = parsedData
   if (useFirstRowAsHeader.value) {
-    dataRows = parsedData.slice(1)
+    processedData = processedData.slice(1)
   }
 
-  // columnHeadersがある場合は先頭に追加
-  let dataWithHeaders = dataRows
   if (columnHeaders.value.trim() && !useFirstRowAsHeader.value) {
     const headerDelimiter = getDelimiter(columnHeaders.value, 'auto')
     const headers = headerDelimiter === '|'
       ? parsePipe(columnHeaders.value)[0]
       : parseDelimitedData(columnHeaders.value, headerDelimiter)[0]
-    dataWithHeaders = [headers, ...dataRows]
+    processedData = [headers, ...processedData]
   }
 
   if (outputFormat.value === 'fixed') {
@@ -156,17 +153,17 @@ const handleFixedWidthInput = (lengths: number[], data: string) => {
     const options = columnOptions.value.trim()
       ? parseColumnOptions(columnOptions.value)
       : lengths.map(() => ({ type: 'string' as const, padding: 'right' as const, padChar: ' ' }))
-    fullResult.value = convertTsvToFixed(dataWithHeaders, lengths, options)
+    fullResult.value = convertTsvToFixed(processedData, lengths, options)
   } else if (outputFormat.value === 'md-tbl') {
     conversionType.value = '固定長 → md-tbl'
-    fullResult.value = toMarkdown(dataWithHeaders)
+    fullResult.value = toMarkdown(processedData)
   } else if (outputFormat.value === 'html-tbl') {
     conversionType.value = '固定長 → html-tbl'
-    fullResult.value = toHtmlTable(dataWithHeaders)
+    fullResult.value = toHtmlTable(processedData)
   } else {
     const outputType = outputFormat.value === 'csv' ? 'CSV' : 'TSV'
     conversionType.value = `固定長 → ${outputType}`
-    fullResult.value = outputFormat.value === 'csv' ? toCSV(dataWithHeaders, forceAllString.value) : toTSV(dataWithHeaders, forceAllString.value)
+    fullResult.value = outputFormat.value === 'csv' ? toCSV(processedData, forceAllString.value) : toTSV(processedData, forceAllString.value)
   }
 }
 
