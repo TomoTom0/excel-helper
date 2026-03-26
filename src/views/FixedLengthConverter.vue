@@ -135,14 +135,20 @@ const handleFixedWidthInput = (lengths: number[], data: string) => {
   // 固定長 → TSV/CSV/md-tbl/html-tbl/固定長
   const parsedData = parseFixed(data, lengths)
 
+  // useFirstRowAsHeaderがtrueの場合、1行目をスキップ
+  let dataRows = parsedData
+  if (useFirstRowAsHeader.value) {
+    dataRows = parsedData.slice(1)
+  }
+
   // columnHeadersがある場合は先頭に追加
-  let dataWithHeaders = parsedData
+  let dataWithHeaders = dataRows
   if (columnHeaders.value.trim() && !useFirstRowAsHeader.value) {
     const headerDelimiter = getDelimiter(columnHeaders.value, 'auto')
     const headers = headerDelimiter === '|'
       ? parsePipe(columnHeaders.value)[0]
       : parseDelimitedData(columnHeaders.value, headerDelimiter)[0]
-    dataWithHeaders = [headers, ...parsedData]
+    dataWithHeaders = [headers, ...dataRows]
   }
 
   if (outputFormat.value === 'fixed') {
