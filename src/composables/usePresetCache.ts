@@ -1,13 +1,14 @@
 import { ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useConverterStore } from '../stores/converter'
+import type { DelimiterType } from '../utils/converter'
 
 interface PresetData {
   columnLengths: string
   columnHeaders: string
   columnOptions: string
-  delimiterType: string
-  outputFormat: string
+  delimiterType: DelimiterType
+  outputFormat: 'tsv' | 'csv' | 'fixed' | 'md-tbl' | 'html-tbl'
   forceAllString: boolean
   useFirstRowAsHeader: boolean
 }
@@ -38,7 +39,10 @@ export function usePresetCache() {
     try {
       const stored = localStorage.getItem(STORAGE_KEY)
       if (stored) {
-        presets.value = JSON.parse(stored)
+        const parsed = JSON.parse(stored)
+        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+          presets.value = parsed
+        }
       }
     } catch {
       presets.value = {}
@@ -59,6 +63,17 @@ export function usePresetCache() {
     const name = presetName.value.trim()
     if (!name) {
       return { success: false, message: 'プリセット名を入力してください' }
+    }
+
+    // 同名のプリセットが存在する場合は上書き確認
+    if (presets.value[name]) {
+      const overwrite = window.confirm(
+        `プリセット「${name}」は既に存在します。上書き保存しますか？`
+      )
+
+      if (!overwrite) {
+        return { success: false, message: '保存をキャンセルしました' }
+      }
     }
 
     presets.value[name] = {
@@ -85,8 +100,8 @@ export function usePresetCache() {
     columnLengths.value = preset.columnLengths
     columnHeaders.value = preset.columnHeaders
     columnOptions.value = preset.columnOptions
-    delimiterType.value = preset.delimiterType as typeof delimiterType.value
-    outputFormat.value = preset.outputFormat as typeof outputFormat.value
+    delimiterType.value = preset.delimiterType
+    outputFormat.value = preset.outputFormat
     forceAllString.value = preset.forceAllString
     useFirstRowAsHeader.value = preset.useFirstRowAsHeader
 
