@@ -34,6 +34,7 @@ const {
 } = usePresetCache()
 
 const selectedPreset = ref('')
+const deleteConfirming = ref(false)
 
 const handleSavePreset = () => {
   const result = saveCurrentAsPreset()
@@ -57,11 +58,22 @@ const handleDeletePreset = () => {
     showNotification('削除するプリセットを選択してください', 'error')
     return
   }
+
+  // 2段階削除: 最初のクリックで確認状態、2回目で削除
+  if (!deleteConfirming.value) {
+    deleteConfirming.value = true
+    setTimeout(() => {
+      deleteConfirming.value = false
+    }, 3000)
+    return
+  }
+
   const result = deletePreset(selectedPreset.value)
   showNotification(result.message, result.success ? 'success' : 'error')
   if (result.success) {
     selectedPreset.value = ''
   }
+  deleteConfirming.value = false
 }
 
 const presetOptions = computed(() => {
@@ -367,8 +379,15 @@ const clearDataBody = () => {
           <i class="mdi mdi-folder-open"></i>
           読込
         </button>
-        <button class="btn btn-small btn-danger" @click="handleDeletePreset" :disabled="!selectedPreset" title="選択したプリセットを削除">
-          <i class="mdi mdi-delete"></i>
+        <button
+          class="btn btn-small"
+          :class="deleteConfirming ? 'btn-danger' : ''"
+          @click="handleDeletePreset"
+          :disabled="!selectedPreset"
+          :title="deleteConfirming ? 'もう一度クリックして削除' : '選択したプリセットを削除'"
+        >
+          <i class="mdi" :class="deleteConfirming ? 'mdi-alert' : 'mdi-delete'"></i>
+          <span v-if="deleteConfirming">?</span>
         </button>
       </div>
     </div>

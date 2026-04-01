@@ -8,6 +8,8 @@ export interface ColumnOption {
 
 export type DelimiterType = 'auto' | 'tsv' | 'csv' | 'fixed' | 'pipe'
 
+export type OutputFormat = 'tsv' | 'csv' | 'fixed' | 'md-tbl' | 'html-tbl'
+
 // Unicode正規表現定数
 const UNICODE_SPACE_REGEX = /[\u00A0\u2000-\u200A\u202F\u205F]/g
 const UNICODE_CONTROL_REGEX = /[\u00AD\u200B-\u200F]/g

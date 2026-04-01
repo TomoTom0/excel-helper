@@ -1,14 +1,14 @@
 import { ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useConverterStore } from '../stores/converter'
-import type { DelimiterType } from '../utils/converter'
+import type { DelimiterType, OutputFormat } from '../utils/converter'
 
 interface PresetData {
   columnLengths: string
   columnHeaders: string
   columnOptions: string
   delimiterType: DelimiterType
-  outputFormat: 'tsv' | 'csv' | 'fixed' | 'md-tbl' | 'html-tbl'
+  outputFormat: OutputFormat
   forceAllString: boolean
   useFirstRowAsHeader: boolean
 }
@@ -97,13 +97,13 @@ export function usePresetCache() {
       return { success: false, message: 'プリセットが見つかりません' }
     }
 
-    columnLengths.value = preset.columnLengths
-    columnHeaders.value = preset.columnHeaders
-    columnOptions.value = preset.columnOptions
-    delimiterType.value = preset.delimiterType
-    outputFormat.value = preset.outputFormat
-    forceAllString.value = preset.forceAllString
-    useFirstRowAsHeader.value = preset.useFirstRowAsHeader
+    columnLengths.value = preset.columnLengths ?? ''
+    columnHeaders.value = preset.columnHeaders ?? ''
+    columnOptions.value = preset.columnOptions ?? ''
+    delimiterType.value = preset.delimiterType ?? 'auto'
+    outputFormat.value = preset.outputFormat ?? 'tsv'
+    forceAllString.value = preset.forceAllString ?? false
+    useFirstRowAsHeader.value = preset.useFirstRowAsHeader ?? false
 
     presetName.value = name
     return { success: true, message: `プリセット「${name}」を読み込みました` }
