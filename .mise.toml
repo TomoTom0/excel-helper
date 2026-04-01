@@ -1,0 +1,7 @@
+[tasks."dev:stop"]
+description = "Stop dev server on port 40101"
+run = "kill $(lsof -ti:40101) 2>/dev/null || true"
+
+[tasks."dev:restart"]
+description = "Restart dev server"
+run = ["mise dev:stop", "npm run dev"]

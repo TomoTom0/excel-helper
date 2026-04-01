@@ -7,6 +7,7 @@ import { parseDelimitedData, parsePipe, toCSV, toTSV, toMarkdown, toHtmlTable } 
 import { useNotification } from '../composables/useNotification'
 import { useTruncatedDisplay } from '../composables/useTruncatedDisplay'
 import { useFileUpload } from '../composables/useFileUpload'
+import { usePresetCache } from '../composables/usePresetCache'
 
 const store = useConverterStore()
 const { columnLengths, columnHeaders, columnOptions, delimiterType, outputFormat, forceAllString, useFirstRowAsHeader } = storeToRefs(store)
@@ -22,6 +23,50 @@ const fullResult = ref('')
 
 const { notificationMessage, notificationType, showNotificationFlag, showNotification } = useNotification()
 const { displayResult } = useTruncatedDisplay(fullResult)
+
+// プリセットキャッシュ機能
+const {
+  presetName,
+  presets,
+  saveCurrentAsPreset,
+  loadPreset,
+  deletePreset
+} = usePresetCache()
+
+const selectedPreset = ref('')
+
+const handleSavePreset = () => {
+  const result = saveCurrentAsPreset()
+  showNotification(result.message, result.success ? 'success' : 'error')
+  if (result.success) {
+    selectedPreset.value = presetName.value
+  }
+}
+
+const handleLoadPreset = () => {
+  if (!selectedPreset.value) {
+    showNotification('読み込むプリセットを選択してください', 'error')
+    return
+  }
+  const result = loadPreset(selectedPreset.value)
+  showNotification(result.message, result.success ? 'success' : 'error')
+}
+
+const handleDeletePreset = () => {
+  if (!selectedPreset.value) {
+    showNotification('削除するプリセットを選択してください', 'error')
+    return
+  }
+  const result = deletePreset(selectedPreset.value)
+  showNotification(result.message, result.success ? 'success' : 'error')
+  if (result.success) {
+    selectedPreset.value = ''
+  }
+}
+
+const presetOptions = computed(() => {
+  return Object.keys(presets.value)
+})
 
 // ファイルアップロード機能
 const {
@@ -298,6 +343,36 @@ const clearDataBody = () => {
       </div>
     </div>
 
+    <div class="preset-section">
+      <div class="preset-input">
+        <input
+          type="text"
+          v-model="presetName"
+          placeholder="プリセット名"
+          class="preset-name-input"
+        />
+        <select v-model="selectedPreset" class="preset-select">
+          <option value="">選択...</option>
+          <option v-for="name in presetOptions" :key="name" :value="name">
+            {{ name }}
+          </option>
+        </select>
+      </div>
+      <div class="preset-actions">
+        <button class="btn btn-small" @click="handleSavePreset" title="現在の設定を保存">
+          <i class="mdi mdi-content-save"></i>
+          保存
+        </button>
+        <button class="btn btn-small" @click="handleLoadPreset" :disabled="!selectedPreset" title="選択したプリセットを読み込み">
+          <i class="mdi mdi-folder-open"></i>
+          読込
+        </button>
+        <button class="btn btn-small btn-danger" @click="handleDeletePreset" :disabled="!selectedPreset" title="選択したプリセットを削除">
+          <i class="mdi mdi-delete"></i>
+        </button>
+      </div>
+    </div>
+
     <div class="input-section">
       <div class="input-header">
         <div class="input-actions">
@@ -341,13 +416,6 @@ const clearDataBody = () => {
           />
           <button
             class="btn btn-icon-small"
-            @click="uploadFile"
-            title="ファイルから読み込み"
-          >
-            <i class="mdi mdi-file-upload"></i>
-          </button>
-          <button
-            class="btn btn-icon-small"
             @click="copyFieldToClipboard(displayDataBody, 'データ本体')"
             :disabled="!hasDataBody"
             title="コピー"
@@ -368,6 +436,13 @@ const clearDataBody = () => {
             title="クリア"
           >
             <i class="mdi mdi-delete"></i>
+          </button>
+          <button
+            class="btn btn-icon-small"
+            @click="uploadFile"
+            title="ファイルから読み込み"
+          >
+            <i class="mdi mdi-file-upload"></i>
           </button>
         </div>
         <h3>データ本体</h3>
