@@ -34,7 +34,7 @@ const {
 } = usePresetCache()
 
 const selectedPreset = ref('')
-const deleteConfirming = ref(false)
+const confirmingDeletePresetName = ref('')
 
 const handleSavePreset = () => {
   const result = saveCurrentAsPreset()
@@ -60,10 +60,12 @@ const handleDeletePreset = () => {
   }
 
   // 2段階削除: 最初のクリックで確認状態、2回目で削除
-  if (!deleteConfirming.value) {
-    deleteConfirming.value = true
+  if (confirmingDeletePresetName.value !== selectedPreset.value) {
+    confirmingDeletePresetName.value = selectedPreset.value
     setTimeout(() => {
-      deleteConfirming.value = false
+      if (confirmingDeletePresetName.value === selectedPreset.value) {
+        confirmingDeletePresetName.value = ''
+      }
     }, 3000)
     return
   }
@@ -73,7 +75,7 @@ const handleDeletePreset = () => {
   if (result.success) {
     selectedPreset.value = ''
   }
-  deleteConfirming.value = false
+  confirmingDeletePresetName.value = ''
 }
 
 const presetOptions = computed(() => {
@@ -113,7 +115,7 @@ const isDelimitedData = (data: string, expectedColumnCount: number): ParseResult
   // 明示的な形式が指定されている場合、その区切り文字がデータに含まれているか検証
   if (delimiterType.value !== 'auto') {
     const expectedDelimiter = delimiterType.value === 'tsv' ? '\t' : delimiterType.value === 'csv' ? ',' : '|'
-    const hasExpectedDelimiter = trimmedData.includes(expectedDelimiter)
+    const hasExpectedDelimiter = expectedColumnCount === 1 || trimmedData.includes(expectedDelimiter)
 
     if (!hasExpectedDelimiter) {
       const formatName = delimiterType.value === 'tsv' ? 'TSV' : delimiterType.value === 'csv' ? 'CSV' : 'SQL/MD表'
@@ -377,13 +379,13 @@ const clearDataBody = () => {
         </button>
         <button
           class="btn btn-small"
-          :class="deleteConfirming ? 'btn-danger' : ''"
+          :class="confirmingDeletePresetName === selectedPreset ? 'btn-danger' : ''"
           @click="handleDeletePreset"
           :disabled="!selectedPreset"
-          :title="deleteConfirming ? 'もう一度クリックして削除' : '選択したプリセットを削除'"
+          :title="confirmingDeletePresetName === selectedPreset ? 'もう一度クリックして削除' : '選択したプリセットを削除'"
         >
-          <i class="mdi" :class="deleteConfirming ? 'mdi-alert' : 'mdi-delete'"></i>
-          <span v-if="deleteConfirming">?</span>
+          <i class="mdi" :class="confirmingDeletePresetName === selectedPreset ? 'mdi-alert' : 'mdi-delete'"></i>
+          <span v-if="confirmingDeletePresetName === selectedPreset">?</span>
         </button>
       </div>
     </div>
