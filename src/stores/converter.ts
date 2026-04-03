@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import type { DelimiterType } from '../utils/converter'
+import type { DelimiterType, OutputFormat } from '../utils/converter'
 
 export const useConverterStore = defineStore('converter', () => {
   const columnLengths = ref('')
@@ -8,7 +8,7 @@ export const useConverterStore = defineStore('converter', () => {
   const columnHeaders = ref('')
   const columnOptions = ref('')
   const delimiterType = ref<DelimiterType>('auto')
-  const outputFormat = ref<'tsv' | 'csv' | 'fixed' | 'md-tbl' | 'html-tbl'>('tsv')
+  const outputFormat = ref<OutputFormat>('tsv')
   const forceAllString = ref(false)
   const useFirstRowAsHeader = ref(false)
 
