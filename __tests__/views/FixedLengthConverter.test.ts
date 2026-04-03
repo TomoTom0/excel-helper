@@ -260,11 +260,13 @@ describe('FixedLengthConverter.vue', () => {
     it('should allow delimiter type selection', async () => {
       const wrapper = createWrapper();
       const store = useConverterStore();
-      
-      const delimiterSelect = wrapper.find('select');
-      if (delimiterSelect.exists()) {
-        await delimiterSelect.setValue('comma');
-        expect(store.delimiterType).toBe('comma');
+
+      // delimiterTypeはラジオボタンで実装されている
+      const radioButtons = wrapper.findAll('input[type="radio"]');
+      const csvRadio = radioButtons.find(r => r.element.value === 'csv');
+      if (csvRadio?.exists()) {
+        await csvRadio.setValue();
+        expect(store.delimiterType).toBe('csv');
       }
     });
   });

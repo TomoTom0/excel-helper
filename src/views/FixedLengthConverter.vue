@@ -7,6 +7,7 @@ import { parseDelimitedData, parsePipe, toCSV, toTSV, toMarkdown, toHtmlTable } 
 import { useNotification } from '../composables/useNotification'
 import { useTruncatedDisplay } from '../composables/useTruncatedDisplay'
 import { useFileUpload } from '../composables/useFileUpload'
+import { usePresetCache } from '../composables/usePresetCache'
 
 const store = useConverterStore()
 const { columnLengths, columnHeaders, columnOptions, delimiterType, outputFormat, forceAllString, useFirstRowAsHeader } = storeToRefs(store)
@@ -22,6 +23,64 @@ const fullResult = ref('')
 
 const { notificationMessage, notificationType, showNotificationFlag, showNotification } = useNotification()
 const { displayResult } = useTruncatedDisplay(fullResult)
+
+// プリセットキャッシュ機能
+const {
+  presetName,
+  presets,
+  saveCurrentAsPreset,
+  loadPreset,
+  deletePreset
+} = usePresetCache()
+
+const selectedPreset = ref('')
+const confirmingDeletePresetName = ref('')
+
+const handleSavePreset = () => {
+  const result = saveCurrentAsPreset()
+  showNotification(result.message, result.success ? 'success' : 'error')
+  if (result.success) {
+    selectedPreset.value = presetName.value
+  }
+}
+
+const handleLoadPreset = () => {
+  if (!selectedPreset.value) {
+    showNotification('読み込むプリセットを選択してください', 'error')
+    return
+  }
+  const result = loadPreset(selectedPreset.value)
+  showNotification(result.message, result.success ? 'success' : 'error')
+}
+
+const handleDeletePreset = () => {
+  if (!selectedPreset.value) {
+    showNotification('削除するプリセットを選択してください', 'error')
+    return
+  }
+
+  // 2段階削除: 最初のクリックで確認状態、2回目で削除
+  if (confirmingDeletePresetName.value !== selectedPreset.value) {
+    confirmingDeletePresetName.value = selectedPreset.value
+    setTimeout(() => {
+      if (confirmingDeletePresetName.value === selectedPreset.value) {
+        confirmingDeletePresetName.value = ''
+      }
+    }, 3000)
+    return
+  }
+
+  const result = deletePreset(selectedPreset.value)
+  showNotification(result.message, result.success ? 'success' : 'error')
+  if (result.success) {
+    selectedPreset.value = ''
+  }
+  confirmingDeletePresetName.value = ''
+}
+
+const presetOptions = computed(() => {
+  return Object.keys(presets.value)
+})
 
 // ファイルアップロード機能
 const {
@@ -44,12 +103,25 @@ void fileInputRef // テンプレートで使用されるが、スクリプト�
 
 const hasDataBody = computed(() => !!(uploadedFile.value || store.dataBody))
 
-const isDelimitedData = (data: string, expectedColumnCount: number): string[][] | false => {
+type ParseResult = { data: string[][] } | { error: string }
+
+const isDelimitedData = (data: string, expectedColumnCount: number): ParseResult | false => {
   // 固定長として明示的に指定されている場合は区切り文字データとして扱わない
   if (delimiterType.value === 'fixed') return false
-  
+
   const trimmedData = data.trim().replace(/\r\n/g, '\n').replace(/\r/g, '\n')
   if (trimmedData.length === 0) return false
+
+  // 明示的な形式が指定されている場合、その区切り文字がデータに含まれているか検証
+  if (delimiterType.value !== 'auto') {
+    const expectedDelimiter = delimiterType.value === 'tsv' ? '\t' : delimiterType.value === 'csv' ? ',' : '|'
+    const hasExpectedDelimiter = expectedColumnCount === 1 || trimmedData.includes(expectedDelimiter)
+
+    if (!hasExpectedDelimiter) {
+      const formatName = delimiterType.value === 'tsv' ? 'TSV' : delimiterType.value === 'csv' ? 'CSV' : 'SQL/MD表'
+      return { error: `入力形式が「${formatName}」に設定されていますが、${formatName === 'CSV' ? 'カンマ' : formatName === 'TSV' ? 'タブ' : 'パイプ'}が見つかりません。入力形式を見直してください。` }
+    }
+  }
 
   try {
     const delimiter = getDelimiter(trimmedData, delimiterType.value)
@@ -76,7 +148,7 @@ const isDelimitedData = (data: string, expectedColumnCount: number): string[][] 
     if (firstColumnCount === 1 && expectedColumnCount !== 1) return false
 
     // パース成功時は全行を返す
-    return allRows
+    return { data: allRows }
   } catch {
     // パースに失敗した場合は区切り文字データではないと判断
     return false
@@ -186,9 +258,14 @@ const convert = async () => {
 
     // まず区切り文字データかどうか判定（カラム長は後で確認）
     const lengths = parseColumnLengths(columnLengths.value)
-    const parsedData = isDelimitedData(data, lengths.length || 1)
-    
-    if (parsedData) {
+    const parseResult = isDelimitedData(data, lengths.length || 1)
+
+    // エラーがある場合は表示して終了
+    if (parseResult && 'error' in parseResult) {
+      throw new Error(parseResult.error)
+    }
+
+    if (parseResult && 'data' in parseResult) {
       // 区切り文字データ（TSV/CSV/SQL表）の場合
       // 固定長への変換時のみカラム長が必要
       if (outputFormat.value === 'fixed') {
@@ -196,7 +273,7 @@ const convert = async () => {
           throw new Error('固定長への変換にはカラム長が必要です')
         }
       }
-      handleDelimitedInput(lengths, parsedData, data)
+      handleDelimitedInput(lengths, parseResult.data, data)
     } else {
       // 固定長データの場合は必ずカラム長が必要
       if (lengths.length === 0) {
@@ -274,27 +351,42 @@ const clearDataBody = () => {
   <div class="converter-container">
     <div class="header-row">
       <h2>固定長相互変換</h2>
-      <div class="delimiter-selector">
-        <label>
-          <input type="radio" value="auto" v-model="delimiterType" />
-          自動判別
-        </label>
-        <label>
-          <input type="radio" value="tsv" v-model="delimiterType" />
-          TSV
-        </label>
-        <label>
-          <input type="radio" value="csv" v-model="delimiterType" />
-          CSV
-        </label>
-        <label>
-          <input type="radio" value="pipe" v-model="delimiterType" />
-          SQL/MD表
-        </label>
-        <label>
-          <input type="radio" value="fixed" v-model="delimiterType" />
-          固定長
-        </label>
+    </div>
+
+    <div class="preset-section">
+      <div class="preset-input">
+        <input
+          type="text"
+          v-model="presetName"
+          placeholder="プリセット名"
+          class="preset-name-input"
+        />
+        <select v-model="selectedPreset" class="preset-select">
+          <option value="">選択...</option>
+          <option v-for="name in presetOptions" :key="name" :value="name">
+            {{ name }}
+          </option>
+        </select>
+      </div>
+      <div class="preset-actions">
+        <button class="btn btn-small" @click="handleSavePreset" title="現在の設定を保存">
+          <i class="mdi mdi-content-save"></i>
+          保存
+        </button>
+        <button class="btn btn-small" @click="handleLoadPreset" :disabled="!selectedPreset" title="選択したプリセットを読み込み">
+          <i class="mdi mdi-folder-open"></i>
+          読込
+        </button>
+        <button
+          class="btn btn-small"
+          :class="confirmingDeletePresetName === selectedPreset ? 'btn-danger' : ''"
+          @click="handleDeletePreset"
+          :disabled="!selectedPreset"
+          :title="confirmingDeletePresetName === selectedPreset ? 'もう一度クリックして削除' : '選択したプリセットを削除'"
+        >
+          <i class="mdi" :class="confirmingDeletePresetName === selectedPreset ? 'mdi-alert' : 'mdi-delete'"></i>
+          <span v-if="confirmingDeletePresetName === selectedPreset">?</span>
+        </button>
       </div>
     </div>
 
@@ -341,13 +433,6 @@ const clearDataBody = () => {
           />
           <button
             class="btn btn-icon-small"
-            @click="uploadFile"
-            title="ファイルから読み込み"
-          >
-            <i class="mdi mdi-file-upload"></i>
-          </button>
-          <button
-            class="btn btn-icon-small"
             @click="copyFieldToClipboard(displayDataBody, 'データ本体')"
             :disabled="!hasDataBody"
             title="コピー"
@@ -368,6 +453,13 @@ const clearDataBody = () => {
             title="クリア"
           >
             <i class="mdi mdi-delete"></i>
+          </button>
+          <button
+            class="btn btn-icon-small"
+            @click="uploadFile"
+            title="ファイルから読み込み"
+          >
+            <i class="mdi mdi-file-upload"></i>
           </button>
         </div>
         <h3>データ本体</h3>
@@ -471,9 +563,9 @@ const clearDataBody = () => {
       </div>
     </div>
 
-    <div class="button-group">
-      <button 
-        class="btn btn-primary" 
+    <div class="conversion-row">
+      <button
+        class="btn btn-primary"
         @click="convert"
         :disabled="convertLoading"
         :class="{ loading: convertLoading }"
@@ -481,6 +573,58 @@ const clearDataBody = () => {
         <i class="mdi mdi-auto-fix"></i>
         <span>変換</span>
       </button>
+
+      <div class="format-selectors">
+        <div class="format-group">
+          <span class="format-label">入力:</span>
+          <label class="format-option">
+            <input type="radio" value="auto" v-model="delimiterType" />
+            自動
+          </label>
+          <label class="format-option">
+            <input type="radio" value="tsv" v-model="delimiterType" />
+            TSV
+          </label>
+          <label class="format-option">
+            <input type="radio" value="csv" v-model="delimiterType" />
+            CSV
+          </label>
+          <label class="format-option">
+            <input type="radio" value="pipe" v-model="delimiterType" />
+            SQL/MD
+          </label>
+          <label class="format-option">
+            <input type="radio" value="fixed" v-model="delimiterType" />
+            固定長
+          </label>
+        </div>
+
+        <span class="format-arrow"><i class="mdi mdi-arrow-right"></i></span>
+
+        <div class="format-group">
+          <span class="format-label">出力:</span>
+          <label class="format-option">
+            <input type="radio" value="fixed" v-model="outputFormat" />
+            固定長
+          </label>
+          <label class="format-option">
+            <input type="radio" value="tsv" v-model="outputFormat" />
+            TSV
+          </label>
+          <label class="format-option">
+            <input type="radio" value="csv" v-model="outputFormat" />
+            CSV
+          </label>
+          <label class="format-option">
+            <input type="radio" value="md-tbl" v-model="outputFormat" />
+            md-tbl
+          </label>
+          <label class="format-option">
+            <input type="radio" value="html-tbl" v-model="outputFormat" />
+            html-tbl
+          </label>
+        </div>
+      </div>
     </div>
 
     <div class="result-section">
@@ -508,31 +652,6 @@ const clearDataBody = () => {
         <h3>実行結果<span v-if="conversionType" class="conversion-type">（{{ conversionType }}）</span></h3>
       </div>
       <textarea :value="displayResult" rows="10" readonly :placeholder="resultPlaceholder"></textarea>
-      <div class="result-actions">
-        <div class="output-format-selector">
-          <label>出力形式:</label>
-          <label>
-            <input type="radio" value="fixed" v-model="outputFormat" />
-            固定長
-          </label>
-          <label>
-            <input type="radio" value="tsv" v-model="outputFormat" />
-            TSV
-          </label>
-          <label>
-            <input type="radio" value="csv" v-model="outputFormat" />
-            CSV
-          </label>
-          <label>
-            <input type="radio" value="md-tbl" v-model="outputFormat" />
-            md-tbl
-          </label>
-          <label>
-            <input type="radio" value="html-tbl" v-model="outputFormat" />
-            html-tbl
-          </label>
-        </div>
-      </div>
     </div>
 
     <!-- 通知メッセージ -->

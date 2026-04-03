@@ -26,3 +26,6 @@ tmp/
 # Build artifacts
 *.tsbuildinfo
 tasks/
+
+# Playwright MCP
+.playwright-mcp/
