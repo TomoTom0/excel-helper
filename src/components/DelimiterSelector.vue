@@ -1,12 +1,18 @@
 <script setup lang="ts">
 import type { DelimiterType } from '../utils/converter'
 
+interface Option {
+  value: DelimiterType
+  label: string
+}
+
 interface Props {
   modelValue: DelimiterType
   label?: string
+  options?: Option[]
 }
 
-const OPTIONS: { value: DelimiterType, label: string }[] = [
+const DEFAULT_OPTIONS: Option[] = [
   { value: 'auto', label: '自動判別' },
   { value: 'tsv', label: 'TSV' },
   { value: 'csv', label: 'CSV' },
@@ -23,7 +29,7 @@ defineEmits<{ (e: 'update:modelValue', value: DelimiterType): void }>()
 <template>
   <div class="delimiter-selector">
     <label v-if="label">{{ label }}</label>
-    <label v-for="opt in OPTIONS" :key="opt.value">
+    <label v-for="opt in (options || DEFAULT_OPTIONS)" :key="opt.value">
       <input
         type="radio"
         :value="opt.value"

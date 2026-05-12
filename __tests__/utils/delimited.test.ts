@@ -242,6 +242,16 @@ describe('Delimited Data Converter', () => {
       expect(result).toEqual([['a', '', 'c']])
     })
 
+    it('全て空セルのデータ行をスキップしない', () => {
+      const input = '┌───┬───┬───┐\n│ a │ b │ c │\n├───┼───┼───┤\n│   │   │   │\n├───┼───┼───┤\n│ d │ e │ f │\n└───┴───┴───┘'
+      const result = parseFrame(input)
+      expect(result).toEqual([
+        ['a', 'b', 'c'],
+        ['', '', ''],
+        ['d', 'e', 'f']
+      ])
+    })
+
     it('ヘッダーなしのframe-tableをパースできる', () => {
       const input = '┌───┬───────┬─────┐\n│ 1 │ Alice │ 100 │\n│ 2 │ Bob   │ 200 │\n└───┴───────┴─────┘'
       const result = parseFrame(input)

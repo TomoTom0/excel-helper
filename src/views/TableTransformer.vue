@@ -119,8 +119,9 @@ const convert = async () => {
     const transformed = transformAll(parsed, transformTypes.value)
     fullResult.value = formatOutput(transformed, outputFormat.value)
 
+    const detected = detectDelimiter(data)
     const inputType = inputFormat.value === 'auto'
-      ? (detectDelimiter(data) === '\t' ? 'TSV' : detectDelimiter(data) === ',' ? 'CSV' : detectDelimiter(data) === '|' ? 'SQL/MD表' : 'TSV')
+      ? (detected === '\t' ? 'TSV' : detected === ',' ? 'CSV' : detected === '|' ? 'SQL/MD表' : detected === '│' ? 'Frame表' : 'TSV')
       : inputFormat.value === 'pipe' ? 'SQL/MD' : inputFormat.value === 'frame' ? 'Frame表' : inputFormat.value.toUpperCase()
     const outputType = outputFormat.value === 'markdown' ? 'Markdown' : outputFormat.value.toUpperCase()
     const typeLabels = transformTypes.value.map(t => transformLabels[t]).join('+')
@@ -263,32 +264,6 @@ const clearInputData = () => {
       </button>
 
       <div class="format-selectors">
-        <div class="format-group">
-          <span class="format-label">入力:</span>
-          <label class="format-option">
-            <input type="radio" value="auto" v-model="inputFormat" />
-            自動
-          </label>
-          <label class="format-option">
-            <input type="radio" value="tsv" v-model="inputFormat" />
-            TSV
-          </label>
-          <label class="format-option">
-            <input type="radio" value="csv" v-model="inputFormat" />
-            CSV
-          </label>
-          <label class="format-option">
-            <input type="radio" value="markdown" v-model="inputFormat" />
-            MD
-          </label>
-          <label class="format-option">
-            <input type="radio" value="html" v-model="inputFormat" />
-            HTML
-          </label>
-        </div>
-
-        <span class="format-arrow"><i class="mdi mdi-arrow-right"></i></span>
-
         <div class="format-group">
           <span class="format-label">出力:</span>
           <label class="format-option">

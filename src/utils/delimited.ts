@@ -107,7 +107,7 @@ export function parseFrame(input: string): string[][] {
     }
 
     // box-drawing文字のみの行（セパレータ行）をスキップ
-    if (/^[\s┌─┬┐├┼┤└┴┘│]+$/.test(line)) {
+    if (/^[\s┌─┬┐├┼┤└┴┘]+$/.test(line)) {
       continue;
     }
 
