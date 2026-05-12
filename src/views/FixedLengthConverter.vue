@@ -3,8 +3,9 @@ import { ref, computed, toRef } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useConverterStore } from '../stores/converter'
 import { parseColumnLengths, parseColumnOptions, getDelimiter, parseFixed, tsvToFixed as convertTsvToFixed } from '../utils/converter'
-import { parseDelimitedData, parsePipe, toCSV, toTSV, toMarkdown, toHtmlTable } from '../utils/delimited'
+import { parseDelimitedData, parsePipe, parseFrame, toCSV, toTSV, toMarkdown, toHtmlTable } from '../utils/delimited'
 import { useNotification } from '../composables/useNotification'
+import DelimiterSelector from '../components/DelimiterSelector.vue'
 import { useTruncatedDisplay } from '../composables/useTruncatedDisplay'
 import { useFileUpload } from '../composables/useFileUpload'
 import { usePresetCache } from '../composables/usePresetCache'
@@ -129,6 +130,8 @@ const isDelimitedData = (data: string, expectedColumnCount: number): ParseResult
 
     if (delimiter === '|') {
       allRows = parsePipe(trimmedData)
+    } else if (delimiter === '│') {
+      allRows = parseFrame(trimmedData)
     } else {
       allRows = parseDelimitedData(trimmedData, delimiter)
     }
@@ -172,7 +175,7 @@ const resultPlaceholder = computed(() => {
 
 const handleDelimitedInput = (lengths: number[], parsedData: string[][], data: string) => {
   const delimiter = getDelimiter(data, delimiterType.value)
-  const inputType = delimiter === '\t' ? 'TSV' : delimiter === '|' ? 'SQL/MD表' : 'CSV'
+  const inputType = delimiter === '\t' ? 'TSV' : delimiter === '|' ? 'SQL/MD表' : delimiter === '│' ? 'Frame表' : 'CSV'
 
   // useFirstRowAsHeaderがtrueの場合、1行目をスキップ
   let dataRows = parsedData
@@ -216,7 +219,9 @@ const handleFixedWidthInput = (lengths: number[], data: string) => {
     const headerDelimiter = getDelimiter(columnHeaders.value, 'auto')
     const headers = headerDelimiter === '|'
       ? parsePipe(columnHeaders.value)[0]
-      : parseDelimitedData(columnHeaders.value, headerDelimiter)[0]
+      : headerDelimiter === '│'
+        ? parseFrame(columnHeaders.value)[0]
+        : parseDelimitedData(columnHeaders.value, headerDelimiter)[0]
     processedData = [headers, ...processedData]
   }
 
@@ -351,6 +356,10 @@ const clearDataBody = () => {
   <div class="converter-container">
     <div class="header-row">
       <h2>固定長相互変換</h2>
+      <DelimiterSelector
+        v-model="delimiterType"
+        label="入力形式:"
+      />
     </div>
 
     <div class="preset-section">

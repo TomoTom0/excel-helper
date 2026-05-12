@@ -89,6 +89,49 @@ export function parsePipe(input: string): string[][] {
 }
 
 /**
+ * Unicode box-drawing文字のframe-tableをパースする
+ * 例:
+ * ┌───────────────┬────────┬────────────┐
+ * │  Model / Bot  │ AvgPen │ Normalized │
+ * ├───────────────┼────────┼────────────┤
+ * │ pmc:100:1.0   │ 6.38   │ 2.16       │
+ * └───────────────┴────────┴────────────┘
+ */
+export function parseFrame(input: string): string[][] {
+  const lines = input.split('\n');
+  const result: string[][] = [];
+
+  for (const line of lines) {
+    if (line.trim() === '') {
+      continue;
+    }
+
+    // box-drawing文字のみの行（セパレータ行）をスキップ
+    if (/^[\s┌─┬┐├┼┤└┴┘]+$/.test(line)) {
+      continue;
+    }
+
+    let trimmedLine = line.trim();
+
+    // 行頭・行末の │ (U+2502) を削除
+    if (trimmedLine.startsWith('│')) {
+      trimmedLine = trimmedLine.slice(1);
+    }
+    if (trimmedLine.endsWith('│')) {
+      trimmedLine = trimmedLine.slice(0, -1);
+    }
+
+    const columns = trimmedLine.split('│').map(col => col.trim());
+
+    if (columns.length > 0) {
+      result.push(columns);
+    }
+  }
+
+  return result;
+}
+
+/**
  * 2次元配列を区切り文字列に変換する（共通関数）
  */
 function unparseDelimited(data: string[][], delimiter: ',' | '\t', forceAllString = false): string {
@@ -145,6 +188,42 @@ export function toPipe(data: string[][]): string {
       lines.push('-' + separators.join('-+-') + '-');
     }
   }
+
+  return lines.join('\n');
+}
+
+/**
+ * 2次元配列をframe-table形式（Unicode box-drawing）に変換する
+ */
+export function toFrame(data: string[][]): string {
+  if (data.length === 0) return '';
+
+  const colWidths = data.reduce<number[]>((widths, row) => {
+    row.forEach((cell, i) => {
+      const cellLen = (cell || '').length;
+      widths[i] = Math.max(widths[i] || 1, cellLen);
+    });
+    return widths;
+  }, []);
+
+  const topBorder = '┌' + colWidths.map(w => '─'.repeat(w)).join('┬') + '┐';
+  const midBorder = '├' + colWidths.map(w => '─'.repeat(w)).join('┼') + '┤';
+  const bottomBorder = '└' + colWidths.map(w => '─'.repeat(w)).join('┴') + '┘';
+
+  const lines: string[] = [topBorder];
+  for (let rowIndex = 0; rowIndex < data.length; rowIndex++) {
+    const row = data[rowIndex];
+    const paddedCols = row.map((col, i) => {
+      const width = colWidths[i] || 1;
+      return (col || '').padEnd(width, ' ');
+    });
+    lines.push('│' + paddedCols.join('│') + '│');
+
+    if (rowIndex === 0 && data.length > 1) {
+      lines.push(midBorder);
+    }
+  }
+  lines.push(bottomBorder);
 
   return lines.join('\n');
 }
@@ -217,6 +296,43 @@ export function toHtmlTable(data: string[][]): string {
 
   lines.push('</table>');
   return lines.join('\n');
+}
+
+/**
+ * HTML表形式をパースする
+ */
+export function parseHtmlTable(input: string): string[][] {
+  const result: string[][] = []
+  const rowRegex = /<tr[^>]*>([\s\S]*?)<\/tr>/gi
+  const cellRegex = /<t[dh][^>]*>([\s\S]*?)<\/t[dh]>/gi
+
+  const htmlDecode = (text: string): string => {
+    return text
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&#039;/g, "'")
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<[^>]+>/g, '')
+      .trim()
+  }
+
+  let rowMatch: RegExpExecArray | null
+  while ((rowMatch = rowRegex.exec(input)) !== null) {
+    const rowContent = rowMatch[1]
+    const cells: string[] = []
+    let cellMatch: RegExpExecArray | null
+    cellRegex.lastIndex = 0
+    while ((cellMatch = cellRegex.exec(rowContent)) !== null) {
+      cells.push(htmlDecode(cellMatch[1]))
+    }
+    if (cells.length > 0) {
+      result.push(cells)
+    }
+  }
+
+  return result
 }
 
 /**

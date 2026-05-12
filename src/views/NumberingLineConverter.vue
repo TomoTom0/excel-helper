@@ -5,6 +5,7 @@ import { convertNumberingLines } from '../utils/numberingConverter'
 import { parseCSV, parseTSV, toCSV, toTSV } from '../utils/delimited'
 import { getDelimiter } from '../utils/converter'
 import { useNumberingStore } from '../stores/numbering'
+import DelimiterSelector from '../components/DelimiterSelector.vue'
 
 const store = useNumberingStore()
 const { 
@@ -130,21 +131,15 @@ const { clearDataBody, togglePattern } = store
   <div class="converter-container">
     <div class="header-row">
       <h2>ナンバリング行変換</h2>
-      <div class="delimiter-selector">
-        <label>入力形式:</label>
-        <label>
-          <input type="radio" value="auto" v-model="inputDelimiterType" />
-          自動判別
-        </label>
-        <label>
-          <input type="radio" value="tsv" v-model="inputDelimiterType" />
-          TSV
-        </label>
-        <label>
-          <input type="radio" value="csv" v-model="inputDelimiterType" />
-          CSV
-        </label>
-      </div>
+      <DelimiterSelector
+        v-model="inputDelimiterType"
+        label="入力形式:"
+        :options="[
+          { value: 'auto', label: '自動判別' },
+          { value: 'tsv', label: 'TSV' },
+          { value: 'csv', label: 'CSV' },
+        ]"
+      />
     </div>
 
     <div class="input-section">
