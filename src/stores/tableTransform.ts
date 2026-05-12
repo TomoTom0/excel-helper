@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import type { DelimiterType } from '../utils/converter'
 
-export type OutputFormat = 'csv' | 'tsv' | 'markdown' | 'html'
+export type OutputFormat = 'csv' | 'tsv' | 'markdown' | 'html' | 'frame'
 export type TransformType = 'transpose' | 'flipVertical' | 'flipHorizontal'
 
 export const useTableTransformStore = defineStore('tableTransform', () => {

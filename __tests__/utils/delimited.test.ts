@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { toCSV, toTSV, parseCSV, parseTSV, parsePipe, parseFrame, toPipe, toMarkdown, toHtmlTable } from '../../src/utils/delimited'
+import { toCSV, toTSV, parseCSV, parseTSV, parsePipe, parseFrame, toPipe, toMarkdown, toHtmlTable, toFrame } from '../../src/utils/delimited'
 
 describe('Delimited Data Converter', () => {
   describe('toCSV', () => {
@@ -313,6 +313,36 @@ describe('Delimited Data Converter', () => {
       const lines = result.split('\n')
       expect(lines[0]).toBe('| a   | b   |')
       expect(lines[1]).toBe('| --- | --- |')
+    })
+  })
+
+  describe('toFrame', () => {
+    it('frame-table形式に変換できる', () => {
+      const data = [['id', 'name'], ['1', 'Alice'], ['2', 'Bob']]
+      const result = toFrame(data)
+      const lines = result.split('\n')
+      expect(lines[0]).toBe('┌──┬─────┐')
+      expect(lines[1]).toBe('│id│name │')
+      expect(lines[2]).toBe('├──┼─────┤')
+      expect(lines[3]).toBe('│1 │Alice│')
+      expect(lines[4]).toBe('│2 │Bob  │')
+      expect(lines[5]).toBe('└──┴─────┘')
+    })
+
+    it('空データを処理できる', () => {
+      const data: string[][] = []
+      const result = toFrame(data)
+      expect(result).toBe('')
+    })
+
+    it('1行のみのデータを処理できる（中間罫線なし）', () => {
+      const data = [['a', 'b']]
+      const result = toFrame(data)
+      const lines = result.split('\n')
+      expect(lines[0]).toBe('┌─┬─┐')
+      expect(lines[1]).toBe('│a│b│')
+      expect(lines[2]).toBe('└─┴─┘')
+      expect(lines.length).toBe(3)
     })
   })
 

@@ -2,7 +2,7 @@
 import { ref, computed, toRef } from 'vue'
 import { storeToRefs } from 'pinia'
 import { transpose, flipVertical, flipHorizontal } from '../utils/tableTransform'
-import { parseCSV, parseTSV, parsePipe, parseFrame, parseHtmlTable, toCSV, toTSV, toMarkdown, toHtmlTable } from '../utils/delimited'
+import { parseCSV, parseTSV, parsePipe, parseFrame, parseHtmlTable, toCSV, toTSV, toMarkdown, toHtmlTable, toFrame } from '../utils/delimited'
 import { detectDelimiter } from '../utils/converter'
 import { useTableTransformStore } from '../stores/tableTransform'
 import { useNotification } from '../composables/useNotification'
@@ -68,6 +68,7 @@ const formatOutput = (data: string[][], format: OutputFormat): string => {
   if (format === 'tsv') return toTSV(data)
   if (format === 'markdown') return toMarkdown(data)
   if (format === 'html') return toHtmlTable(data)
+  if (format === 'frame') return toFrame(data)
   return toTSV(data)
 }
 
@@ -90,6 +91,7 @@ const resultPlaceholder = computed(() => {
   if (outputFormat.value === 'csv') return 'name,age,city\nAlice,30,Tokyo\nBob,25,Osaka\n(変換結果がここに表示されます)'
   if (outputFormat.value === 'markdown') return '| name | age | city |\n| ---- | --- | ---- |\n| Alice | 30 | Tokyo |\n| Bob | 25 | Osaka |\n(変換結果がここに表示されます)'
   if (outputFormat.value === 'html') return '<table>\n  <tr>\n    <th>name</th>\n    <th>age</th>\n    <th>city</th>\n  </tr>\n  ...\n</table>\n(変換結果がここに表示されます)'
+  if (outputFormat.value === 'frame') return '┌──────┬─────┬───────┐\n│ name │ age │ city  │\n├──────┼─────┼───────┤\n│Alice │ 30  │ Tokyo │\n│ Bob  │ 25  │ Osaka │\n└──────┴─────┴───────┘\n(変換結果がここに表示されます)'
   return 'name\tage\tcity\nAlice\t30\tTokyo\nBob\t25\tOsaka\n(変換結果がここに表示されます)'
 })
 
@@ -123,7 +125,7 @@ const convert = async () => {
     const inputType = inputFormat.value === 'auto'
       ? (detected === '\t' ? 'TSV' : detected === ',' ? 'CSV' : detected === '|' ? 'SQL/MD表' : detected === '│' ? 'Frame表' : 'TSV')
       : inputFormat.value === 'pipe' ? 'SQL/MD' : inputFormat.value === 'frame' ? 'Frame表' : inputFormat.value.toUpperCase()
-    const outputType = outputFormat.value === 'markdown' ? 'Markdown' : outputFormat.value.toUpperCase()
+    const outputType = outputFormat.value === 'markdown' ? 'Markdown' : outputFormat.value === 'frame' ? 'Frame表' : outputFormat.value.toUpperCase()
     const typeLabels = transformTypes.value.map(t => transformLabels[t]).join('+')
     conversionType.value = `${typeLabels} (${inputType} → ${outputType})`
   } catch (error) {
@@ -147,7 +149,7 @@ const copyToClipboard = () => {
 
 const downloadResult = () => {
   downloadLoading.value = true
-  const extMap: Record<OutputFormat, string> = { csv: '.csv', tsv: '.tsv', markdown: '.md', html: '.html' }
+  const extMap: Record<OutputFormat, string> = { csv: '.csv', tsv: '.tsv', markdown: '.md', html: '.html', frame: '.txt' }
   const blob = new Blob([fullResult.value], { type: 'text/plain' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
@@ -281,6 +283,10 @@ const clearInputData = () => {
           <label class="format-option">
             <input type="radio" value="html" v-model="outputFormat" />
             HTML
+          </label>
+          <label class="format-option">
+            <input type="radio" value="frame" v-model="outputFormat" />
+            Frame表
           </label>
         </div>
       </div>

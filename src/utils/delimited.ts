@@ -193,6 +193,42 @@ export function toPipe(data: string[][]): string {
 }
 
 /**
+ * 2次元配列をframe-table形式（Unicode box-drawing）に変換する
+ */
+export function toFrame(data: string[][]): string {
+  if (data.length === 0) return '';
+
+  const colWidths = data.reduce<number[]>((widths, row) => {
+    row.forEach((cell, i) => {
+      const cellLen = (cell || '').length;
+      widths[i] = Math.max(widths[i] || 1, cellLen);
+    });
+    return widths;
+  }, []);
+
+  const topBorder = '┌' + colWidths.map(w => '─'.repeat(w)).join('┬') + '┐';
+  const midBorder = '├' + colWidths.map(w => '─'.repeat(w)).join('┼') + '┤';
+  const bottomBorder = '└' + colWidths.map(w => '─'.repeat(w)).join('┴') + '┘';
+
+  const lines: string[] = [topBorder];
+  for (let rowIndex = 0; rowIndex < data.length; rowIndex++) {
+    const row = data[rowIndex];
+    const paddedCols = row.map((col, i) => {
+      const width = colWidths[i] || 1;
+      return (col || '').padEnd(width, ' ');
+    });
+    lines.push('│' + paddedCols.join('│') + '│');
+
+    if (rowIndex === 0 && data.length > 1) {
+      lines.push(midBorder);
+    }
+  }
+  lines.push(bottomBorder);
+
+  return lines.join('\n');
+}
+
+/**
  * 2次元配列をMarkdown表形式に変換する
  */
 export function toMarkdown(data: string[][]): string {
