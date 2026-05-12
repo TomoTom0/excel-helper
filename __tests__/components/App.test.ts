@@ -5,6 +5,7 @@ import { createRouter, createMemoryHistory } from 'vue-router';
 import App from '../../src/App.vue';
 import FixedLengthConverter from '../../src/views/FixedLengthConverter.vue';
 import NumberingLineConverter from '../../src/views/NumberingLineConverter.vue';
+import TableTransformer from '../../src/views/TableTransformer.vue';
 import SqlInsertGenerator from '../../src/views/SqlInsertGenerator.vue';
 import SettingsPage from '../../src/views/SettingsPage.vue';
 
@@ -16,6 +17,7 @@ describe('App.vue', () => {
         { path: '/', redirect: '/fixed-length' },
         { path: '/fixed-length', name: 'fixed-length', component: FixedLengthConverter },
         { path: '/numbering-line', name: 'numbering-line', component: NumberingLineConverter },
+        { path: '/table-transform', name: 'table-transform', component: TableTransformer },
         { path: '/sql-insert', name: 'sql-insert', component: SqlInsertGenerator },
         { path: '/settings', name: 'settings', component: SettingsPage },
       ],
@@ -40,11 +42,12 @@ describe('App.vue', () => {
     it('should render all tabs', async () => {
       const wrapper = await createWrapper();
       const tabs = wrapper.findAll('.sidebar-nav li');
-      expect(tabs).toHaveLength(4);
+      expect(tabs).toHaveLength(5);
       expect(tabs[0].text()).toBe('固定長相互変換');
       expect(tabs[1].text()).toBe('ナンバリング行変換');
-      expect(tabs[2].text()).toBe('SQL INSERT文生成');
-      expect(tabs[3].text()).toBe('設定');
+      expect(tabs[2].text()).toBe('表変換');
+      expect(tabs[3].text()).toBe('SQL INSERT文生成');
+      expect(tabs[4].text()).toBe('設定');
     });
 
     it('should have first tab active by default', async () => {

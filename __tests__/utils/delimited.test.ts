@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { toCSV, toTSV, parseCSV, parseTSV, parsePipe, toPipe, toMarkdown, toHtmlTable } from '../../src/utils/delimited'
+import { toCSV, toTSV, parseCSV, parseTSV, parsePipe, parseFrame, toPipe, toMarkdown, toHtmlTable } from '../../src/utils/delimited'
 
 describe('Delimited Data Converter', () => {
   describe('toCSV', () => {
@@ -206,6 +206,58 @@ describe('Delimited Data Converter', () => {
       expect(result).toEqual([
         ['1', 'Alice', '100'],
         ['2', 'Bob', '200']
+      ])
+    })
+  })
+
+  describe('parseFrame', () => {
+    it('frame-table形式をパースできる', () => {
+      const input = '┌───────────────┬────────┬────────────┐\n│  Model / Bot  │ AvgPen │ Normalized │\n├───────────────┼────────┼────────────┤\n│ pmc:100:1.0   │ 6.38   │ 2.16       │\n├───────────────┼────────┼────────────┤\n│ counting      │ 7.78   │ 1.72       │\n└───────────────┴────────┴────────────┘'
+      const result = parseFrame(input)
+      expect(result).toEqual([
+        ['Model / Bot', 'AvgPen', 'Normalized'],
+        ['pmc:100:1.0', '6.38', '2.16'],
+        ['counting', '7.78', '1.72']
+      ])
+    })
+
+    it('セパレータ行のみのframe-tableをパースできる（データなし）', () => {
+      const input = '┌────┬──────┐\n└────┴──────┘'
+      const result = parseFrame(input)
+      expect(result).toEqual([])
+    })
+
+    it('空行をスキップする', () => {
+      const input = '┌────┬──────┐\n│ id │ name │\n├────┼──────┤\n\n│  1 │ Alice│\n└────┴──────┘'
+      const result = parseFrame(input)
+      expect(result).toEqual([
+        ['id', 'name'],
+        ['1', 'Alice']
+      ])
+    })
+
+    it('空のカラムを含む行を処理できる', () => {
+      const input = '┌───┬───┬───┐\n│ a │   │ c │\n└───┴───┴───┘'
+      const result = parseFrame(input)
+      expect(result).toEqual([['a', '', 'c']])
+    })
+
+    it('ヘッダーなしのframe-tableをパースできる', () => {
+      const input = '┌───┬───────┬─────┐\n│ 1 │ Alice │ 100 │\n│ 2 │ Bob   │ 200 │\n└───┴───────┴─────┘'
+      const result = parseFrame(input)
+      expect(result).toEqual([
+        ['1', 'Alice', '100'],
+        ['2', 'Bob', '200']
+      ])
+    })
+
+    it('末尾セパレータなしのframe-tableをパースできる', () => {
+      const input = '┌────┬──────┐\n│ id │ name │\n├────┼──────┤\n│  1 │ Alice│\n│  2 │ Bob  │'
+      const result = parseFrame(input)
+      expect(result).toEqual([
+        ['id', 'name'],
+        ['1', 'Alice'],
+        ['2', 'Bob']
       ])
     })
   })
