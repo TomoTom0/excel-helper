@@ -134,6 +134,16 @@ describe('Fixed Length Converter', () => {
       const data = 'test'
       expect(detectDelimiter(data)).toBe('\t')
     })
+
+    it('should detect frame-table format', () => {
+      const data = '┌───────────────┬────────┬────────────┐\n│  Model / Bot  │ AvgPen │ Normalized │\n├───────────────┼────────┼────────────┤\n│ pmc:100:1.0   │ 6.38   │ 2.16       │'
+      expect(detectDelimiter(data)).toBe('│')
+    })
+
+    it('should detect frame-table format with bottom border', () => {
+      const data = '┌────┬──────┐\n│ id │ name │\n├────┼──────┤\n│  1 │ Alice│\n└────┴──────┘'
+      expect(detectDelimiter(data)).toBe('│')
+    })
   })
 
   describe('getDelimiter', () => {
@@ -145,8 +155,16 @@ describe('Fixed Length Converter', () => {
       expect(getDelimiter('any data', 'csv')).toBe(',')
     })
 
-    it('should return pipe for pipe type', () => {
-      expect(getDelimiter('any data', 'pipe')).toBe('|')
+    it('should return pipe for sql type', () => {
+      expect(getDelimiter('any data', 'sql')).toBe('|')
+    })
+
+    it('should return pipe for md type', () => {
+      expect(getDelimiter('any data', 'md')).toBe('|')
+    })
+
+    it('should return frame delimiter for frame type', () => {
+      expect(getDelimiter('any data', 'frame')).toBe('│')
     })
 
     it('should auto-detect for auto type', () => {

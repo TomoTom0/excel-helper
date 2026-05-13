@@ -1,6 +1,45 @@
 import { parse, unparse } from 'papaparse';
 
 /**
+ * 文字列の表示幅を計算する（全角文字を2カラム分として扱う）
+ */
+function visualWidth(str: string): number {
+  let width = 0;
+  for (const char of str) {
+    const cp = char.codePointAt(0)!;
+    if (
+      (cp >= 0x1100 && cp <= 0x115F) ||  // Hangul Jamo
+      (cp >= 0x2E80 && cp <= 0x303E) ||  // CJK Misc
+      (cp >= 0x3040 && cp <= 0x33BF) ||  // Hiragana, Katakana, CJK Symbols
+      (cp >= 0x3400 && cp <= 0x4DBF) ||  // CJK Unified Ideographs Extension A
+      (cp >= 0x4E00 && cp <= 0x9FFF) ||  // CJK Unified Ideographs
+      (cp >= 0xAC00 && cp <= 0xD7A3) ||  // Hangul Syllables
+      (cp >= 0xF900 && cp <= 0xFAFF) ||  // CJK Compatibility Ideographs
+      (cp >= 0xFE30 && cp <= 0xFE6F) ||  // CJK Compatibility Forms
+      (cp >= 0xFF01 && cp <= 0xFF60) ||  // Fullwidth Forms
+      (cp >= 0xFFE0 && cp <= 0xFFE6) ||  // Fullwidth Signs
+      (cp >= 0x20000 && cp <= 0x2FFFF) ||  // CJK Plane 2 (Extensions B-F, etc.)
+      (cp >= 0x30000 && cp <= 0x3FFFF) ||  // CJK Plane 3 (Extensions G-H, etc.)
+      (cp >= 0x1F300 && cp <= 0x1FAFF)     // Emojis
+    ) {
+      width += 2;
+    } else {
+      width += 1;
+    }
+  }
+  return width;
+}
+
+/**
+ * 文字列を視覚幅に合わせて右パディングする
+ */
+function visualPadEnd(str: string, targetWidth: number, padChar: string = ' '): string {
+  const currentWidth = visualWidth(str);
+  const padCount = targetWidth - currentWidth;
+  return padCount > 0 ? str + padChar.repeat(padCount) : str;
+}
+
+/**
  * 区切り文字データをパースする（共通関数）
  */
 function parseDelimited(input: string, delimiter: ',' | '\t'): string[][] {
@@ -89,6 +128,49 @@ export function parsePipe(input: string): string[][] {
 }
 
 /**
+ * Unicode box-drawing文字のframe-tableをパースする
+ * 例:
+ * ┌───────────────┬────────┬────────────┐
+ * │  Model / Bot  │ AvgPen │ Normalized │
+ * ├───────────────┼────────┼────────────┤
+ * │ pmc:100:1.0   │ 6.38   │ 2.16       │
+ * └───────────────┴────────┴────────────┘
+ */
+export function parseFrame(input: string): string[][] {
+  const lines = input.split('\n');
+  const result: string[][] = [];
+
+  for (const line of lines) {
+    if (line.trim() === '') {
+      continue;
+    }
+
+    // box-drawing文字のみの行（セパレータ行）をスキップ
+    if (/^[\s┌─┬┐├┼┤└┴┘]+$/.test(line)) {
+      continue;
+    }
+
+    let trimmedLine = line.trim();
+
+    // 行頭・行末の │ (U+2502) を削除
+    if (trimmedLine.startsWith('│')) {
+      trimmedLine = trimmedLine.slice(1);
+    }
+    if (trimmedLine.endsWith('│')) {
+      trimmedLine = trimmedLine.slice(0, -1);
+    }
+
+    const columns = trimmedLine.split('│').map(col => col.trim());
+
+    if (columns.length > 0) {
+      result.push(columns);
+    }
+  }
+
+  return result;
+}
+
+/**
  * 2次元配列を区切り文字列に変換する（共通関数）
  */
 function unparseDelimited(data: string[][], delimiter: ',' | '\t', forceAllString = false): string {
@@ -124,7 +206,7 @@ export function toPipe(data: string[][]): string {
   // 各列の最大幅を計算
   const colWidths = data.reduce<number[]>((widths, row) => {
     row.forEach((cell, i) => {
-      widths[i] = Math.max(widths[i] || 0, (cell || '').length);
+      widths[i] = Math.max(widths[i] || 0, visualWidth(cell || ''));
     });
     return widths;
   }, []);
@@ -135,7 +217,7 @@ export function toPipe(data: string[][]): string {
     const row = data[rowIndex];
     const paddedCols = row.map((col, i) => {
       const width = colWidths[i] || 0;
-      return (col || '').padEnd(width, ' ');
+      return visualPadEnd(col || '', width);
     });
     lines.push(' ' + paddedCols.join(' | ') + ' ');
 
@@ -150,6 +232,42 @@ export function toPipe(data: string[][]): string {
 }
 
 /**
+ * 2次元配列をframe-table形式（Unicode box-drawing）に変換する
+ */
+export function toFrame(data: string[][]): string {
+  if (data.length === 0) return '';
+
+  const colWidths = data.reduce<number[]>((widths, row) => {
+    row.forEach((cell, i) => {
+      const cellLen = visualWidth(cell || '');
+      widths[i] = Math.max(widths[i] || 1, cellLen);
+    });
+    return widths;
+  }, []);
+
+  const topBorder = '┌' + colWidths.map(w => '─'.repeat(w)).join('┬') + '┐';
+  const midBorder = '├' + colWidths.map(w => '─'.repeat(w)).join('┼') + '┤';
+  const bottomBorder = '└' + colWidths.map(w => '─'.repeat(w)).join('┴') + '┘';
+
+  const lines: string[] = [topBorder];
+  for (let rowIndex = 0; rowIndex < data.length; rowIndex++) {
+    const row = data[rowIndex];
+    const paddedCols = row.map((col, i) => {
+      const width = colWidths[i] || 1;
+      return visualPadEnd(col || '', width);
+    });
+    lines.push('│' + paddedCols.join('│') + '│');
+
+    if (rowIndex === 0 && data.length > 1) {
+      lines.push(midBorder);
+    }
+  }
+  lines.push(bottomBorder);
+
+  return lines.join('\n');
+}
+
+/**
  * 2次元配列をMarkdown表形式に変換する
  */
 export function toMarkdown(data: string[][]): string {
@@ -158,7 +276,7 @@ export function toMarkdown(data: string[][]): string {
   // 各列の最大幅を計算（最低3文字）
   const colWidths = data.reduce<number[]>((widths, row) => {
     row.forEach((cell, i) => {
-      const cellLen = (cell || '').length;
+      const cellLen = visualWidth(cell || '');
       widths[i] = Math.max(widths[i] || 3, cellLen);
     });
     return widths;
@@ -170,7 +288,7 @@ export function toMarkdown(data: string[][]): string {
     const row = data[rowIndex];
     const paddedCols = row.map((col, i) => {
       const width = colWidths[i] || 3;
-      return (col || '').padEnd(width, ' ');
+      return visualPadEnd(col || '', width);
     });
     lines.push('| ' + paddedCols.join(' | ') + ' |');
 
@@ -217,6 +335,43 @@ export function toHtmlTable(data: string[][]): string {
 
   lines.push('</table>');
   return lines.join('\n');
+}
+
+/**
+ * HTML表形式をパースする
+ */
+export function parseHtmlTable(input: string): string[][] {
+  const result: string[][] = []
+  const rowRegex = /<tr[^>]*>([\s\S]*?)<\/tr>/gi
+  const cellRegex = /<t[dh][^>]*>([\s\S]*?)<\/t[dh]>/gi
+
+  const htmlDecode = (text: string): string => {
+    return text
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&#039;/g, "'")
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<[^>]+>/g, '')
+      .trim()
+  }
+
+  let rowMatch: RegExpExecArray | null
+  while ((rowMatch = rowRegex.exec(input)) !== null) {
+    const rowContent = rowMatch[1]
+    const cells: string[] = []
+    let cellMatch: RegExpExecArray | null
+    cellRegex.lastIndex = 0
+    while ((cellMatch = cellRegex.exec(rowContent)) !== null) {
+      cells.push(htmlDecode(cellMatch[1]))
+    }
+    if (cells.length > 0) {
+      result.push(cells)
+    }
+  }
+
+  return result
 }
 
 /**

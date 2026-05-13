@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { toCSV, toTSV, parseCSV, parseTSV, parsePipe, toPipe, toMarkdown, toHtmlTable } from '../../src/utils/delimited'
+import { toCSV, toTSV, parseCSV, parseTSV, parsePipe, parseFrame, toPipe, toMarkdown, toHtmlTable, toFrame } from '../../src/utils/delimited'
 
 describe('Delimited Data Converter', () => {
   describe('toCSV', () => {
@@ -210,6 +210,68 @@ describe('Delimited Data Converter', () => {
     })
   })
 
+  describe('parseFrame', () => {
+    it('frame-table形式をパースできる', () => {
+      const input = '┌───────────────┬────────┬────────────┐\n│  Model / Bot  │ AvgPen │ Normalized │\n├───────────────┼────────┼────────────┤\n│ pmc:100:1.0   │ 6.38   │ 2.16       │\n├───────────────┼────────┼────────────┤\n│ counting      │ 7.78   │ 1.72       │\n└───────────────┴────────┴────────────┘'
+      const result = parseFrame(input)
+      expect(result).toEqual([
+        ['Model / Bot', 'AvgPen', 'Normalized'],
+        ['pmc:100:1.0', '6.38', '2.16'],
+        ['counting', '7.78', '1.72']
+      ])
+    })
+
+    it('セパレータ行のみのframe-tableをパースできる（データなし）', () => {
+      const input = '┌────┬──────┐\n└────┴──────┘'
+      const result = parseFrame(input)
+      expect(result).toEqual([])
+    })
+
+    it('空行をスキップする', () => {
+      const input = '┌────┬──────┐\n│ id │ name │\n├────┼──────┤\n\n│  1 │ Alice│\n└────┴──────┘'
+      const result = parseFrame(input)
+      expect(result).toEqual([
+        ['id', 'name'],
+        ['1', 'Alice']
+      ])
+    })
+
+    it('空のカラムを含む行を処理できる', () => {
+      const input = '┌───┬───┬───┐\n│ a │   │ c │\n└───┴───┴───┘'
+      const result = parseFrame(input)
+      expect(result).toEqual([['a', '', 'c']])
+    })
+
+    it('全て空セルのデータ行をスキップしない', () => {
+      const input = '┌───┬───┬───┐\n│ a │ b │ c │\n├───┼───┼───┤\n│   │   │   │\n├───┼───┼───┤\n│ d │ e │ f │\n└───┴───┴───┘'
+      const result = parseFrame(input)
+      expect(result).toEqual([
+        ['a', 'b', 'c'],
+        ['', '', ''],
+        ['d', 'e', 'f']
+      ])
+    })
+
+    it('ヘッダーなしのframe-tableをパースできる', () => {
+      const input = '┌───┬───────┬─────┐\n│ 1 │ Alice │ 100 │\n│ 2 │ Bob   │ 200 │\n└───┴───────┴─────┘'
+      const result = parseFrame(input)
+      expect(result).toEqual([
+        ['1', 'Alice', '100'],
+        ['2', 'Bob', '200']
+      ])
+    })
+
+    it('末尾セパレータなしのframe-tableをパースできる', () => {
+      const input = '┌────┬──────┐\n│ id │ name │\n├────┼──────┤\n│  1 │ Alice│\n│  2 │ Bob  │'
+      const result = parseFrame(input)
+      expect(result).toEqual([
+        ['id', 'name'],
+        ['1', 'Alice'],
+        ['2', 'Bob']
+      ])
+    })
+  })
+
   describe('toPipe', () => {
     it('パイプ区切り形式に変換できる', () => {
       const data = [['id', 'name', 'value'], ['1', 'Alice', '100'], ['2', 'Bob', '200']]
@@ -225,6 +287,15 @@ describe('Delimited Data Converter', () => {
       const data: string[][] = []
       const result = toPipe(data)
       expect(result).toBe('')
+    })
+
+    it('全角文字を含むデータの幅を正しく計算する', () => {
+      const data = [['名前', '値'], ['太郎', '100']]
+      const result = toPipe(data)
+      const lines = result.split('\n')
+      expect(lines[0]).toBe(' 名前 | 値  ')
+      expect(lines[1]).toBe('------+-----')
+      expect(lines[2]).toBe(' 太郎 | 100 ')
     })
   })
 
@@ -251,6 +322,68 @@ describe('Delimited Data Converter', () => {
       const lines = result.split('\n')
       expect(lines[0]).toBe('| a   | b   |')
       expect(lines[1]).toBe('| --- | --- |')
+    })
+
+    it('全角文字を含むデータの幅を正しく計算する', () => {
+      const data = [['名前', '値'], ['太郎', '100']]
+      const result = toMarkdown(data)
+      const lines = result.split('\n')
+      expect(lines[0]).toBe('| 名前 | 値  |')
+      expect(lines[1]).toBe('| ---- | --- |')
+      expect(lines[2]).toBe('| 太郎 | 100 |')
+    })
+  })
+
+  describe('toFrame', () => {
+    it('frame-table形式に変換できる', () => {
+      const data = [['id', 'name'], ['1', 'Alice'], ['2', 'Bob']]
+      const result = toFrame(data)
+      const lines = result.split('\n')
+      expect(lines[0]).toBe('┌──┬─────┐')
+      expect(lines[1]).toBe('│id│name │')
+      expect(lines[2]).toBe('├──┼─────┤')
+      expect(lines[3]).toBe('│1 │Alice│')
+      expect(lines[4]).toBe('│2 │Bob  │')
+      expect(lines[5]).toBe('└──┴─────┘')
+    })
+
+    it('空データを処理できる', () => {
+      const data: string[][] = []
+      const result = toFrame(data)
+      expect(result).toBe('')
+    })
+
+    it('1行のみのデータを処理できる（中間罫線なし）', () => {
+      const data = [['a', 'b']]
+      const result = toFrame(data)
+      const lines = result.split('\n')
+      expect(lines[0]).toBe('┌─┬─┐')
+      expect(lines[1]).toBe('│a│b│')
+      expect(lines[2]).toBe('└─┴─┘')
+      expect(lines.length).toBe(3)
+    })
+
+    it('全角文字を含むデータの幅を正しく計算する', () => {
+      const data = [['名前', '年齢'], ['太郎', '25']]
+      const result = toFrame(data)
+      const lines = result.split('\n')
+      expect(lines[0]).toBe('┌────┬────┐')
+      expect(lines[1]).toBe('│名前│年齢│')
+      expect(lines[2]).toBe('├────┼────┤')
+      expect(lines[3]).toBe('│太郎│25  │')
+      expect(lines[4]).toBe('└────┴────┘')
+    })
+
+    it('絵文字を含むデータの幅を正しく計算する', () => {
+      const data = [['item', '\u{1F431}'], ['apple', 'OK']]
+      const result = toFrame(data)
+      const lines = result.split('\n')
+      // colWidths: [5, 2] (apple=5, cat emoji=2)
+      expect(lines[0]).toBe('┌─────┬──┐')
+      expect(lines[1]).toBe('│item │\u{1F431}│')
+      expect(lines[2]).toBe('├─────┼──┤')
+      expect(lines[3]).toBe('│apple│OK│')
+      expect(lines[4]).toBe('└─────┴──┘')
     })
   })
 

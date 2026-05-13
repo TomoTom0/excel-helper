@@ -1,16 +1,18 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useSqlInsertStore } from '../stores/sqlInsert'
 import { getDelimiter, parseColumnLengths, convertFromFixed } from '../utils/converter'
-import { parseDelimitedData, parsePipe } from '../utils/delimited'
+import { parseDelimitedData, parsePipe, parseFrame } from '../utils/delimited'
 import { generateInsertStatements, parseColumnOptions } from '../utils/sqlInsert'
 import NotificationToast from '../components/NotificationToast.vue'
+import DelimiterSelector from '../components/DelimiterSelector.vue'
 import { useFileUpload } from '../composables/useFileUpload'
 import { useNotification } from '../composables/useNotification'
 import { useTruncatedDisplay } from '../composables/useTruncatedDisplay'
 
 const DEFAULT_TABLE_NAME = 'YOUR_TABLE_NAME'
+const AUTO_REGEN_LIMIT = 100000
 
 const store = useSqlInsertStore()
 const { tableName, dataBody, columnHeaders, columnOptions, useFirstRowAsHeader, delimiterType, columnLengths, insertFormat, useBacktick, forceAllString } = storeToRefs(store)
@@ -44,6 +46,16 @@ const {
 const fileInputRef = fileInput
 void fileInputRef // テンプレートで使用されるが、スクリプト内では未使用
 
+// パース済みデータ（INSERT形式切替時の再生成用）
+interface ParsedState {
+  columns: string[]
+  dataRows: string[][]
+  columnTypes: ReturnType<typeof parseColumnOptions> | undefined
+  finalTableName: string
+  inputType: string
+}
+const parsedState = ref<ParsedState | null>(null)
+
 const copyFieldToClipboard = (text: string, fieldName: string) => {
   navigator.clipboard.writeText(text).then(() => {
     showNotification(`${fieldName}をコピーしました`)
@@ -61,10 +73,15 @@ const parseInputData = (data: string): string[][] | false => {
   if (delimiterType.value === 'fixed') {
     const lengths = parseColumnLengths(columnLengths.value, delimiterType.value)
     if (lengths.length === 0) return false
-    
+
     // 固定長→TSVに変換してからパース
     const tsvData = convertFromFixed(trimmedData, lengths, 'tsv')
     return parseDelimitedData(tsvData, '\t')
+  }
+
+  // frame-tableとして明示的に指定されている場合
+  if (delimiterType.value === 'frame') {
+    return parseFrame(trimmedData)
   }
 
   // TSV/CSV/SQL表としてパース
@@ -73,10 +90,39 @@ const parseInputData = (data: string): string[][] | false => {
     if (delimiter === '|') {
       return parsePipe(trimmedData)
     }
+    if (delimiter === '│') {
+      return parseFrame(trimmedData)
+    }
     return parseDelimitedData(trimmedData, delimiter)
   } catch {
     return false
   }
+}
+
+const buildInputType = (data: string): string => {
+  const delimiter = delimiterType.value === 'fixed' ? null : getDelimiter(data, delimiterType.value)
+  return delimiterType.value === 'fixed' ? '固定長' :
+         delimiterType.value === 'frame' ? 'Frame表' :
+         delimiter === '\t' ? 'TSV' :
+         delimiter === '|' ? 'SQL/MD表' :
+         delimiter === '│' ? 'Frame表' : 'CSV'
+}
+
+const generateFromState = () => {
+  if (!parsedState.value) return
+  const { columns, dataRows, columnTypes, finalTableName, inputType } = parsedState.value
+  const outputType = insertFormat.value === 'single' ? '単一行INSERT' : '複数行INSERT'
+  conversionType.value = `${inputType} → SQL INSERT (${outputType})`
+
+  fullResult.value = generateInsertStatements(
+    finalTableName,
+    columns,
+    dataRows,
+    insertFormat.value,
+    columnTypes,
+    useBacktick.value,
+    forceAllString.value
+  )
 }
 
 const convert = async () => {
@@ -107,7 +153,6 @@ const convert = async () => {
       // 1行目をヘッダーとして使用
       columns = parsedData[0]
       dataRows = parsedData.slice(1)
-      conversionType.value = '1行目をヘッダーとして使用'
     } else {
       // 別途入力されたヘッダーを使用
       if (!columnHeaders.value.trim()) {
@@ -117,12 +162,13 @@ const convert = async () => {
       let headerData: string[][]
       if (delimiter === '|') {
         headerData = parsePipe(columnHeaders.value)
+      } else if (delimiter === '│') {
+        headerData = parseFrame(columnHeaders.value)
       } else {
         headerData = parseDelimitedData(columnHeaders.value, delimiter)
       }
       columns = headerData[0]
       dataRows = parsedData
-      conversionType.value = '別途入力したヘッダーを使用'
     }
 
     if (dataRows.length === 0) {
@@ -130,40 +176,34 @@ const convert = async () => {
     }
 
     // カラムオプションのパース
-    const columnTypes = columnOptions.value.trim() 
-      ? parseColumnOptions(columnOptions.value, delimiterType.value) 
+    const columnTypes = columnOptions.value.trim()
+      ? parseColumnOptions(columnOptions.value, delimiterType.value)
       : undefined
 
     // テーブル名（空の場合はデフォルト値）
     const finalTableName = tableName.value.trim() || DEFAULT_TABLE_NAME
+    const inputType = buildInputType(data)
 
-    // INSERT文生成
-    const delimiter = delimiterType.value === 'fixed' ? null : getDelimiter(data, delimiterType.value)
-    const inputType = delimiterType.value === 'fixed' ? '固定長' :
-                     delimiter === '\t' ? 'TSV' : 
-                     delimiter === '|' ? 'SQL/MD表' : 'CSV'
-    const outputType = insertFormat.value === 'single' ? '単一行INSERT' : '複数行INSERT'
-    conversionType.value = `${inputType} → SQL INSERT (${outputType})`
+    // パース済み状態を保存
+    parsedState.value = { columns, dataRows, columnTypes, finalTableName, inputType }
 
-    const generatedResult = generateInsertStatements(
-      finalTableName,
-      columns,
-      dataRows,
-      insertFormat.value,
-      columnTypes,
-      useBacktick.value,
-      forceAllString.value
-    )
-
-    // Store full result
-    fullResult.value = generatedResult
+    generateFromState()
   } catch (error) {
     fullResult.value = 'エラー: ' + (error as Error).message
     conversionType.value = ''
+    parsedState.value = null
   } finally {
     convertLoading.value = false
   }
 }
+
+// INSERT形式切替時に自動再生成（データ量が大きくない場合）
+watch(insertFormat, () => {
+  if (!parsedState.value) return
+  if (fullResult.value.length <= AUTO_REGEN_LIMIT) {
+    generateFromState()
+  }
+})
 
 const copyToClipboard = () => {
   copyLoading.value = true
@@ -226,50 +266,32 @@ const resultPlaceholder = computed(() => {
   <div class="converter-container">
     <div class="header-row">
       <h2>SQL INSERT文生成</h2>
-      <div class="delimiter-selector">
-        <label>
-          <input type="radio" value="auto" v-model="delimiterType" />
-          自動判別
-        </label>
-        <label>
-          <input type="radio" value="tsv" v-model="delimiterType" />
-          TSV
-        </label>
-        <label>
-          <input type="radio" value="csv" v-model="delimiterType" />
-          CSV
-        </label>
-        <label>
-          <input type="radio" value="pipe" v-model="delimiterType" />
-          SQL/MD表
-        </label>
-        <label>
-          <input type="radio" value="fixed" v-model="delimiterType" />
-          固定長
-        </label>
-      </div>
+      <DelimiterSelector
+        v-model="delimiterType"
+        label="入力形式:"
+      />
     </div>
 
     <div class="input-section input-section-inline">
       <div class="input-header">
         <div class="input-actions">
-          <button 
-            class="btn btn-icon-small" 
+          <button
+            class="btn btn-icon-small"
             @click="copyFieldToClipboard(tableName, 'テーブル名')"
             :disabled="!tableName"
             title="コピー"
           >
             <i class="mdi mdi-content-copy"></i>
           </button>
-          <button 
-            class="btn btn-icon-small" 
+          <button
+            class="btn btn-icon-small"
             @click="pasteFromClipboard('tableName')"
             title="ペーストして置換"
           >
             <i class="mdi mdi-content-paste"></i>
           </button>
-          <button 
-            class="btn btn-icon-small" 
+          <button
+            class="btn btn-icon-small"
             @click="store.clearTableName()"
             :disabled="!tableName"
             title="クリア"
@@ -279,7 +301,7 @@ const resultPlaceholder = computed(() => {
         </div>
         <h3>テーブル名<span class="optional">（省略可）</span></h3>
       </div>
-      <input 
+      <input
         type="text"
         v-model="tableName"
         :placeholder="DEFAULT_TABLE_NAME"
@@ -290,24 +312,24 @@ const resultPlaceholder = computed(() => {
     <div class="input-section">
       <div class="input-header">
         <div class="input-actions">
-          <button 
-            class="btn btn-icon-small" 
+          <button
+            class="btn btn-icon-small"
             @click="copyFieldToClipboard(columnLengths, 'カラム長')"
             :disabled="!columnLengths || delimiterType !== 'fixed'"
             title="コピー"
           >
             <i class="mdi mdi-content-copy"></i>
           </button>
-          <button 
-            class="btn btn-icon-small" 
+          <button
+            class="btn btn-icon-small"
             @click="pasteFromClipboard('columnLengths')"
             :disabled="delimiterType !== 'fixed'"
             title="ペーストして置換"
           >
             <i class="mdi mdi-content-paste"></i>
           </button>
-          <button 
-            class="btn btn-icon-small" 
+          <button
+            class="btn btn-icon-small"
             @click="store.clearColumnLengths()"
             :disabled="!columnLengths || delimiterType !== 'fixed'"
             title="クリア"
@@ -317,10 +339,10 @@ const resultPlaceholder = computed(() => {
         </div>
         <h3>カラム長<span class="optional">（固定長の場合のみ）</span></h3>
       </div>
-      <textarea 
+      <textarea
         v-model="columnLengths"
         :disabled="delimiterType !== 'fixed'"
-        rows="2" 
+        rows="2"
         placeholder="10,20,15&#10;(CSV or TSV形式)"
       ></textarea>
     </div>
@@ -390,24 +412,24 @@ const resultPlaceholder = computed(() => {
     <div class="input-section">
       <div class="input-header">
         <div class="input-actions">
-          <button 
-            class="btn btn-icon-small" 
+          <button
+            class="btn btn-icon-small"
             @click="copyFieldToClipboard(columnHeaders, 'カラムヘッダー')"
             :disabled="!columnHeaders || useFirstRowAsHeader"
             title="コピー"
           >
             <i class="mdi mdi-content-copy"></i>
           </button>
-          <button 
-            class="btn btn-icon-small" 
+          <button
+            class="btn btn-icon-small"
             @click="pasteFromClipboard('columnHeaders')"
             :disabled="useFirstRowAsHeader"
             title="ペーストして置換"
           >
             <i class="mdi mdi-content-paste"></i>
           </button>
-          <button 
-            class="btn btn-icon-small" 
+          <button
+            class="btn btn-icon-small"
             @click="store.clearColumnHeaders()"
             :disabled="!columnHeaders || useFirstRowAsHeader"
             title="クリア"
@@ -417,10 +439,10 @@ const resultPlaceholder = computed(() => {
         </div>
         <h3>カラムヘッダー</h3>
       </div>
-      <textarea 
+      <textarea
         v-model="columnHeaders"
         :disabled="useFirstRowAsHeader"
-        rows="2" 
+        rows="2"
         placeholder="id,name,age&#10;(CSV or TSV形式)"
       ></textarea>
     </div>
@@ -428,23 +450,23 @@ const resultPlaceholder = computed(() => {
     <div class="input-section">
       <div class="input-header">
         <div class="input-actions">
-          <button 
-            class="btn btn-icon-small" 
+          <button
+            class="btn btn-icon-small"
             @click="copyFieldToClipboard(columnOptions, 'カラムオプション')"
             :disabled="!columnOptions"
             title="コピー"
           >
             <i class="mdi mdi-content-copy"></i>
           </button>
-          <button 
-            class="btn btn-icon-small" 
+          <button
+            class="btn btn-icon-small"
             @click="pasteFromClipboard('columnOptions')"
             title="ペーストして置換"
           >
             <i class="mdi mdi-content-paste"></i>
           </button>
-          <button 
-            class="btn btn-icon-small" 
+          <button
+            class="btn btn-icon-small"
             @click="store.clearColumnOptions()"
             :disabled="!columnOptions"
             title="クリア"
@@ -474,8 +496,8 @@ const resultPlaceholder = computed(() => {
     </div>
 
     <div class="button-group">
-      <button 
-        class="btn btn-primary" 
+      <button
+        class="btn btn-primary"
         @click="convert"
         :disabled="convertLoading"
         :class="{ loading: convertLoading }"
@@ -509,9 +531,9 @@ const resultPlaceholder = computed(() => {
         </div>
         <h3>実行結果<span v-if="conversionType" class="conversion-type">（{{ conversionType }}）</span></h3>
       </div>
-      <textarea :value="displayResult" rows="10" readonly :placeholder="resultPlaceholder"></textarea>
-      <div class="result-actions">
-        <div class="output-format-selector">
+      <div class="result-textarea-wrapper">
+        <textarea :value="displayResult" rows="10" readonly :placeholder="resultPlaceholder"></textarea>
+        <div class="result-textarea-overlay">
           <label>INSERT形式:</label>
           <label>
             <input type="radio" value="single" v-model="insertFormat" />
@@ -525,10 +547,66 @@ const resultPlaceholder = computed(() => {
       </div>
     </div>
 
-    <NotificationToast 
+    <NotificationToast
       :show="showNotificationFlag"
       :message="notificationMessage"
       :type="notificationType"
     />
   </div>
 </template>
+
+<style scoped>
+.result-textarea-wrapper {
+  position: relative;
+}
+
+.result-textarea-wrapper textarea {
+  width: 100%;
+  min-height: 200px;
+  padding: 10px;
+  padding-bottom: 35px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  font-family: 'Courier New', monospace;
+  font-size: 14px;
+  resize: vertical;
+  background-color: var(--result-bg);
+  color: var(--text-primary);
+  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+  box-sizing: border-box;
+}
+
+.result-textarea-overlay {
+  position: absolute;
+  bottom: 8px;
+  right: 12px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 3px 10px;
+  background-color: var(--bg-tertiary);
+  border-radius: 4px;
+  border: 1px solid var(--border-color-light);
+  font-size: 12px;
+  color: var(--btn-icon-text);
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.result-textarea-overlay label {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  cursor: pointer;
+}
+
+.result-textarea-overlay label:first-child {
+  font-weight: 500;
+  cursor: default;
+}
+
+.result-textarea-overlay input[type="radio"] {
+  cursor: pointer;
+  margin-right: 2px;
+  accent-color: #667eea;
+}
+</style>

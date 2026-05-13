@@ -3,8 +3,9 @@ import { ref, computed, toRef } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useConverterStore } from '../stores/converter'
 import { parseColumnLengths, parseColumnOptions, getDelimiter, parseFixed, tsvToFixed as convertTsvToFixed } from '../utils/converter'
-import { parseDelimitedData, parsePipe, toCSV, toTSV, toMarkdown, toHtmlTable } from '../utils/delimited'
+import { parseDelimitedData, parsePipe, parseFrame, parseHtmlTable, toCSV, toTSV, toPipe, toMarkdown, toHtmlTable, toFrame } from '../utils/delimited'
 import { useNotification } from '../composables/useNotification'
+import DelimiterSelector from '../components/DelimiterSelector.vue'
 import { useTruncatedDisplay } from '../composables/useTruncatedDisplay'
 import { useFileUpload } from '../composables/useFileUpload'
 import { usePresetCache } from '../composables/usePresetCache'
@@ -114,12 +115,20 @@ const isDelimitedData = (data: string, expectedColumnCount: number): ParseResult
 
   // 明示的な形式が指定されている場合、その区切り文字がデータに含まれているか検証
   if (delimiterType.value !== 'auto') {
-    const expectedDelimiter = delimiterType.value === 'tsv' ? '\t' : delimiterType.value === 'csv' ? ',' : '|'
+    // HTMLは区切り文字ベースではないため個別に処理
+    if (delimiterType.value === 'html') {
+      const rows = parseHtmlTable(trimmedData)
+      if (rows.length === 0) return { error: '入力形式が「HTML」に設定されていますが、有効な<table>が見つかりません。' }
+      return { data: rows }
+    }
+    const expectedDelimiter = delimiterType.value === 'tsv' ? '\t' : delimiterType.value === 'csv' ? ',' : delimiterType.value === 'sql' || delimiterType.value === 'md' ? '|' : delimiterType.value === 'frame' ? '│' : null
+    if (expectedDelimiter === null) return false
     const hasExpectedDelimiter = expectedColumnCount === 1 || trimmedData.includes(expectedDelimiter)
 
     if (!hasExpectedDelimiter) {
-      const formatName = delimiterType.value === 'tsv' ? 'TSV' : delimiterType.value === 'csv' ? 'CSV' : 'SQL/MD表'
-      return { error: `入力形式が「${formatName}」に設定されていますが、${formatName === 'CSV' ? 'カンマ' : formatName === 'TSV' ? 'タブ' : 'パイプ'}が見つかりません。入力形式を見直してください。` }
+      const formatName = delimiterType.value === 'tsv' ? 'TSV' : delimiterType.value === 'csv' ? 'CSV' : delimiterType.value === 'frame' ? 'Frame表' : 'SQL/MD'
+      const charName = formatName === 'CSV' ? 'カンマ' : formatName === 'TSV' ? 'タブ' : formatName === 'Frame表' ? '罫線' : 'パイプ'
+      return { error: `入力形式が「${formatName}」に設定されていますが、${charName}が見つかりません。入力形式を見直してください。` }
     }
   }
 
@@ -129,6 +138,8 @@ const isDelimitedData = (data: string, expectedColumnCount: number): ParseResult
 
     if (delimiter === '|') {
       allRows = parsePipe(trimmedData)
+    } else if (delimiter === '│') {
+      allRows = parseFrame(trimmedData)
     } else {
       allRows = parseDelimitedData(trimmedData, delimiter)
     }
@@ -161,18 +172,24 @@ const resultPlaceholder = computed(() => {
     return 'John      Tokyo     25\nAlice     NewYork   30\n(変換結果がここに表示されます)'
   } else if (outputFormat.value === 'tsv') {
     return 'John\tTokyo\t25\nAlice\tNewYork\t30\n(変換結果がここに表示されます)'
-  } else if (outputFormat.value === 'md-tbl') {
+  } else if (outputFormat.value === 'sql') {
+    return ' name | city    | age \n------+---------+-----\n John | Tokyo   | 25  \n Alice| NewYork | 30  \n(変換結果がここに表示されます)'
+  } else if (outputFormat.value === 'md') {
     return '| name | city    | age |\n| ---- | ------- | --- |\n| John | Tokyo   | 25  |\n| Alice| NewYork | 30  |\n(変換結果がここに表示されます)'
-  } else if (outputFormat.value === 'html-tbl') {
+  } else if (outputFormat.value === 'html') {
     return '<table>\n  <tr>\n    <th>name</th>\n    <th>city</th>\n    <th>age</th>\n  </tr>\n  ...\n</table>\n(変換結果がここに表示されます)'
+  } else if (outputFormat.value === 'frame') {
+    return '┌──────┬─────────┬─────┐\n│ name │ city    │ age │\n├──────┼─────────┼─────┤\n│ John │ Tokyo   │ 25  │\n└──────┴─────────┴─────┘\n(変換結果がここに表示されます)'
   } else {
     return 'John,Tokyo,25\nAlice,NewYork,30\n(変換結果がここに表示されます)'
   }
 })
 
 const handleDelimitedInput = (lengths: number[], parsedData: string[][], data: string) => {
-  const delimiter = getDelimiter(data, delimiterType.value)
-  const inputType = delimiter === '\t' ? 'TSV' : delimiter === '|' ? 'SQL/MD表' : 'CSV'
+  const inputType = delimiterType.value === 'html' ? 'HTML' : (() => {
+    const d = getDelimiter(data, delimiterType.value)
+    return d === '\t' ? 'TSV' : d === '|' ? 'SQL/MD' : d === '│' ? 'Frame表' : 'CSV'
+  })()
 
   // useFirstRowAsHeaderがtrueの場合、1行目をスキップ
   let dataRows = parsedData
@@ -187,14 +204,18 @@ const handleDelimitedInput = (lengths: number[], parsedData: string[][], data: s
       ? parseColumnOptions(columnOptions.value)
       : lengths.map(() => ({ type: 'string' as const, padding: 'right' as const, padChar: ' ' }))
     fullResult.value = convertTsvToFixed(dataRows, lengths, options)
-  } else if (outputFormat.value === 'md-tbl') {
-    // TSV/CSV/SQL/MD表 → md-tbl
-    conversionType.value = `${inputType} → md-tbl`
+  } else if (outputFormat.value === 'sql') {
+    conversionType.value = `${inputType} → SQL`
+    fullResult.value = toPipe(dataRows)
+  } else if (outputFormat.value === 'md') {
+    conversionType.value = `${inputType} → MD`
     fullResult.value = toMarkdown(dataRows)
-  } else if (outputFormat.value === 'html-tbl') {
-    // TSV/CSV/SQL/MD表 → html-tbl
-    conversionType.value = `${inputType} → html-tbl`
+  } else if (outputFormat.value === 'html') {
+    conversionType.value = `${inputType} → HTML`
     fullResult.value = toHtmlTable(dataRows)
+  } else if (outputFormat.value === 'frame') {
+    conversionType.value = `${inputType} → Frame表`
+    fullResult.value = toFrame(dataRows)
   } else {
     // TSV/CSV/SQL/MD表 → TSV/CSV (区切り文字変換)
     const outputType = outputFormat.value === 'csv' ? 'CSV' : 'TSV'
@@ -204,7 +225,7 @@ const handleDelimitedInput = (lengths: number[], parsedData: string[][], data: s
 }
 
 const handleFixedWidthInput = (lengths: number[], data: string) => {
-  // 固定長 → TSV/CSV/md-tbl/html-tbl/固定長
+  // 固定長 → TSV/CSV/SQL/MD/HTML/Frame表/固定長
   const parsedData = parseFixed(data, lengths)
 
   let processedData = parsedData
@@ -216,7 +237,9 @@ const handleFixedWidthInput = (lengths: number[], data: string) => {
     const headerDelimiter = getDelimiter(columnHeaders.value, 'auto')
     const headers = headerDelimiter === '|'
       ? parsePipe(columnHeaders.value)[0]
-      : parseDelimitedData(columnHeaders.value, headerDelimiter)[0]
+      : headerDelimiter === '│'
+        ? parseFrame(columnHeaders.value)[0]
+        : parseDelimitedData(columnHeaders.value, headerDelimiter)[0]
     processedData = [headers, ...processedData]
   }
 
@@ -226,12 +249,18 @@ const handleFixedWidthInput = (lengths: number[], data: string) => {
       ? parseColumnOptions(columnOptions.value)
       : lengths.map(() => ({ type: 'string' as const, padding: 'right' as const, padChar: ' ' }))
     fullResult.value = convertTsvToFixed(processedData, lengths, options)
-  } else if (outputFormat.value === 'md-tbl') {
-    conversionType.value = '固定長 → md-tbl'
+  } else if (outputFormat.value === 'sql') {
+    conversionType.value = '固定長 → SQL'
+    fullResult.value = toPipe(processedData)
+  } else if (outputFormat.value === 'md') {
+    conversionType.value = '固定長 → MD'
     fullResult.value = toMarkdown(processedData)
-  } else if (outputFormat.value === 'html-tbl') {
-    conversionType.value = '固定長 → html-tbl'
+  } else if (outputFormat.value === 'html') {
+    conversionType.value = '固定長 → HTML'
     fullResult.value = toHtmlTable(processedData)
+  } else if (outputFormat.value === 'frame') {
+    conversionType.value = '固定長 → Frame表'
+    fullResult.value = toFrame(processedData)
   } else {
     const outputType = outputFormat.value === 'csv' ? 'CSV' : 'TSV'
     conversionType.value = `固定長 → ${outputType}`
@@ -351,6 +380,10 @@ const clearDataBody = () => {
   <div class="converter-container">
     <div class="header-row">
       <h2>固定長相互変換</h2>
+      <DelimiterSelector
+        v-model="delimiterType"
+        label="入力形式:"
+      />
     </div>
 
     <div class="preset-section">
@@ -576,32 +609,6 @@ const clearDataBody = () => {
 
       <div class="format-selectors">
         <div class="format-group">
-          <span class="format-label">入力:</span>
-          <label class="format-option">
-            <input type="radio" value="auto" v-model="delimiterType" />
-            自動
-          </label>
-          <label class="format-option">
-            <input type="radio" value="tsv" v-model="delimiterType" />
-            TSV
-          </label>
-          <label class="format-option">
-            <input type="radio" value="csv" v-model="delimiterType" />
-            CSV
-          </label>
-          <label class="format-option">
-            <input type="radio" value="pipe" v-model="delimiterType" />
-            SQL/MD
-          </label>
-          <label class="format-option">
-            <input type="radio" value="fixed" v-model="delimiterType" />
-            固定長
-          </label>
-        </div>
-
-        <span class="format-arrow"><i class="mdi mdi-arrow-right"></i></span>
-
-        <div class="format-group">
           <span class="format-label">出力:</span>
           <label class="format-option">
             <input type="radio" value="fixed" v-model="outputFormat" />
@@ -616,12 +623,20 @@ const clearDataBody = () => {
             CSV
           </label>
           <label class="format-option">
-            <input type="radio" value="md-tbl" v-model="outputFormat" />
-            md-tbl
+            <input type="radio" value="sql" v-model="outputFormat" />
+            SQL
           </label>
           <label class="format-option">
-            <input type="radio" value="html-tbl" v-model="outputFormat" />
-            html-tbl
+            <input type="radio" value="md" v-model="outputFormat" />
+            MD
+          </label>
+          <label class="format-option">
+            <input type="radio" value="frame" v-model="outputFormat" />
+            Frame表
+          </label>
+          <label class="format-option">
+            <input type="radio" value="html" v-model="outputFormat" />
+            HTML
           </label>
         </div>
       </div>

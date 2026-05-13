@@ -1,4 +1,4 @@
-import { parseDelimitedData, parsePipe } from './delimited'
+import { parseDelimitedData, parsePipe, parseFrame } from './delimited'
 
 export interface ColumnOption {
   type: 'string' | 'number'
@@ -6,9 +6,9 @@ export interface ColumnOption {
   padChar: string
 }
 
-export type DelimiterType = 'auto' | 'tsv' | 'csv' | 'fixed' | 'pipe'
+export type DelimiterType = 'auto' | 'tsv' | 'csv' | 'sql' | 'md' | 'frame' | 'html' | 'fixed'
 
-export type OutputFormat = 'tsv' | 'csv' | 'fixed' | 'md-tbl' | 'html-tbl'
+export type OutputFormat = 'tsv' | 'csv' | 'sql' | 'md' | 'frame' | 'html' | 'fixed'
 
 // Unicode正規表現定数
 const UNICODE_SPACE_REGEX = /[\u00A0\u2000-\u200A\u202F\u205F]/g
@@ -27,10 +27,18 @@ const normalizeUnicodeWhitespace = (value: string): string => {
     .replace(UNICODE_CONTROL_REGEX, '')  // ソフトハイフンとゼロ幅文字などの制御文字を削除
 }
 
-export const detectDelimiter = (data: string): '\t' | ',' | '|' => {
+export type DetectedDelimiter = '\t' | ',' | '|' | '│'
+
+export const detectDelimiter = (data: string): DetectedDelimiter => {
   const lines = data.split('\n').filter(line => line.trim() !== '').slice(0, 10) // 最初の10行（空行を除く）
   if (lines.length === 0) return '\t'
-  
+
+  // frame-table形式の検出（box-drawing文字のセパレータ行）
+  const hasFrameSeparator = lines.some(line => /^[\s┌─┬┐├┼┤└┴┘│]+$/.test(line))
+  if (hasFrameSeparator) {
+    return '│'
+  }
+
   // PostgreSQLパイプ形式の検出（区切り線の存在をチェック）
   const hasSeparatorLine = lines.some(line => /^[\s|+-]+$/.test(line))
   if (hasSeparatorLine) {
@@ -68,11 +76,14 @@ export const detectDelimiter = (data: string): '\t' | ',' | '|' => {
   return ','
 }
 
-export const getDelimiter = (data: string, type: DelimiterType): '\t' | ',' | '|' => {
+export const getDelimiter = (data: string, type: DelimiterType): DetectedDelimiter => {
   if (type === 'auto') return detectDelimiter(data)
   if (type === 'tsv') return '\t'
   if (type === 'csv') return ','
-  if (type === 'pipe') return '|'
+  if (type === 'sql') return '|'
+  if (type === 'md') return '|'
+  if (type === 'frame') return '│'
+  if (type === 'html') throw new Error("getDelimiter should not be called with type 'html'")
   // type === 'fixed' の場合はデリミタを検出しないため、呼び出すべきではない
   throw new Error("getDelimiter should not be called with type 'fixed'")
 }
@@ -88,7 +99,7 @@ export const getDelimiter = (data: string, type: DelimiterType): '\t' | ',' | '|
  * @returns タブまたはカンマ
  */
 export const getOptionsDelimiter = (input: string, delimiterType: DelimiterType = 'auto'): '\t' | ',' => {
-  if (delimiterType === 'auto' || delimiterType === 'fixed' || delimiterType === 'pipe') {
+  if (delimiterType === 'auto' || delimiterType === 'fixed' || delimiterType === 'sql' || delimiterType === 'md' || delimiterType === 'frame' || delimiterType === 'html') {
     return input.includes('\t') ? '\t' : ','
   }
   return delimiterType === 'tsv' ? '\t' : ','
@@ -253,6 +264,8 @@ export const tsvToFixedFromString = (data: string, lengths: number[], options: C
   
   if (delimiter === '|') {
     parsedData = parsePipe(data)
+  } else if (delimiter === '│') {
+    parsedData = parseFrame(data)
   } else {
     parsedData = parseDelimitedData(data, delimiter)
   }
