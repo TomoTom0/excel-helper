@@ -1,7 +1,8 @@
 import { ref, computed } from 'vue'
 import type { Ref } from 'vue'
+import type { DelimiterType } from '../utils/converter'
 
-export type DelimiterType = 'csv' | 'tsv' | 'fixed' | 'auto' | 'pipe' | 'frame' | 'html'
+export type { DelimiterType }
 
 const CONTROL_CHAR_RATIO_THRESHOLD = 0.1
 const BINARY_CHECK_SIZE = 8000
@@ -88,8 +89,9 @@ export function useFileUpload(options: UseFileUploadOptions) {
         auto: '自動判別',
         csv: 'CSV',
         tsv: 'TSV',
+        sql: 'SQL',
+        md: 'MD',
         fixed: '固定長',
-        pipe: 'SQL/MD表',
         frame: 'Frame表',
         html: 'HTML',
       }

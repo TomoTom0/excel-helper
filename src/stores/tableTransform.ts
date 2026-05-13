@@ -1,8 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import type { DelimiterType } from '../utils/converter'
+import type { DelimiterType, OutputFormat } from '../utils/converter'
 
-export type OutputFormat = 'csv' | 'tsv' | 'markdown' | 'html' | 'frame'
 export type TransformType = 'transpose' | 'flipVertical' | 'flipHorizontal'
 
 export const useTableTransformStore = defineStore('tableTransform', () => {
@@ -23,5 +22,12 @@ export const useTableTransformStore = defineStore('tableTransform', () => {
     clearInput
   }
 }, {
-  persist: true
+  persist: {
+    afterHydrate: (ctx) => {
+      const store = ctx.store as unknown as { outputFormat: string }
+      if (store.outputFormat === 'markdown') {
+        store.outputFormat = 'md'
+      }
+    }
+  }
 })

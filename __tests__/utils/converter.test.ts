@@ -155,8 +155,12 @@ describe('Fixed Length Converter', () => {
       expect(getDelimiter('any data', 'csv')).toBe(',')
     })
 
-    it('should return pipe for pipe type', () => {
-      expect(getDelimiter('any data', 'pipe')).toBe('|')
+    it('should return pipe for sql type', () => {
+      expect(getDelimiter('any data', 'sql')).toBe('|')
+    })
+
+    it('should return pipe for md type', () => {
+      expect(getDelimiter('any data', 'md')).toBe('|')
     })
 
     it('should return frame delimiter for frame type', () => {

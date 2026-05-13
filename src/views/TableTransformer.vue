@@ -2,7 +2,7 @@
 import { ref, computed, toRef } from 'vue'
 import { storeToRefs } from 'pinia'
 import { transpose, flipVertical, flipHorizontal } from '../utils/tableTransform'
-import { parseCSV, parseTSV, parsePipe, parseFrame, parseHtmlTable, toCSV, toTSV, toMarkdown, toHtmlTable, toFrame } from '../utils/delimited'
+import { parseCSV, parseTSV, parsePipe, parseFrame, parseHtmlTable, toCSV, toTSV, toPipe, toMarkdown, toHtmlTable, toFrame } from '../utils/delimited'
 import { detectDelimiter } from '../utils/converter'
 import { useTableTransformStore } from '../stores/tableTransform'
 import { useNotification } from '../composables/useNotification'
@@ -10,8 +10,8 @@ import { useTruncatedDisplay } from '../composables/useTruncatedDisplay'
 import { useFileUpload } from '../composables/useFileUpload'
 import NotificationToast from '../components/NotificationToast.vue'
 import DelimiterSelector from '../components/DelimiterSelector.vue'
-import type { OutputFormat, TransformType } from '../stores/tableTransform'
-import type { DelimiterType } from '../utils/converter'
+import type { OutputFormat, DelimiterType } from '../utils/converter'
+import type { TransformType } from '../stores/tableTransform'
 
 const store = useTableTransformStore()
 const { inputText, inputFormat, outputFormat, transformTypes } = storeToRefs(store)
@@ -58,7 +58,8 @@ const parseInput = (text: string, format: DelimiterType): string[][] => {
 
   if (format === 'tsv') return parseTSV(text)
   if (format === 'csv') return parseCSV(text)
-  if (format === 'pipe') return parsePipe(text)
+  if (format === 'sql') return parsePipe(text)
+  if (format === 'md') return parsePipe(text)
   if (format === 'frame') return parseFrame(text)
   return parseTSV(text)
 }
@@ -66,7 +67,8 @@ const parseInput = (text: string, format: DelimiterType): string[][] => {
 const formatOutput = (data: string[][], format: OutputFormat): string => {
   if (format === 'csv') return toCSV(data)
   if (format === 'tsv') return toTSV(data)
-  if (format === 'markdown') return toMarkdown(data)
+  if (format === 'sql') return toPipe(data)
+  if (format === 'md') return toMarkdown(data)
   if (format === 'html') return toHtmlTable(data)
   if (format === 'frame') return toFrame(data)
   return toTSV(data)
@@ -89,7 +91,8 @@ const transformAll = (data: string[][], types: TransformType[]): string[][] => {
 
 const resultPlaceholder = computed(() => {
   if (outputFormat.value === 'csv') return 'name,age,city\nAlice,30,Tokyo\nBob,25,Osaka\n(変換結果がここに表示されます)'
-  if (outputFormat.value === 'markdown') return '| name | age | city |\n| ---- | --- | ---- |\n| Alice | 30 | Tokyo |\n| Bob | 25 | Osaka |\n(変換結果がここに表示されます)'
+  if (outputFormat.value === 'sql') return ' name | age | city  \n------+-----+-------\n Alice| 30  | Tokyo \n Bob  | 25  | Osaka \n(変換結果がここに表示されます)'
+  if (outputFormat.value === 'md') return '| name | age | city |\n| ---- | --- | ---- |\n| Alice | 30 | Tokyo |\n| Bob | 25 | Osaka |\n(変換結果がここに表示されます)'
   if (outputFormat.value === 'html') return '<table>\n  <tr>\n    <th>name</th>\n    <th>age</th>\n    <th>city</th>\n  </tr>\n  ...\n</table>\n(変換結果がここに表示されます)'
   if (outputFormat.value === 'frame') return '┌──────┬─────┬───────┐\n│ name │ age │ city  │\n├──────┼─────┼───────┤\n│Alice │ 30  │ Tokyo │\n│ Bob  │ 25  │ Osaka │\n└──────┴─────┴───────┘\n(変換結果がここに表示されます)'
   return 'name\tage\tcity\nAlice\t30\tTokyo\nBob\t25\tOsaka\n(変換結果がここに表示されます)'
@@ -123,9 +126,9 @@ const convert = async () => {
 
     const detected = detectDelimiter(data)
     const inputType = inputFormat.value === 'auto'
-      ? (detected === '\t' ? 'TSV' : detected === ',' ? 'CSV' : detected === '|' ? 'SQL/MD表' : detected === '│' ? 'Frame表' : 'TSV')
-      : inputFormat.value === 'pipe' ? 'SQL/MD' : inputFormat.value === 'frame' ? 'Frame表' : inputFormat.value.toUpperCase()
-    const outputType = outputFormat.value === 'markdown' ? 'Markdown' : outputFormat.value === 'frame' ? 'Frame表' : outputFormat.value.toUpperCase()
+      ? (detected === '\t' ? 'TSV' : detected === ',' ? 'CSV' : detected === '|' ? 'SQL/MD' : detected === '│' ? 'Frame表' : 'TSV')
+      : inputFormat.value === 'sql' ? 'SQL' : inputFormat.value === 'md' ? 'MD' : inputFormat.value === 'frame' ? 'Frame表' : inputFormat.value.toUpperCase()
+    const outputType = outputFormat.value === 'sql' ? 'SQL' : outputFormat.value === 'md' ? 'MD' : outputFormat.value === 'frame' ? 'Frame表' : outputFormat.value.toUpperCase()
     const typeLabels = transformTypes.value.map(t => transformLabels[t]).join('+')
     conversionType.value = `${typeLabels} (${inputType} → ${outputType})`
   } catch (error) {
@@ -149,7 +152,7 @@ const copyToClipboard = () => {
 
 const downloadResult = () => {
   downloadLoading.value = true
-  const extMap: Record<OutputFormat, string> = { csv: '.csv', tsv: '.tsv', markdown: '.md', html: '.html', frame: '.txt' }
+  const extMap: Record<OutputFormat, string> = { csv: '.csv', tsv: '.tsv', sql: '.txt', md: '.md', html: '.html', frame: '.txt', fixed: '.txt' }
   const blob = new Blob([fullResult.value], { type: 'text/plain' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
@@ -277,16 +280,20 @@ const clearInputData = () => {
             CSV
           </label>
           <label class="format-option">
-            <input type="radio" value="markdown" v-model="outputFormat" />
-            MD
+            <input type="radio" value="sql" v-model="outputFormat" />
+            SQL
           </label>
           <label class="format-option">
-            <input type="radio" value="html" v-model="outputFormat" />
-            HTML
+            <input type="radio" value="md" v-model="outputFormat" />
+            MD
           </label>
           <label class="format-option">
             <input type="radio" value="frame" v-model="outputFormat" />
             Frame表
+          </label>
+          <label class="format-option">
+            <input type="radio" value="html" v-model="outputFormat" />
+            HTML
           </label>
         </div>
       </div>

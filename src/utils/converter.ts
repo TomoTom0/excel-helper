@@ -6,9 +6,9 @@ export interface ColumnOption {
   padChar: string
 }
 
-export type DelimiterType = 'auto' | 'tsv' | 'csv' | 'pipe' | 'frame' | 'html' | 'fixed'
+export type DelimiterType = 'auto' | 'tsv' | 'csv' | 'sql' | 'md' | 'frame' | 'html' | 'fixed'
 
-export type OutputFormat = 'tsv' | 'csv' | 'fixed' | 'md-tbl' | 'html-tbl'
+export type OutputFormat = 'tsv' | 'csv' | 'sql' | 'md' | 'frame' | 'html' | 'fixed'
 
 // Unicode正規表現定数
 const UNICODE_SPACE_REGEX = /[\u00A0\u2000-\u200A\u202F\u205F]/g
@@ -80,7 +80,8 @@ export const getDelimiter = (data: string, type: DelimiterType): DetectedDelimit
   if (type === 'auto') return detectDelimiter(data)
   if (type === 'tsv') return '\t'
   if (type === 'csv') return ','
-  if (type === 'pipe') return '|'
+  if (type === 'sql') return '|'
+  if (type === 'md') return '|'
   if (type === 'frame') return '│'
   if (type === 'html') throw new Error("getDelimiter should not be called with type 'html'")
   // type === 'fixed' の場合はデリミタを検出しないため、呼び出すべきではない
@@ -98,7 +99,7 @@ export const getDelimiter = (data: string, type: DelimiterType): DetectedDelimit
  * @returns タブまたはカンマ
  */
 export const getOptionsDelimiter = (input: string, delimiterType: DelimiterType = 'auto'): '\t' | ',' => {
-  if (delimiterType === 'auto' || delimiterType === 'fixed' || delimiterType === 'pipe' || delimiterType === 'frame' || delimiterType === 'html') {
+  if (delimiterType === 'auto' || delimiterType === 'fixed' || delimiterType === 'sql' || delimiterType === 'md' || delimiterType === 'frame' || delimiterType === 'html') {
     return input.includes('\t') ? '\t' : ','
   }
   return delimiterType === 'tsv' ? '\t' : ','
