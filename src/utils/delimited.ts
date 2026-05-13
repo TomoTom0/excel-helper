@@ -18,11 +18,9 @@ function visualWidth(str: string): number {
       (cp >= 0xFE30 && cp <= 0xFE6F) ||  // CJK Compatibility Forms
       (cp >= 0xFF01 && cp <= 0xFF60) ||  // Fullwidth Forms
       (cp >= 0xFFE0 && cp <= 0xFFE6) ||  // Fullwidth Signs
-      (cp >= 0x20000 && cp <= 0x2A6DF) ||  // CJK Unified Extension B
-      (cp >= 0x2A700 && cp <= 0x2B73F) ||  // CJK Unified Extension C
-      (cp >= 0x2B740 && cp <= 0x2B81F) ||  // CJK Unified Extension D
-      (cp >= 0x2B820 && cp <= 0x2CEAF) ||  // CJK Unified Extension E
-      (cp >= 0x2CEB0 && cp <= 0x2EBEF)     // CJK Unified Extension F
+      (cp >= 0x20000 && cp <= 0x2FFFF) ||  // CJK Plane 2 (Extensions B-F, etc.)
+      (cp >= 0x30000 && cp <= 0x3FFFF) ||  // CJK Plane 3 (Extensions G-H, etc.)
+      (cp >= 0x1F300 && cp <= 0x1FAFF)     // Emojis
     ) {
       width += 2;
     } else {

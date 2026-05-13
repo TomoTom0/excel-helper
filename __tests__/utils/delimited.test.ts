@@ -373,6 +373,18 @@ describe('Delimited Data Converter', () => {
       expect(lines[3]).toBe('│太郎│25  │')
       expect(lines[4]).toBe('└────┴────┘')
     })
+
+    it('絵文字を含むデータの幅を正しく計算する', () => {
+      const data = [['item', '\u{1F431}'], ['apple', 'OK']]
+      const result = toFrame(data)
+      const lines = result.split('\n')
+      // colWidths: [5, 2] (apple=5, cat emoji=2)
+      expect(lines[0]).toBe('┌─────┬──┐')
+      expect(lines[1]).toBe('│item │\u{1F431}│')
+      expect(lines[2]).toBe('├─────┼──┤')
+      expect(lines[3]).toBe('│apple│OK│')
+      expect(lines[4]).toBe('└─────┴──┘')
+    })
   })
 
   describe('toHtmlTable', () => {
