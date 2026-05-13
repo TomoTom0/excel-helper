@@ -288,6 +288,15 @@ describe('Delimited Data Converter', () => {
       const result = toPipe(data)
       expect(result).toBe('')
     })
+
+    it('全角文字を含むデータの幅を正しく計算する', () => {
+      const data = [['名前', '値'], ['太郎', '100']]
+      const result = toPipe(data)
+      const lines = result.split('\n')
+      expect(lines[0]).toBe(' 名前 | 値  ')
+      expect(lines[1]).toBe('------+-----')
+      expect(lines[2]).toBe(' 太郎 | 100 ')
+    })
   })
 
   describe('toMarkdown', () => {
@@ -313,6 +322,15 @@ describe('Delimited Data Converter', () => {
       const lines = result.split('\n')
       expect(lines[0]).toBe('| a   | b   |')
       expect(lines[1]).toBe('| --- | --- |')
+    })
+
+    it('全角文字を含むデータの幅を正しく計算する', () => {
+      const data = [['名前', '値'], ['太郎', '100']]
+      const result = toMarkdown(data)
+      const lines = result.split('\n')
+      expect(lines[0]).toBe('| 名前 | 値  |')
+      expect(lines[1]).toBe('| ---- | --- |')
+      expect(lines[2]).toBe('| 太郎 | 100 |')
     })
   })
 
@@ -343,6 +361,17 @@ describe('Delimited Data Converter', () => {
       expect(lines[1]).toBe('│a│b│')
       expect(lines[2]).toBe('└─┴─┘')
       expect(lines.length).toBe(3)
+    })
+
+    it('全角文字を含むデータの幅を正しく計算する', () => {
+      const data = [['名前', '年齢'], ['太郎', '25']]
+      const result = toFrame(data)
+      const lines = result.split('\n')
+      expect(lines[0]).toBe('┌────┬────┐')
+      expect(lines[1]).toBe('│名前│年齢│')
+      expect(lines[2]).toBe('├────┼────┤')
+      expect(lines[3]).toBe('│太郎│25  │')
+      expect(lines[4]).toBe('└────┴────┘')
     })
   })
 
