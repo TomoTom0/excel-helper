@@ -1,6 +1,45 @@
 import { parse, unparse } from 'papaparse';
 
 /**
+ * 文字列の表示幅を計算する（全角文字を2カラム分として扱う）
+ */
+function visualWidth(str: string): number {
+  let width = 0;
+  for (const char of str) {
+    const cp = char.codePointAt(0)!;
+    if (
+      (cp >= 0x1100 && cp <= 0x115F) ||  // Hangul Jamo
+      (cp >= 0x2E80 && cp <= 0x303E) ||  // CJK Misc
+      (cp >= 0x3040 && cp <= 0x33BF) ||  // Hiragana, Katakana, CJK Symbols
+      (cp >= 0x3400 && cp <= 0x4DBF) ||  // CJK Unified Ideographs Extension A
+      (cp >= 0x4E00 && cp <= 0x9FFF) ||  // CJK Unified Ideographs
+      (cp >= 0xAC00 && cp <= 0xD7A3) ||  // Hangul Syllables
+      (cp >= 0xF900 && cp <= 0xFAFF) ||  // CJK Compatibility Ideographs
+      (cp >= 0xFE30 && cp <= 0xFE6F) ||  // CJK Compatibility Forms
+      (cp >= 0xFF01 && cp <= 0xFF60) ||  // Fullwidth Forms
+      (cp >= 0xFFE0 && cp <= 0xFFE6) ||  // Fullwidth Signs
+      (cp >= 0x20000 && cp <= 0x2FFFF) ||  // CJK Plane 2 (Extensions B-F, etc.)
+      (cp >= 0x30000 && cp <= 0x3FFFF) ||  // CJK Plane 3 (Extensions G-H, etc.)
+      (cp >= 0x1F300 && cp <= 0x1FAFF)     // Emojis
+    ) {
+      width += 2;
+    } else {
+      width += 1;
+    }
+  }
+  return width;
+}
+
+/**
+ * 文字列を視覚幅に合わせて右パディングする
+ */
+function visualPadEnd(str: string, targetWidth: number, padChar: string = ' '): string {
+  const currentWidth = visualWidth(str);
+  const padCount = targetWidth - currentWidth;
+  return padCount > 0 ? str + padChar.repeat(padCount) : str;
+}
+
+/**
  * 区切り文字データをパースする（共通関数）
  */
 function parseDelimited(input: string, delimiter: ',' | '\t'): string[][] {
@@ -167,7 +206,7 @@ export function toPipe(data: string[][]): string {
   // 各列の最大幅を計算
   const colWidths = data.reduce<number[]>((widths, row) => {
     row.forEach((cell, i) => {
-      widths[i] = Math.max(widths[i] || 0, (cell || '').length);
+      widths[i] = Math.max(widths[i] || 0, visualWidth(cell || ''));
     });
     return widths;
   }, []);
@@ -178,7 +217,7 @@ export function toPipe(data: string[][]): string {
     const row = data[rowIndex];
     const paddedCols = row.map((col, i) => {
       const width = colWidths[i] || 0;
-      return (col || '').padEnd(width, ' ');
+      return visualPadEnd(col || '', width);
     });
     lines.push(' ' + paddedCols.join(' | ') + ' ');
 
@@ -200,7 +239,7 @@ export function toFrame(data: string[][]): string {
 
   const colWidths = data.reduce<number[]>((widths, row) => {
     row.forEach((cell, i) => {
-      const cellLen = (cell || '').length;
+      const cellLen = visualWidth(cell || '');
       widths[i] = Math.max(widths[i] || 1, cellLen);
     });
     return widths;
@@ -215,7 +254,7 @@ export function toFrame(data: string[][]): string {
     const row = data[rowIndex];
     const paddedCols = row.map((col, i) => {
       const width = colWidths[i] || 1;
-      return (col || '').padEnd(width, ' ');
+      return visualPadEnd(col || '', width);
     });
     lines.push('│' + paddedCols.join('│') + '│');
 
@@ -237,7 +276,7 @@ export function toMarkdown(data: string[][]): string {
   // 各列の最大幅を計算（最低3文字）
   const colWidths = data.reduce<number[]>((widths, row) => {
     row.forEach((cell, i) => {
-      const cellLen = (cell || '').length;
+      const cellLen = visualWidth(cell || '');
       widths[i] = Math.max(widths[i] || 3, cellLen);
     });
     return widths;
@@ -249,7 +288,7 @@ export function toMarkdown(data: string[][]): string {
     const row = data[rowIndex];
     const paddedCols = row.map((col, i) => {
       const width = colWidths[i] || 3;
-      return (col || '').padEnd(width, ' ');
+      return visualPadEnd(col || '', width);
     });
     lines.push('| ' + paddedCols.join(' | ') + ' |');
 

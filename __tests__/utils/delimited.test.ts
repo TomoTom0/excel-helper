@@ -288,6 +288,15 @@ describe('Delimited Data Converter', () => {
       const result = toPipe(data)
       expect(result).toBe('')
     })
+
+    it('全角文字を含むデータの幅を正しく計算する', () => {
+      const data = [['名前', '値'], ['太郎', '100']]
+      const result = toPipe(data)
+      const lines = result.split('\n')
+      expect(lines[0]).toBe(' 名前 | 値  ')
+      expect(lines[1]).toBe('------+-----')
+      expect(lines[2]).toBe(' 太郎 | 100 ')
+    })
   })
 
   describe('toMarkdown', () => {
@@ -313,6 +322,15 @@ describe('Delimited Data Converter', () => {
       const lines = result.split('\n')
       expect(lines[0]).toBe('| a   | b   |')
       expect(lines[1]).toBe('| --- | --- |')
+    })
+
+    it('全角文字を含むデータの幅を正しく計算する', () => {
+      const data = [['名前', '値'], ['太郎', '100']]
+      const result = toMarkdown(data)
+      const lines = result.split('\n')
+      expect(lines[0]).toBe('| 名前 | 値  |')
+      expect(lines[1]).toBe('| ---- | --- |')
+      expect(lines[2]).toBe('| 太郎 | 100 |')
     })
   })
 
@@ -343,6 +361,29 @@ describe('Delimited Data Converter', () => {
       expect(lines[1]).toBe('│a│b│')
       expect(lines[2]).toBe('└─┴─┘')
       expect(lines.length).toBe(3)
+    })
+
+    it('全角文字を含むデータの幅を正しく計算する', () => {
+      const data = [['名前', '年齢'], ['太郎', '25']]
+      const result = toFrame(data)
+      const lines = result.split('\n')
+      expect(lines[0]).toBe('┌────┬────┐')
+      expect(lines[1]).toBe('│名前│年齢│')
+      expect(lines[2]).toBe('├────┼────┤')
+      expect(lines[3]).toBe('│太郎│25  │')
+      expect(lines[4]).toBe('└────┴────┘')
+    })
+
+    it('絵文字を含むデータの幅を正しく計算する', () => {
+      const data = [['item', '\u{1F431}'], ['apple', 'OK']]
+      const result = toFrame(data)
+      const lines = result.split('\n')
+      // colWidths: [5, 2] (apple=5, cat emoji=2)
+      expect(lines[0]).toBe('┌─────┬──┐')
+      expect(lines[1]).toBe('│item │\u{1F431}│')
+      expect(lines[2]).toBe('├─────┼──┤')
+      expect(lines[3]).toBe('│apple│OK│')
+      expect(lines[4]).toBe('└─────┴──┘')
     })
   })
 
