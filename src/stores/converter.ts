@@ -43,5 +43,18 @@ export const useConverterStore = defineStore('converter', () => {
     clearColumnOptions
   }
 }, {
-  persist: true
+  persist: {
+    afterHydrate: (ctx) => {
+      const store = ctx.store as unknown as { delimiterType: string; outputFormat: string }
+      if (store.delimiterType === 'pipe') {
+        store.delimiterType = 'sql'
+      }
+      if (store.outputFormat === 'md-tbl') {
+        store.outputFormat = 'md'
+      }
+      if (store.outputFormat === 'html-tbl') {
+        store.outputFormat = 'html'
+      }
+    }
+  }
 })
