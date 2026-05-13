@@ -3,7 +3,7 @@ import { ref, computed, toRef } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useConverterStore } from '../stores/converter'
 import { parseColumnLengths, parseColumnOptions, getDelimiter, parseFixed, tsvToFixed as convertTsvToFixed } from '../utils/converter'
-import { parseDelimitedData, parsePipe, parseFrame, toCSV, toTSV, toPipe, toMarkdown, toHtmlTable, toFrame } from '../utils/delimited'
+import { parseDelimitedData, parsePipe, parseFrame, parseHtmlTable, toCSV, toTSV, toPipe, toMarkdown, toHtmlTable, toFrame } from '../utils/delimited'
 import { useNotification } from '../composables/useNotification'
 import DelimiterSelector from '../components/DelimiterSelector.vue'
 import { useTruncatedDisplay } from '../composables/useTruncatedDisplay'
@@ -115,13 +115,20 @@ const isDelimitedData = (data: string, expectedColumnCount: number): ParseResult
 
   // 明示的な形式が指定されている場合、その区切り文字がデータに含まれているか検証
   if (delimiterType.value !== 'auto') {
-    const expectedDelimiter = delimiterType.value === 'tsv' ? '\t' : delimiterType.value === 'csv' ? ',' : delimiterType.value === 'sql' || delimiterType.value === 'md' ? '|' : null
+    // HTMLは区切り文字ベースではないため個別に処理
+    if (delimiterType.value === 'html') {
+      const rows = parseHtmlTable(trimmedData)
+      if (rows.length === 0) return { error: '入力形式が「HTML」に設定されていますが、有効な<table>が見つかりません。' }
+      return { data: rows }
+    }
+    const expectedDelimiter = delimiterType.value === 'tsv' ? '\t' : delimiterType.value === 'csv' ? ',' : delimiterType.value === 'sql' || delimiterType.value === 'md' ? '|' : delimiterType.value === 'frame' ? '│' : null
     if (expectedDelimiter === null) return false
     const hasExpectedDelimiter = expectedColumnCount === 1 || trimmedData.includes(expectedDelimiter)
 
     if (!hasExpectedDelimiter) {
-      const formatName = delimiterType.value === 'tsv' ? 'TSV' : delimiterType.value === 'csv' ? 'CSV' : 'SQL/MD'
-      return { error: `入力形式が「${formatName}」に設定されていますが、${formatName === 'CSV' ? 'カンマ' : formatName === 'TSV' ? 'タブ' : 'パイプ'}が見つかりません。入力形式を見直してください。` }
+      const formatName = delimiterType.value === 'tsv' ? 'TSV' : delimiterType.value === 'csv' ? 'CSV' : delimiterType.value === 'frame' ? 'Frame表' : 'SQL/MD'
+      const charName = formatName === 'CSV' ? 'カンマ' : formatName === 'TSV' ? 'タブ' : formatName === 'Frame表' ? '罫線' : 'パイプ'
+      return { error: `入力形式が「${formatName}」に設定されていますが、${charName}が見つかりません。入力形式を見直してください。` }
     }
   }
 
@@ -179,8 +186,10 @@ const resultPlaceholder = computed(() => {
 })
 
 const handleDelimitedInput = (lengths: number[], parsedData: string[][], data: string) => {
-  const delimiter = getDelimiter(data, delimiterType.value)
-  const inputType = delimiter === '\t' ? 'TSV' : delimiter === '|' ? 'SQL/MD' : delimiter === '│' ? 'Frame表' : 'CSV'
+  const inputType = delimiterType.value === 'html' ? 'HTML' : (() => {
+    const d = getDelimiter(data, delimiterType.value)
+    return d === '\t' ? 'TSV' : d === '|' ? 'SQL/MD' : d === '│' ? 'Frame表' : 'CSV'
+  })()
 
   // useFirstRowAsHeaderがtrueの場合、1行目をスキップ
   let dataRows = parsedData

@@ -24,7 +24,10 @@ export const useTableTransformStore = defineStore('tableTransform', () => {
 }, {
   persist: {
     afterHydrate: (ctx) => {
-      const store = ctx.store as unknown as { outputFormat: string }
+      const store = ctx.store as unknown as { inputFormat: string; outputFormat: string }
+      if (store.inputFormat === 'pipe') {
+        store.inputFormat = 'sql'
+      }
       if (store.outputFormat === 'markdown') {
         store.outputFormat = 'md'
       }
