@@ -1,8 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import type { DelimiterType, OutputFormat } from '../utils/converter'
-
-export type TransformType = 'transpose' | 'flipVertical' | 'flipHorizontal'
+import type { TransformType } from '../utils/tableTransform'
 
 export const useTableTransformStore = defineStore('tableTransform', () => {
   const inputText = ref('')

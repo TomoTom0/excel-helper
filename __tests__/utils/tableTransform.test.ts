@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { transpose, flipVertical, flipHorizontal } from '../../src/utils/tableTransform'
+import { transpose, flipVertical, flipHorizontal, transformAll } from '../../src/utils/tableTransform'
 
 describe('tableTransform', () => {
   describe('transpose', () => {
@@ -97,6 +97,46 @@ describe('tableTransform', () => {
 
     it('should handle rows with single column', () => {
       expect(flipHorizontal([['a'], ['b']])).toEqual([['a'], ['b']])
+    })
+  })
+
+  describe('transformAll', () => {
+    it('should return data unchanged when no transform types are given', () => {
+      const data = [
+        ['a', 'b'],
+        ['c', 'd']
+      ]
+      expect(transformAll(data, [])).toEqual(data)
+    })
+
+    it('should apply a single transform', () => {
+      const data = [
+        ['a', 'b'],
+        ['c', 'd']
+      ]
+      expect(transformAll(data, ['transpose'])).toEqual([
+        ['a', 'c'],
+        ['b', 'd']
+      ])
+    })
+
+    it('should apply multiple transforms in the given order', () => {
+      const data = [
+        ['a', 'b'],
+        ['c', 'd']
+      ]
+      // transpose -> flipVertical
+      expect(transformAll(data, ['transpose', 'flipVertical'])).toEqual([
+        ['b', 'd'],
+        ['a', 'c']
+      ])
+    })
+
+    it('should not modify the original array', () => {
+      const data = [['a', 'b'], ['c', 'd']]
+      const result = transformAll(data, ['flipHorizontal'])
+      expect(data).toEqual([['a', 'b'], ['c', 'd']])
+      expect(result).toEqual([['b', 'a'], ['d', 'c']])
     })
   })
 })

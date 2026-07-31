@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, toRef } from 'vue'
 import { storeToRefs } from 'pinia'
-import { transpose, flipVertical, flipHorizontal } from '../utils/tableTransform'
+import { transformAll } from '../utils/tableTransform'
 import { parseCSV, parseTSV, parsePipe, parseFrame, parseHtmlTable, toCSV, toTSV, toPipe, toMarkdown, toHtmlTable, toFrame } from '../utils/delimited'
 import { detectDelimiter } from '../utils/converter'
 import { useTableTransformStore } from '../stores/tableTransform'
@@ -11,7 +11,7 @@ import { useFileUpload } from '../composables/useFileUpload'
 import NotificationToast from '../components/NotificationToast.vue'
 import DelimiterSelector from '../components/DelimiterSelector.vue'
 import type { OutputFormat, DelimiterType } from '../utils/converter'
-import type { TransformType } from '../stores/tableTransform'
+import type { TransformType } from '../utils/tableTransform'
 
 const store = useTableTransformStore()
 const { inputText, inputFormat, outputFormat, transformTypes } = storeToRefs(store)
@@ -80,15 +80,6 @@ const transformLabels: Record<TransformType, string> = {
   flipHorizontal: '左右反転'
 }
 
-const transformAll = (data: string[][], types: TransformType[]): string[][] => {
-  return types.reduce((acc, type) => {
-    if (type === 'transpose') return transpose(acc)
-    if (type === 'flipVertical') return flipVertical(acc)
-    if (type === 'flipHorizontal') return flipHorizontal(acc)
-    return acc
-  }, data)
-}
-
 const resultPlaceholder = computed(() => {
   if (outputFormat.value === 'csv') return 'name,age,city\nAlice,30,Tokyo\nBob,25,Osaka\n(変換結果がここに表示されます)'
   if (outputFormat.value === 'sql') return ' name | age | city  \n------+-----+-------\n Alice| 30  | Tokyo \n Bob  | 25  | Osaka \n(変換結果がここに表示されます)'
@@ -117,10 +108,6 @@ const convert = async () => {
       throw new Error('有効なデータが見つかりません')
     }
 
-    if (transformTypes.value.length === 0) {
-      throw new Error('変換形式を1つ以上選択してください')
-    }
-
     const transformed = transformAll(parsed, transformTypes.value)
     fullResult.value = formatOutput(transformed, outputFormat.value)
 
@@ -129,7 +116,9 @@ const convert = async () => {
       ? (detected === '\t' ? 'TSV' : detected === ',' ? 'CSV' : detected === '|' ? 'SQL/MD' : detected === '│' ? 'Frame表' : 'TSV')
       : inputFormat.value === 'sql' ? 'SQL' : inputFormat.value === 'md' ? 'MD' : inputFormat.value === 'frame' ? 'Frame表' : inputFormat.value.toUpperCase()
     const outputType = outputFormat.value === 'sql' ? 'SQL' : outputFormat.value === 'md' ? 'MD' : outputFormat.value === 'frame' ? 'Frame表' : outputFormat.value.toUpperCase()
-    const typeLabels = transformTypes.value.map(t => transformLabels[t]).join('+')
+    const typeLabels = transformTypes.value.length > 0
+      ? transformTypes.value.map(t => transformLabels[t]).join('+')
+      : '形式変換のみ'
     conversionType.value = `${typeLabels} (${inputType} → ${outputType})`
   } catch (error) {
     fullResult.value = 'エラー: ' + (error as Error).message
