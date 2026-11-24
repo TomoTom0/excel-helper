@@ -142,6 +142,78 @@ export const parseColumnOptions = (input: string, delimiterType: DelimiterType =
     .filter((opt): opt is ColumnOption => opt !== null)
 }
 
+/**
+ * カラム長入力のバリデーション
+ *
+ * parseColumnLengths は不正な値を黙って除外するため、入力ミスが
+ * 誤った変換結果を無警告で生む。変換前にこの関数で誤りの箇所を
+ * 特定し、利用者に提示する。
+ *
+ * @param input - カラム長入力文字列（例: "5,5,10"）
+ * @param delimiterType - 区切り文字タイプ
+ * @returns 問題の説明の配列（問題がなければ空配列）。入力自体が空の場合は空配列
+ */
+export const validateColumnLengths = (input: string, delimiterType: DelimiterType = 'auto'): string[] => {
+  if (input.trim() === '') return []
+  const delimiter = getOptionsDelimiter(input, delimiterType)
+  const problems: string[] = []
+  input.split(delimiter).forEach((token, index) => {
+    const value = token.trim()
+    const position = index + 1
+    if (value === '') {
+      problems.push(`${position}番目の値が空です`)
+      return
+    }
+    const num = Number(value)
+    if (Number.isNaN(num)) {
+      problems.push(`${position}番目の値「${value}」は数値ではありません`)
+    } else if (!Number.isInteger(num)) {
+      problems.push(`${position}番目の値「${value}」は整数ではありません`)
+    } else if (num <= 0) {
+      problems.push(`${position}番目の値「${value}」は正の整数ではありません`)
+    }
+  })
+  return problems
+}
+
+/**
+ * カラムオプション入力のバリデーション
+ *
+ * parseColumnOptions は型が不正な項目を黙って除外し、不正な揃え指定を
+ * 右揃えとして扱うため、入力ミスがカラムとの対応ずれや意図しない
+ * 変換結果を無警告で生む。変換前にこの関数で誤りの箇所を特定する。
+ *
+ * @param input - カラムオプション入力文字列（例: "string:right,number:left:0"）
+ * @param delimiterType - 区切り文字タイプ
+ * @returns 問題の説明の配列（問題がなければ空配列）。入力自体が空の場合は空配列
+ */
+export const validateColumnOptions = (input: string, delimiterType: DelimiterType = 'auto'): string[] => {
+  if (input.trim() === '') return []
+  const delimiter = getOptionsDelimiter(input, delimiterType)
+  const problems: string[] = []
+  input.split(delimiter).forEach((token, index) => {
+    const value = token.trim()
+    const position = index + 1
+    if (value === '') {
+      problems.push(`${position}番目の値が空です`)
+      return
+    }
+    const parts = value.split(':')
+    const type = (parts[0] || '').toLowerCase()
+    if (type !== 'string' && type !== 'number') {
+      problems.push(`${position}番目の値「${value}」の型は string または number で指定してください`)
+      return
+    }
+    if (parts[1] !== undefined && parts[1] !== '') {
+      const padding = parts[1].toLowerCase()
+      if (padding !== 'left' && padding !== 'right') {
+        problems.push(`${position}番目の値「${value}」の揃えは left または right で指定してください`)
+      }
+    }
+  })
+  return problems
+}
+
 export const padValue = (value: string, length: number, option: ColumnOption): string => {
   // フィールド内の改行とタブをスペースに置換
   let normalizedValue = value.replace(/\r?\n/g, ' ').replace(/\t/g, ' ')

@@ -2,7 +2,7 @@
 import { ref, computed, toRef } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useConverterStore } from '../stores/converter'
-import { parseColumnLengths, parseColumnOptions, getDelimiter, parseFixed, tsvToFixed as convertTsvToFixed } from '../utils/converter'
+import { parseColumnLengths, parseColumnOptions, validateColumnLengths, validateColumnOptions, getDelimiter, parseFixed, tsvToFixed as convertTsvToFixed } from '../utils/converter'
 import { parseDelimitedData, parsePipe, parseFrame, parseHtmlTable, toCSV, toTSV, toPipe, toMarkdown, toHtmlTable, toFrame } from '../utils/delimited'
 import { useNotification } from '../composables/useNotification'
 import DelimiterSelector from '../components/DelimiterSelector.vue'
@@ -283,6 +283,19 @@ const convert = async () => {
 
     if (!data.trim()) {
       throw new Error(`データが空です（uploadedFile: ${!!uploadedFile.value}, dataBody長: ${store.dataBody.length}, data長: ${data.length}）`)
+    }
+
+    // 補助入力のバリデーション: 不正な値はパース時に黙って除外され、
+    // 誤った変換結果を生むため、変換前に誤りの箇所を提示して止める
+    const lengthProblems = validateColumnLengths(columnLengths.value)
+    if (lengthProblems.length > 0) {
+      throw new Error(`カラム長の入力に誤りがあります: ${lengthProblems.join('、')}`)
+    }
+    if (outputFormat.value === 'fixed' && columnOptions.value.trim()) {
+      const optionProblems = validateColumnOptions(columnOptions.value)
+      if (optionProblems.length > 0) {
+        throw new Error(`カラムオプションの入力に誤りがあります: ${optionProblems.join('、')}`)
+      }
     }
 
     // まず区切り文字データかどうか判定（カラム長は後で確認）

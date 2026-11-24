@@ -109,6 +109,54 @@ describe('FixedLengthConverter.vue', () => {
       }
     });
 
+    it('should report invalid column lengths instead of silently dropping them', async () => {
+      const wrapper = createWrapper();
+      const store = useConverterStore();
+
+      store.columnLengths = '5,abc,10';
+      store.dataBody = 'AAAA BBBB CCCCCCCCCC';
+
+      const button = wrapper.findAll('button').find(b =>
+        b.text().includes('変換')
+      );
+
+      if (button) {
+        await button.trigger('click');
+        await wrapper.vm.$nextTick();
+
+        const resultArea = wrapper.find('textarea[readonly]');
+        expect(resultArea.exists()).toBe(true);
+        const value = (resultArea.element as HTMLTextAreaElement).value;
+        expect(value).toContain('カラム長の入力に誤りがあります');
+        expect(value).toContain('abc');
+      }
+    });
+
+    it('should report invalid column options when converting to fixed length', async () => {
+      const wrapper = createWrapper();
+      const store = useConverterStore();
+
+      store.columnLengths = '5,5,5';
+      store.columnOptions = 'string:right,bogus';
+      store.dataBody = 'AAAA\tBBBB\tCCCC';
+      store.outputFormat = 'fixed';
+
+      const button = wrapper.findAll('button').find(b =>
+        b.text().includes('変換')
+      );
+
+      if (button) {
+        await button.trigger('click');
+        await wrapper.vm.$nextTick();
+
+        const resultArea = wrapper.find('textarea[readonly]');
+        expect(resultArea.exists()).toBe(true);
+        const value = (resultArea.element as HTMLTextAreaElement).value;
+        expect(value).toContain('カラムオプションの入力に誤りがあります');
+        expect(value).toContain('bogus');
+      }
+    });
+
     it('should handle conversion errors gracefully', async () => {
       const wrapper = createWrapper();
       const store = useConverterStore();

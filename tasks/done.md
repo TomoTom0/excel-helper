@@ -1,5 +1,20 @@
 # 完了タスク
 
+## 2026-11-25
+
+### カラム長・カラムオプション入力のバリデーション追加
+✅ **PR #95: 固定長相互変換の補助入力バリデーション**
+
+**内容**:
+- parseColumnLengths / parseColumnOptions が不正な値を黙って除外し、入力ミスが誤った変換結果を無警告で生んでいた問題に対応
+- src/utils/converter.ts に validateColumnLengths / validateColumnOptions を追加（誤りの箇所を「N番目の値」として特定）
+- FixedLengthConverter の変換開始時に検証し、誤りがあれば箇所を明示してエラー表示
+- テスト追加: 単体13件・ビュー2件（全333件合格、ビルド成功）
+
+**残件**: SqlInsertGenerator 側のカラム長入力も同じ parseColumnLengths を使っており、同バリデーションの適用は次単位候補
+
+---
+
 ## 2025-10-29
 
 ### アイコン更新作業
