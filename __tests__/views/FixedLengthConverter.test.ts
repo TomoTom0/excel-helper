@@ -132,6 +132,30 @@ describe('FixedLengthConverter.vue', () => {
       }
     });
 
+    it('should not block delimited-to-delimited conversion with invalid leftover column lengths', async () => {
+      const wrapper = createWrapper();
+      const store = useConverterStore();
+
+      store.columnLengths = '5,abc,10';
+      store.dataBody = 'a,b';
+      store.outputFormat = 'tsv';
+
+      const button = wrapper.findAll('button').find(b =>
+        b.text().includes('変換')
+      );
+
+      if (button) {
+        await button.trigger('click');
+        await wrapper.vm.$nextTick();
+
+        const resultArea = wrapper.find('textarea[readonly]');
+        expect(resultArea.exists()).toBe(true);
+        const value = (resultArea.element as HTMLTextAreaElement).value;
+        expect(value).not.toContain('カラム長の入力に誤りがあります');
+        expect(value).toContain('a\tb');
+      }
+    });
+
     it('should report invalid column options when converting to fixed length', async () => {
       const wrapper = createWrapper();
       const store = useConverterStore();
