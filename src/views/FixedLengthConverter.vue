@@ -2,7 +2,7 @@
 import { ref, computed, toRef } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useConverterStore } from '../stores/converter'
-import { parseColumnLengths, parseColumnOptions, getDelimiter, parseFixed, tsvToFixed as convertTsvToFixed } from '../utils/converter'
+import { parseColumnLengths, parseColumnOptions, validateColumnLengths, validateColumnOptions, getDelimiter, parseFixed, tsvToFixed as convertTsvToFixed } from '../utils/converter'
 import { parseDelimitedData, parsePipe, parseFrame, parseHtmlTable, toCSV, toTSV, toPipe, toMarkdown, toHtmlTable, toFrame } from '../utils/delimited'
 import { useNotification } from '../composables/useNotification'
 import DelimiterSelector from '../components/DelimiterSelector.vue'
@@ -294,20 +294,46 @@ const convert = async () => {
       throw new Error(parseResult.error)
     }
 
+    // 補助入力のバリデーション: 不正な値はパース時に黙って除外され、
+    // 誤った変換結果を生むため、誤りの箇所を提示して止める。
+    // ただし検証はカラム長・カラムオプションが実際に使われる変換
+    // （固定長が関わる変換）でのみ行う。区切り文字同士の変換では
+    // これらの設定は使われないうえ、設定はストアに保持されるため、
+    // 残っていた不正値で止めると固定長から切り替えた利用者の
+    // 変換まで妨げてしまう
+    const validateLengths = () => {
+      const lengthProblems = validateColumnLengths(columnLengths.value)
+      if (lengthProblems.length > 0) {
+        throw new Error(`カラム長の入力に誤りがあります: ${lengthProblems.join('、')}`)
+      }
+    }
+    const validateOptions = () => {
+      if (outputFormat.value === 'fixed' && columnOptions.value.trim()) {
+        const optionProblems = validateColumnOptions(columnOptions.value)
+        if (optionProblems.length > 0) {
+          throw new Error(`カラムオプションの入力に誤りがあります: ${optionProblems.join('、')}`)
+        }
+      }
+    }
+
     if (parseResult && 'data' in parseResult) {
       // 区切り文字データ（TSV/CSV/SQL表）の場合
       // 固定長への変換時のみカラム長が必要
       if (outputFormat.value === 'fixed') {
+        validateLengths()
         if (lengths.length === 0) {
           throw new Error('固定長への変換にはカラム長が必要です')
         }
+        validateOptions()
       }
       handleDelimitedInput(lengths, parseResult.data, data)
     } else {
       // 固定長データの場合は必ずカラム長が必要
+      validateLengths()
       if (lengths.length === 0) {
         throw new Error('カラム長が指定されていません')
       }
+      validateOptions()
       handleFixedWidthInput(lengths, data)
     }
   } catch (error) {
