@@ -13,6 +13,15 @@
 
 **残件**: SqlInsertGenerator 側のカラム長入力も同じ parseColumnLengths を使っており、同バリデーションの適用は次単位候補
 
+### SqlInsertGenerator へのバリデーション適用
+✅ **PR #96: SQL INSERT生成の補助入力バリデーション**
+
+**内容**:
+- PR #95 の残件に対応。SqlInsertGenerator でも parseColumnLengths と parseColumnOptions（SQL用）が不正な値を黙って除外し、誤った分割やカラムとの対応ずれを無警告で生んでいた
+- src/utils/sqlInsert.ts に validateColumnOptions を追加（number/string の別名を含む解釈可否を「N番目の値」として特定）
+- SqlInsertGenerator の生成開始時に検証し、誤りがあれば箇所を明示してエラー表示。カラム長の検証はカラム長が使われる固定長入力の場合に限り、未入力時はその旨を明示する
+- テスト追加: 単体6件・ビュー5件（全345件合格、ビルド成功）
+
 ---
 
 ## 2025-10-29

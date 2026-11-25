@@ -21,6 +21,9 @@ YT Excel Helperは、固定長データとTSV/CSV形式の相互変換、およ�
 ### 🎨 [設計資料](./design/chat/)
 初期設計時のチャット記録
 
+### 📝 [変更履歴](./changelog/unreleased.md)
+未リリース分の変更履歴
+
 ## クイックスタート
 
 ```bash
