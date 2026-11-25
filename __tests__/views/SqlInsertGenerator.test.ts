@@ -370,6 +370,102 @@ describe('SqlInsertGenerator.vue', () => {
     })
   })
 
+  describe('Validation', () => {
+    const clickGenerateAndReadResult = async (wrapper: ReturnType<typeof createWrapper>) => {
+      const button = wrapper.findAll('button').find(b =>
+        b.text().includes('生成')
+      )
+      await button!.trigger('click')
+      await wrapper.vm.$nextTick()
+      const resultArea = wrapper.find('textarea[readonly]')
+      return (resultArea.element as HTMLTextAreaElement).value
+    }
+
+    it('should show which column length is invalid for fixed-length input', async () => {
+      const wrapper = createWrapper()
+      const store = useSqlInsertStore()
+
+      store.tableName = 'users'
+      store.delimiterType = 'fixed'
+      store.columnLengths = '3,abc,3'
+      store.columnHeaders = 'id,name,age'
+      store.dataBody = '001John025'
+      store.useFirstRowAsHeader = false
+
+      const result = await clickGenerateAndReadResult(wrapper)
+      expect(result).toContain('カラム長の入力に誤りがあります')
+      expect(result).toContain('2番目')
+      expect(result).not.toContain('INSERT INTO')
+    })
+
+    it('should require column lengths for fixed-length input', async () => {
+      const wrapper = createWrapper()
+      const store = useSqlInsertStore()
+
+      store.tableName = 'users'
+      store.delimiterType = 'fixed'
+      store.columnLengths = ''
+      store.columnHeaders = 'id,name'
+      store.dataBody = '01John'
+      store.useFirstRowAsHeader = false
+
+      const result = await clickGenerateAndReadResult(wrapper)
+      expect(result).toContain('カラム長が必要です')
+      expect(result).not.toContain('INSERT INTO')
+    })
+
+    it('should show which column option is invalid', async () => {
+      const wrapper = createWrapper()
+      const store = useSqlInsertStore()
+
+      store.tableName = 'users'
+      store.columnHeaders = 'id,name'
+      store.dataBody = '1,John'
+      store.columnOptions = 'number,foo'
+      store.useFirstRowAsHeader = false
+
+      const result = await clickGenerateAndReadResult(wrapper)
+      expect(result).toContain('カラムオプションの入力に誤りがあります')
+      expect(result).toContain('2番目')
+      expect(result).toContain('foo')
+      expect(result).not.toContain('INSERT INTO')
+    })
+
+    it('should not block delimited conversion by stale invalid column lengths', async () => {
+      const wrapper = createWrapper()
+      const store = useSqlInsertStore()
+
+      // カラム長は固定長入力でのみ使われる。区切り文字変換では
+      // ストアに残った不正なカラム長で生成を止めない
+      store.tableName = 'users'
+      store.delimiterType = 'csv'
+      store.columnLengths = 'abc'
+      store.columnHeaders = 'id,name'
+      store.dataBody = '1,John'
+      store.useFirstRowAsHeader = false
+
+      const result = await clickGenerateAndReadResult(wrapper)
+      expect(result).toContain('INSERT INTO')
+    })
+
+    it('should generate from fixed-length input with valid lengths and options', async () => {
+      const wrapper = createWrapper()
+      const store = useSqlInsertStore()
+
+      store.tableName = 'users'
+      store.delimiterType = 'fixed'
+      store.columnLengths = '2,4'
+      store.columnHeaders = 'id,name'
+      store.dataBody = '01John\n02Jane'
+      store.columnOptions = 'number,string'
+      store.useFirstRowAsHeader = false
+
+      const result = await clickGenerateAndReadResult(wrapper)
+      expect(result).toContain('INSERT INTO')
+      expect(result).toContain('John')
+    })
+  })
+
   describe('Insert Format Selection', () => {
     it('should allow insert format selection', async () => {
       const wrapper = createWrapper()

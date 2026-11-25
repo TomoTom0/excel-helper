@@ -2,9 +2,9 @@
 import { ref, computed, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useSqlInsertStore } from '../stores/sqlInsert'
-import { getDelimiter, parseColumnLengths, convertFromFixed } from '../utils/converter'
+import { getDelimiter, parseColumnLengths, validateColumnLengths, convertFromFixed } from '../utils/converter'
 import { parseDelimitedData, parsePipe, parseFrame } from '../utils/delimited'
-import { generateInsertStatements, parseColumnOptions } from '../utils/sqlInsert'
+import { generateInsertStatements, parseColumnOptions, validateColumnOptions } from '../utils/sqlInsert'
 import NotificationToast from '../components/NotificationToast.vue'
 import DelimiterSelector from '../components/DelimiterSelector.vue'
 import { useFileUpload } from '../composables/useFileUpload'
@@ -141,6 +141,20 @@ const convert = async () => {
       throw new Error('データが空です')
     }
 
+    // 固定長入力の場合のみカラム長が使われる。parseColumnLengths は不正な
+    // 値を黙って除外するため、誤った分割になる前に誤りの箇所を提示する。
+    // 固定長以外の変換ではカラム長は使われず、設定はストアに保持される
+    // ため、残っていた不正値で変換を止めない（検証は使われる場合に限る）
+    if (delimiterType.value === 'fixed') {
+      const lengthProblems = validateColumnLengths(columnLengths.value, delimiterType.value)
+      if (lengthProblems.length > 0) {
+        throw new Error(`カラム長の入力に誤りがあります: ${lengthProblems.join('、')}`)
+      }
+      if (parseColumnLengths(columnLengths.value, delimiterType.value).length === 0) {
+        throw new Error('固定長データの変換にはカラム長が必要です')
+      }
+    }
+
     const parsedData = parseInputData(data)
     if (!parsedData || parsedData.length === 0) {
       throw new Error('データのパースに失敗しました')
@@ -175,7 +189,14 @@ const convert = async () => {
       throw new Error('データ行がありません')
     }
 
-    // カラムオプションのパース
+    // カラムオプションのパース（parseColumnOptions は解釈できない項目を
+    // 黙って除外し、カラムとの対応がずれるため、先に誤りの箇所を提示する）
+    if (columnOptions.value.trim()) {
+      const optionProblems = validateColumnOptions(columnOptions.value, delimiterType.value)
+      if (optionProblems.length > 0) {
+        throw new Error(`カラムオプションの入力に誤りがあります: ${optionProblems.join('、')}`)
+      }
+    }
     const columnTypes = columnOptions.value.trim()
       ? parseColumnOptions(columnOptions.value, delimiterType.value)
       : undefined
